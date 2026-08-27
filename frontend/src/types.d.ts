@@ -1,0 +1,98 @@
+export type Role = 'ops_pic' | 'fte_ops' | 'fte_mm' | 'doc_officer' | 'dock_officer';
+export type Status = 'PENDING' | 'APPROVED' | 'CANCELLED' | 'REJECTED_BY_MM' | 'ASSIGNED' | 'FOR_DOCKING' | 'DOCKED' | 'CONFIRMED';
+export interface User {
+    id: string;
+    name: string;
+    role: Role;
+    original_role?: Role;
+    is_admin?: boolean;
+    email?: string;
+    ops_id?: string;
+    must_change_password?: boolean;
+    is_active?: boolean;
+    password_changed_at?: string | null;
+}
+export interface TruckRequest {
+    id: string;
+    request_timestamp?: string;
+    cluster: string;
+    region: string;
+    dock_no: string;
+    backlogs: number;
+    backlogs_timestamp?: string | null;
+    ob_fte?: string | null;
+    truck_size: string;
+    truck_type: string;
+    plate_number?: string | null;
+    provide_time?: string | null;
+    linehaul_trip_no?: string | null;
+    docked_time?: string | null;
+    status: Status;
+    rejection_remarks?: string | null;
+    driver_id?: string | null;
+    created_by: string;
+    created_at: string;
+    updated_at?: string;
+}
+export interface ClusterLookup {
+    id: string;
+    cluster_name: string;
+    hub_name: string;
+    region: string;
+    dock_number?: string | null;
+    backlogs?: number | null;
+    backlogs_ts?: string | null;
+}
+export interface Page<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    from?: number | null;
+    to?: number | null;
+    total: number;
+}
+export interface RequestMetrics {
+    total: number;
+    awaiting_action: number;
+    by_status: Partial<Record<Status, number>>;
+}
+export interface RequestAnalytics {
+    truck_sizes: Partial<Record<'4W' | '6W' | '10W' | '6WF', number>>;
+    hourly: Array<{
+        label: string;
+        count: number;
+    }>;
+    shift_start: string;
+}
+export type AppView = 'overview' | 'lh-request' | 'truck-request' | 'docking' | 'kpi' | 'users';
+export interface Notification {
+    id: number;
+    request_id: string | null;
+    event_type: string;
+    title: string;
+    body: string;
+    read_at: string | null;
+    created_at: string;
+}
+export interface ManagedUser {
+    id: string;
+    name: string;
+    role: Role;
+    email?: string | null;
+    ops_id?: string | null;
+    is_active: boolean;
+    created_at: string;
+}
+export type RequestSort = 'created_at' | 'request_timestamp' | 'cluster' | 'dock_no' | 'backlogs' | 'plate_number' | 'status';
+export type SortDirection = 'asc' | 'desc';
+export interface RequestFilters {
+    status: Status | 'ALL';
+    search: string;
+    dateFrom: string;
+    dateTo: string;
+    sort: RequestSort;
+    direction: SortDirection;
+    page: number;
+    perPage: number;
+}

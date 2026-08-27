@@ -1,0 +1,197 @@
+-- Run in Supabase SQL Editor after migrations 001 and 002.
+-- Legacy source IDs are loaded into a temporary table only. public.clusters uses
+-- generated UUIDs and upserts on the unique hub_name business key.
+
+alter table clusters add column if not exists hub_name text;
+alter table clusters add column if not exists dock_number text;
+alter table clusters add column if not exists backlogs integer;
+alter table clusters add column if not exists backlogs_ts timestamptz;
+alter table clusters add column if not exists created_at timestamptz not null default now();
+update clusters set hub_name = cluster_name where hub_name is null;
+alter table clusters alter column hub_name set not null;
+create unique index if not exists clusters_hub_name_uidx on clusters (hub_name);
+create index if not exists clusters_region_idx on clusters (region);
+create index if not exists clusters_active_cluster_name_idx on clusters (active, cluster_name);
+
+drop table if exists seed_clusters;
+create temporary table seed_clusters (
+  id text primary key,
+  cluster_name text not null,
+  hub_name text not null,
+  region text not null,
+  dock_number text,
+  backlogs integer,
+  backlogs_ts timestamptz,
+  active boolean,
+  created_at timestamptz
+);
+
+insert into seed_clusters (
+  id, cluster_name, hub_name, region, dock_number, backlogs, backlogs_ts, active, created_at
+) values
+  ('2ee51ea5e0770a03142fd6fb', 'Tanza Hub', 'Tanza Hub', 'GMA SOL', 'Dock 1', null, null, true, now()),
+  ('c96f8baf52ec0646b6b02c5a', 'Naic Hub', 'Naic Hub', 'GMA SOL', 'Dock 2', null, null, true, now()),
+  ('ee0f9942b484e9f7032e1779', 'Mambugan Hub,Redgold Hub', 'Mambugan Hub', 'MM/GMA', 'Dock 3', null, null, true, now()),
+  ('a1c177c8b44c22856171dac5', 'Mambugan Hub,Redgold Hub', 'Redgold Hub', 'MM/GMA', 'Dock 3', null, null, true, now()),
+  ('79d9073a86a2e5e2e275998d', 'San Mateo Hub,OP Silangan San Mateo Hub', 'OP Silangan San Mateo Hub', 'MM/GMA', 'Dock 4', null, null, true, now()),
+  ('bfad64672ee28a069bec2b06', 'San Mateo Hub,OP Silangan San Mateo Hub', 'San Mateo Hub', 'MM/GMA', 'Dock 4', null, null, true, now()),
+  ('3cd00933056ad3500f3d9811', 'Upper Antipolo Hub', 'Upper Antipolo Hub', 'MM/GMA', 'Dock 5', null, null, true, now()),
+  ('78ae4942cc008b989dc78333', 'MLQ Hub', 'MLQ Hub', 'MM/GMA', 'Dock 5', null, null, true, now()),
+  ('7537a999ac4492adb9ad5cab', 'Upper Antipolo Hub 2,Teresa Rizal Hub', 'Upper Antipolo Hub 2', 'MM/GMA', 'Dock 6', null, null, true, now()),
+  ('3828001703fd03ef45c6c91a', 'Upper Antipolo Hub 2,Teresa Rizal Hub', 'Teresa Rizal Hub', 'MM/GMA', 'Dock 6', null, null, true, now()),
+  ('1f7120674028ead877ae7ed9', 'Mambog Hub', 'Mambog Hub', 'GMA SOL', 'Dock 7', null, null, true, now()),
+  ('52264f6535ca72ffe8fbe393', 'Bacoor Hub', 'Bacoor Hub', 'GMA SOL', 'Dock 8', null, null, true, now()),
+  ('33ba56f481ef4143f65691dd', 'San Isidro Rodriguez Hub', 'San Isidro Rodriguez Hub', 'MM/GMA', 'Dock 09', null, null, true, now()),
+  ('f927eac33050a3cee2f31122', 'Rodriguez Hub,Rodriguez Hub 2', 'Rodriguez Hub', 'MM/GMA', 'Dock 10', null, null, true, now()),
+  ('fea146caf4238acd7187d836', 'Rodriguez Hub,Rodriguez Hub 2', 'Rodriguez Hub 2', 'MM/GMA', null, null, null, true, now()),
+  ('2844a1f11b597d42591956af', 'Baltao Hub', 'Baltao Hub', 'MM/GMA', 'Dock 11', null, null, true, now()),
+  ('5ee7174ef548e1469af0d54d', 'Taytay Hub', 'Taytay Hub', 'MM/GMA', 'Dock 11', null, null, true, now()),
+  ('1594cab0c271e354402f4910', 'Angono Hub', 'Angono Hub', 'MM/GMA', 'Dock 12', null, null, true, now()),
+  ('e5a0f3ad550d84c408663c6a', 'Binangonan Hub', 'Binangonan Hub', 'MM/GMA', 'Dock 13', null, null, true, now()),
+  ('619482f78e9dad73c45b99cd', 'Tanay Hub,OP Pililla Rizal Hub', 'Tanay Hub', 'MM/GMA', 'Dock 14', null, null, true, now()),
+  ('9893b925eced211d3696b1e7', 'Tanay Hub,OP Pililla Rizal Hub', 'OP Pililla Rizal Hub', 'MM/GMA', 'Dock 14', null, null, true, now()),
+  ('994e88665e81dd4623e18e7f', 'Morong Rizal Hub', 'Morong Rizal Hub', 'GMA SOL', 'Dock 15', null, null, true, now()),
+  ('f84b412bf5ce876497ec2178', 'Silang Hub,Maguyam Hub', 'Silang Hub', 'GMA SOL', 'Dock 16', null, null, true, now()),
+  ('f51b8d5c2785ce42b716470a', 'Silang Hub,Maguyam Hub', 'Maguyam Hub', 'GMA SOL', null, null, null, true, now()),
+  ('dcd69441b55c9494fbc6316a', 'Biclatan Hub', 'Biclatan Hub', 'GMA SOL', 'Dock 16', null, null, true, now()),
+  ('0f761675ce66f9f2b0c70b09', 'General Trias Hub', 'General Trias Hub', 'GMA SOL', 'Dock 17', null, null, true, now()),
+  ('1f4e342c4241ec8f90ccc426', 'Malagasang Hub', 'Malagasang Hub', 'GMA SOL', 'Dock 18', null, null, true, now()),
+  ('eb1dd9bc4ec627e1bec39687', 'Baras Hub', 'Baras Hub', 'MM/GMA', 'Dock 19', null, null, true, now()),
+  ('f057b474b3a453427f922680', 'Antipolo Hub,Inarawan Hub', 'Antipolo Hub', 'MM/GMA', 'Dock 19', null, null, true, now()),
+  ('6d9742be1f43c4b5470c4c8d', 'Antipolo Hub,Inarawan Hub', 'Inarawan Hub', 'MM/GMA', null, null, null, true, now()),
+  ('a5cf3e69ec5a3d9e3f0e8bb6', 'Carmona Hub,GMA Hub', 'Carmona Hub', 'GMA SOL', 'Dock 20', null, null, true, now()),
+  ('35e44184e191545771fe2699', 'Carmona Hub,GMA Hub', 'GMA Hub', 'GMA SOL', 'Dock 20', null, null, true, now()),
+  ('d1d1f4df3a61ae5538f5ae77', 'North Tanza Hub', 'North Tanza Hub', 'GMA SOL', 'Dock 21', null, null, true, now()),
+  ('e3a8711b99d90744e1ebd301', 'Trece Martires Hub', 'Trece Martires Hub', 'GMA SOL', 'Dock 22', null, null, true, now()),
+  ('1fd8f1dddb948df097dc044e', 'SOC 8', 'SOC 8', 'InterSOC', 'Dock 22', null, null, true, now()),
+  ('29205bba564e26d224c1339d', 'Cabuyao Hub', 'Cabuyao Hub', 'GMA SOL', 'Dock 23', null, null, true, now()),
+  ('efd3ef5151377b13d4c0c099', 'San Isidro Hub', 'San Isidro Hub', 'GMA SOL', 'Dock 23', null, null, true, now()),
+  ('2b57e0498d493f88d8066b92', 'Cainta Hub,Q Plaza Hub', 'Cainta Hub', 'MM/GMA', 'Dock 24', null, null, true, now()),
+  ('d6c160d95714d7f300444377', 'Cainta Hub,Q Plaza Hub', 'Q Plaza Hub', 'MM/GMA', 'Dock 24', null, null, true, now()),
+  ('c624a6890c0ec0bbf775e407', 'San Pablo Hub,SP Del Remedio Hub', 'SP Del Remedio Hub', 'GMA SOL', 'Dock 25', null, null, true, now()),
+  ('f682ede9265f649ff4083794', 'San Pablo Hub,SP Del Remedio Hub', 'San Pablo Hub', 'GMA SOL', 'Dock 25', null, null, true, now()),
+  ('91d141fdd3cac2a857383dec', 'Tiaong Hub,Candelaria Hub 2', 'Tiaong Hub', 'SOL', 'Dock 26', null, null, true, now()),
+  ('69603a14f2f19eceed14989b', 'Tiaong Hub,Candelaria Hub 2', 'Candelaria Hub 2', 'SOL', 'Dock 26', null, null, true, now()),
+  ('46aac5b3dddbc16284130279', 'Candelaria Hub,Batangas-San Juan Hub', 'Candelaria Hub', 'SOL', 'Dock 27', null, null, true, now()),
+  ('a003c81c4405f204bd4da315', 'Candelaria Hub,Batangas-San Juan Hub', 'Batangas-San Juan Hub', 'SOL', 'Dock 27', null, null, true, now()),
+  ('aca78ca8a8e109df100f9f51', 'Tagaytay Hub,Talisay Batangas Hub', 'Tagaytay Hub', 'SOL', 'Dock 28', null, null, true, now()),
+  ('7b574677ddb739bc47fbf75f', 'Tagaytay Hub,Talisay Batangas Hub', 'Talisay Batangas Hub', 'SOL', 'Dock 28', null, null, true, now()),
+  ('f7a193a547ec1308d3021fa6', 'Sariaya Hub', 'Sariaya Hub', 'SOL', 'Dock 29', null, null, true, now()),
+  ('b2d92d1cc8cc12a6f67b6ba7', 'Bauan Hub', 'Bauan Hub', 'SOL', 'Dock 30', null, null, true, now()),
+  ('6c6a59aa1ea590e9de1e1cf0', 'Batangas Hub', 'Batangas Hub', 'SOL', 'Dock 31', null, null, true, now()),
+  ('b7191e93c69ef49a87658b48', 'Lipa Hub', 'Lipa Hub', 'SOL', 'Dock 32', null, null, true, now()),
+  ('ab7092afec5916864f176eae', 'Pagsanjan Hub', 'Pagsanjan Hub', 'SOL', 'Dock 33', null, null, true, now()),
+  ('571d3c013c86632b31b3e8c8', 'Pila Hub,Santa Cruz Hub', 'Pila Hub', 'GMA SOL', 'Dock 34', null, null, true, now()),
+  ('88f8aa0a1a5b9fed011e04ca', 'Pila Hub,Santa Cruz Hub', 'Santa Cruz Hub', 'GMA SOL', 'Dock 34', null, null, true, now()),
+  ('156d9bcc6c4753fc60f66254', 'Salawag Hub', 'Salawag Hub', 'GMA SOL', 'Dock 35', null, null, true, now()),
+  ('8f46dc92e5e87bb4da314664', 'Paliparan Hub', 'Paliparan Hub', 'GMA SOL', 'Dock 36', null, null, true, now()),
+  ('e40a5ab18afb8bafec1d8975', 'PHSIP', 'PHSIP', 'GMA SOL', 'Dock 37', null, null, true, now()),
+  ('02189e345849d5b0d187c962', 'Canlubang Hub', 'Canlubang Hub', 'GMA SOL', 'Dock 37', null, null, true, now()),
+  ('197c00998c16c16e0d36e6cc', 'Sirang Lupa Hub', 'Sirang Lupa Hub', 'GMA SOL', 'Dock 38', null, null, true, now()),
+  ('f229782522115b521daaee9a', 'Alfonso Hub', 'Alfonso Hub', 'GMA SOL', 'Dock 39', null, null, true, now()),
+  ('d8b93e7a2dc65c96ddb23f48', 'Amadeo Hub', 'Amadeo Hub', 'GMA SOL', 'Dock 39', null, null, true, now()),
+  ('461cea5077583ecef5d46e63', 'Lemery Hub,Taal Hub', 'Lemery Hub', 'SOL', 'DOCK 40', null, null, true, now()),
+  ('29ea9eec4dc3e6dbaeb8f1af', 'Lemery Hub,Taal Hub', 'Taal Hub', 'SOL', 'DOCK 40', null, null, true, now()),
+  ('b62bc96f50b6946b6fee3081', 'Bucal Hub', 'Bucal Hub', 'GMA SOL', 'Dock 41', null, null, true, now()),
+  ('d401a04cf1fb0a502b865100', 'Calamba Hub', 'Calamba Hub', 'GMA SOL', 'Dock 42', null, null, true, now()),
+  ('273eea12d8affcdfae2f620e', 'Agdangan Hub,Mulanay Hub,Catanauan Hub', 'Agdangan Hub', 'SOL', 'Dock 43', null, null, true, now()),
+  ('572e9a6912f779a6d45cabf9', 'Agdangan Hub,Mulanay Hub,Catanauan Hub', 'Mulanay Hub', 'SOL', 'Dock 43', null, null, true, now()),
+  ('d9441c9e7bcb086b4d7e4ab7', 'Agdangan Hub,Mulanay Hub,Catanauan Hub', 'Catanauan Hub', 'SOL', 'Dock 43', null, null, true, now()),
+  ('c869e1334f4aeffcf06a94af', 'Salitran Hub', 'Salitran Hub', 'GMA SOL', 'Dock 44', null, null, true, now()),
+  ('f3e81a1a7beb2170f1abade3', 'Dasmarinas Hub', 'Dasmarinas Hub', 'GMA SOL', 'Dock 45', null, null, true, now()),
+  ('5d74ebb8b2eb29ae56bff9eb', 'Nagcarlan Hub,Liliw Hub', 'Nagcarlan Hub', 'GMA SOL', 'Dock 46', null, null, true, now()),
+  ('6d4946885f6d5bd1e8c397a0', 'Nagcarlan Hub,Liliw Hub', 'Liliw Hub', 'GMA SOL', 'Dock 46', null, null, true, now()),
+  ('a813d26768966c7c03556076', 'Bay Hub', 'Bay Hub', 'GMA SOL', 'Dock 47', null, null, true, now()),
+  ('ffe0a2e90241664a014c31bd', 'Los Banos Hub', 'Los Banos Hub', 'GMA SOL', 'Dock 47', null, null, true, now()),
+  ('b4de8d1a09982b4e495e0a6e', 'Pakil Hub,Mabitac Laguna Hub', 'Pakil Hub', 'GMA SOL', 'Dock 48', null, null, true, now()),
+  ('28108abae5d84e61cb65866f', 'Pakil Hub,Mabitac Laguna Hub', 'Mabitac Laguna Hub', 'GMA SOL', 'Dock 48', null, null, true, now()),
+  ('1c33383fcd82355aa79143a2', 'Real Hub,Infanta Hub', 'Real Hub', 'GMA SOL', 'Dock 49', null, null, true, now()),
+  ('a430fd6c2241504e8c786e29', 'Real Hub,Infanta Hub', 'Infanta Hub', 'SOL', 'Dock 49', null, null, true, now()),
+  ('c727dfd4ee18c138a09fc345', 'Batangas-Bolbok Hub,Pallocan Hub', 'Batangas-Bolbok Hub', 'SOL', 'Dock 50', null, null, true, now()),
+  ('1740308c2d2ca7bb1f22bd51', 'Batangas-Bolbok Hub,Pallocan Hub', 'Pallocan Hub', 'SOL', 'Dock 50', null, null, true, now()),
+  ('3fbf154148f6cc9d9cdfc1f8', 'Padre Garcia Hub', 'Padre Garcia Hub', 'SOL', 'Dock 51', null, null, true, now()),
+  ('6b4bfd984e017093733d65d5', 'Sabang Hub', 'Sabang Hub', 'SOL', 'Dock 52', null, null, true, now()),
+  ('6e37f8dd38ee6f890a4684ce', 'Pagbilao Hub,Pagbilao Hub 2,Atimonan Hub', 'Pagbilao Hub', 'SOL', 'Dock 53', null, null, true, now()),
+  ('3e7a6b52ad72c457bd0e811b', 'Pagbilao Hub,Pagbilao Hub 2,Atimonan Hub', 'Pagbilao Hub 2', 'SOL', 'Dock 53', null, null, true, now()),
+  ('d77ac51a372b0c7bc543e641', 'Pagbilao Hub,Pagbilao Hub 2,Atimonan Hub', 'Atimonan Hub', 'SOL', 'Dock 53', null, null, true, now()),
+  ('84b43059b71c251e950eb8f5', 'Albay DC', 'Albay DC', 'RC', 'Dock 54-55', null, null, true, now()),
+  ('037bb79e30c897e80fabb64c', 'Camarines Sur DC', 'Camarines Sur DC', 'RC', 'Dock 56-58', null, null, true, now()),
+  ('3f00b14f813196182807a22f', 'SOC 4', 'SOC 4', 'InterSOC', 'Dock 59', null, null, true, now()),
+  ('a9bd1fd7308a5195ce16187b', 'SOC 6', 'SOC 6', 'InterSOC', 'Dock 59', null, null, true, now()),
+  ('926b49cdfc1c498c8306ec40', 'Lucena Hub', 'Lucena Hub', 'SOL', 'Dock 60', null, null, true, now()),
+  ('d55e39ec0bdabff83d99708b', 'Tanauan Hub,Malvar Hub', 'Tanauan Hub', 'SOL', 'Dock 61', null, null, true, now()),
+  ('e2ff8b265bd87860e9a120a6', 'Tanauan Hub,Malvar Hub', 'Malvar Hub', 'SOL', 'Dock 61', null, null, true, now()),
+  ('3916a7c4729e4cac79a1e74b', 'Calapan Hub,Puerto Galera Hub', 'Calapan Hub', 'SOL IIS', 'Dock 62', null, null, true, now()),
+  ('a1847d8575d053054d524fb3', 'Calapan Hub,Puerto Galera Hub', 'Puerto Galera Hub', 'SOL IIS', 'Dock 62', null, null, true, now()),
+  ('a3a8d8d4ad4703f537e8ee2a', 'Mamburao Hub,Tangkalan Hub,Sablayan Hub,Magsikap Hub', 'Mamburao Hub', 'SOL IIS', 'Dock 63', null, null, true, now()),
+  ('fe261ae163a0e7afc0091eba', 'Mamburao Hub,Tangkalan Hub,Sablayan Hub,Magsikap Hub', 'Tangkalan Hub', 'SOL IIS', 'Dock 63', null, null, true, now()),
+  ('0e3eeced8071f7ed0e9893ed', 'Mamburao Hub,Tangkalan Hub,Sablayan Hub,Magsikap Hub', 'Sablayan Hub', 'SOL IIS', 'Dock 63', null, null, true, now()),
+  ('1c7d9513bf92561ac84963e9', 'Mamburao Hub,Tangkalan Hub,Sablayan Hub,Magsikap Hub', 'Magsikap Hub', 'SOL IIS', 'Dock 63', null, null, true, now()),
+  ('911cd8b94cba855ade5a0acf', 'San Roque Hub', 'San Roque Hub', 'SOL IIS', 'Dock 64', null, null, true, now()),
+  ('0000449ca6513e8ef9561e47', 'Molino Hub', 'Molino Hub', 'GMA SOL', 'Dock 65', null, null, true, now()),
+  ('0b95aa728c50c22417f8c24a', 'Imus Hub', 'Imus Hub', 'GMA SOL', 'Dock 66', null, null, true, now()),
+  ('9ce5a79ce01c18661478dbd6', 'Masbate Hub,Tugbo Hub,Aroroy Hub', 'Aroroy Hub', 'SOL IIS', 'Dock 67', null, null, true, now()),
+  ('15d373eb27738c853aeb4f64', 'Masbate Hub,Tugbo Hub,Aroroy Hub', 'Tugbo Hub', 'SOL IIS', 'Dock 67', null, null, true, now()),
+  ('527c3574b824d61a394005f4', 'Masbate Hub,Tugbo Hub,Aroroy Hub', 'Masbate Hub', 'SOL IIS', 'Dock 67', null, null, true, now()),
+  ('2ce215a4241d6bc73e1315e0', 'SOC 11', 'SOC 11', 'InterSOC', 'Dock 67', null, null, true, now()),
+  ('d5f8f6cdcfca1ebd44e204e6', 'Noveleta Hub', 'Noveleta Hub', 'GMA SOL', 'Dock 68', null, null, true, now()),
+  ('0433c07161a63bd93ba25433', 'Cavite Hub', 'Cavite Hub', 'GMA SOL', 'Dock 69', null, null, true, now()),
+  ('760d4822e4db3aec05b08de5', 'Bansud Hub,Bongabong Hub,Oriental Mindoro-Roxas Hub,Bulalacao Hub', 'Bansud Hub', 'SOL IIS', 'Dock 70', null, null, true, now()),
+  ('13c11044f33a0542b95039b4', 'Bansud Hub,Bongabong Hub,Oriental Mindoro-Roxas Hub,Bulalacao Hub', 'Bongabong Hub', 'SOL IIS', 'Dock 70', null, null, true, now()),
+  ('acf4b21a3e1b2669d8d030ca', 'Bansud Hub,Bongabong Hub,Oriental Mindoro-Roxas Hub,Bulalacao Hub', 'Oriental Mindoro-Roxas Hub', 'SOL IIS', 'Dock 70', null, null, true, now()),
+  ('0b4421e43bbb30d94ad12ef1', 'Bansud Hub,Bongabong Hub,Oriental Mindoro-Roxas Hub,Bulalacao Hub', 'Bulalacao Hub', 'SOL IIS', 'Dock 70', null, null, true, now()),
+  ('8ea380a48df855eb10f0b4b3', 'Naujan Hub,Victoria Hub,Socorro Hub,Pinamalayan Hub', 'Socorro Hub', 'SOL IIS', 'Dock 71', null, null, true, now()),
+  ('02c67e1101cef23482d6a980', 'Naujan Hub,Victoria Hub,Socorro Hub,Pinamalayan Hub', 'Victoria Hub', 'SOL IIS', 'Dock 71', null, null, true, now()),
+  ('710eb274edd137156adc8516', 'Naujan Hub,Victoria Hub,Socorro Hub,Pinamalayan Hub', 'Naujan Hub', 'SOL IIS', 'Dock 71', null, null, true, now()),
+  ('86adc377d22b777817700bf4', 'Naujan Hub,Victoria Hub,Socorro Hub,Pinamalayan Hub', 'Pinamalayan Hub', 'SOL IIS', 'Dock 71', null, null, true, now()),
+  ('0303716dc189bb49e0be2fdd', 'Batangas San Rafael Hub,Santo Tomas Hub', 'Santo Tomas Hub', 'SOL', 'Dock 72', null, null, true, now()),
+  ('f17511173ecc23c5155cc706', 'Batangas San Rafael Hub,Santo Tomas Hub', 'Batangas San Rafael Hub', 'SOL', 'Dock 72', null, null, true, now()),
+  ('a14a8fcaa9a0029772254166', 'Boac Hub,Marinduque Hub,Boac Hub 2', 'Marinduque Hub', 'SOL IIS', 'Dock 73', null, null, true, now()),
+  ('a0784ad4939e5c17a151bd75', 'Boac Hub,Marinduque Hub,Boac Hub 2', 'Boac Hub', 'SOL IIS', 'Dock 73', null, null, true, now()),
+  ('f4b959ee385aff704675a0a2', 'Boac Hub,Marinduque Hub,Boac Hub 2', 'Boac Hub 2', 'SOL IIS', 'Dock 73', null, null, true, now()),
+  ('ae94ccecf84d66f5da0dfc59', 'Lucban Hub,Mauban Hub', 'Mauban Hub', 'SOL', 'Dock 74', null, null, true, now()),
+  ('f39b569c45f6a8fd1739d680', 'Lucban Hub,Mauban Hub', 'Lucban Hub', 'SOL', 'Dock 74', null, null, true, now()),
+  ('16831492a4e07dfca45a3560', 'Gumaca Hub,San Narciso Hub,San Andres Hub', 'San Narciso Hub', 'SOL', 'Dock 75', null, null, true, now()),
+  ('44a9fdb3f572986d9ed69a10', 'Gumaca Hub,San Narciso Hub,San Andres Hub', 'Gumaca Hub', 'SOL', 'Dock 75', null, null, true, now()),
+  ('1e1d85d8f2f32d62cc83f095', 'Gumaca Hub,San Narciso Hub,San Andres Hub', 'San Andres Hub', 'SOL', 'Dock 75', null, null, true, now()),
+  ('0a71f7e77d17afc3bb222f9c', 'Tagkawayan Hub,Santa Elena Hub', 'Tagkawayan Hub', 'SOL', 'Dock 76', null, null, true, now()),
+  ('91bde51aeb6c3769530c1e40', 'Tagkawayan Hub,Santa Elena Hub', 'Santa Elena Hub', 'SOL', 'Dock 76', null, null, true, now()),
+  ('3ac1313e5c180bc36365cb57', 'Cache Wh1', 'Cache WH1', 'InterSOC', 'DAC 1', null, null, true, now()),
+  ('d054e0afecff72c1961fc9e0', 'Romblon Hub', 'Romblon HUb', 'SOL IIS', 'DAC 1', null, null, true, now()),
+  ('7da3656b078db0485b3d9b27', 'San Agustin Hub,Odiongan Hub,Alcantara Hub', 'San Agustin Hub', 'SOL IIS', 'DAC 1', null, null, true, now()),
+  ('bfa2a2c93ae5fb42b8c879fb', 'San Agustin Hub,Odiongan Hub,Alcantara Hub', 'Odiongan Hub', 'SOL IIS', 'DAC 1', null, null, true, now()),
+  ('eb8884f7e7c83156e550cae5', 'San Agustin Hub,Odiongan Hub,Alcantara Hub', 'Alcantara Hub', 'SOL IIS', 'DAC 1', null, null, true, now()),
+  ('3d9ba51567b8e0dad5ee7a31', 'Davao DC', 'Davao DC', 'Mindanao', 'DAC 1-4', null, null, true, now()),
+  ('a8004fa858305a79edb054e1', 'Gensan DC', 'Gensan DC', 'Mindanao', 'DAC 5-7', null, null, true, now())
+on conflict (id) do update set
+  cluster_name = excluded.cluster_name,
+  hub_name = excluded.hub_name,
+  region = excluded.region,
+  dock_number = excluded.dock_number,
+  backlogs = excluded.backlogs,
+  backlogs_ts = excluded.backlogs_ts,
+  active = excluded.active;
+
+insert into public.clusters (
+  cluster_name, hub_name, region, dock_number, backlogs, backlogs_ts, active, created_at
+)
+select
+  cluster_name,
+  hub_name,
+  region,
+  dock_number,
+  backlogs,
+  backlogs_ts,
+  coalesce(active, true),
+  coalesce(created_at, now())
+from seed_clusters
+on conflict (hub_name) do update set
+  cluster_name = excluded.cluster_name,
+  region = excluded.region,
+  dock_number = excluded.dock_number,
+  backlogs = excluded.backlogs,
+  backlogs_ts = excluded.backlogs_ts,
+  active = excluded.active;
+
+select count(*) as cluster_count from public.clusters;
+drop table seed_clusters;

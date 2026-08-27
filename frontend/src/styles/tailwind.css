@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #2e7bff;
+  --color-accent-2: #1a5ce4;
+  --color-faint: #9daabd;
+  --color-ink: #f4f7ff;
+  --color-line: rgba(238, 244, 255, 0.14);
+}

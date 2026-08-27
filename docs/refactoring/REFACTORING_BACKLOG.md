@@ -1,0 +1,30 @@
+# Refactoring Backlog
+
+This is the master backlog of all refactoring, technical debt, performance, and testing‑gap items discovered during implementation sprints.
+
+---
+
+## Backlog Table
+
+| ID | Sprint Discovered | Category | Priority | Status | Component | Description | Business Impact | Recommendation | Dependencies | Notes |
+|----|-------------------|----------|----------|--------|-----------|-------------|----------------|----------------|--------------|-------|
+| RF-001 | Sprint 1 | Technical Debt | High | Open | `src/components/Button.tsx` | Duplicate button variant with identical markup | Reduces maintainability; risk of inconsistent UI changes | Consolidate into a single reusable Button component | None | |
+| RF-002 | Sprint 2 | Performance | Medium | Open | `src/pages/Orders.tsx` | Unnecessary re‑render on every store update | Increases CPU usage on high‑traffic pages | Memoize component with `React.memo` | Dependent on state‑management refactor | |
+| RF-003 | Sprint 2 | Legacy Cleanup | Low | Open | `src/styles/legacy.scss` | Unused legacy SCSS file | No functional impact but inflates bundle size | Delete file and remove import | None | |
+| RF-004 | Sprint 5 | Legacy Cleanup | Medium | Open | `frontend/src/styles/main.scss` | Global stylesheet still contains non-dashboard dark/glass legacy presentation for app shell and operational surfaces | Can make later Pivora modernization sprints harder to keep visually unified | Continue incremental SCSS migration by moving page/component styles into architecture folders and replacing legacy global rules only when each surface is scheduled | Sprint 6 shared UI components and later operational-page modernization | Discovered while modernizing dashboard framework |
+| RF-005 | Sprint 6 | Legacy Cleanup | High | Open | `frontend/src/components/login` and `frontend/src/pages/Login` | Runtime `.js` files are maintained alongside `.tsx` source files and extensionless imports resolve to the JavaScript copies | Source/runtime drift can reintroduce authentication bugs or deploy stale behavior | Remove committed generated JavaScript or establish one documented build-generated source of truth | Build/deployment workflow review | Discovered while fixing OTP state handling |
+| RF-006 | Sprint 8 | Configuration | Medium | Open | `docs/intraday-sync-setup.md` and Google Apps Script | Sheet ID, Supabase function URL, and sync secret still require manual deployment in the Workspace script | Configuration changes require script maintenance and secret rotation is manual | Move non-secret settings to deployment configuration and document automated secret rotation | Deployment workflow | Discovered while connecting the Total Dispatch intraday chart |
+
+---
+
+## How to Add a New Entry
+1. Copy a table row above and fill in the fields.
+2. Use the **ID** pattern `RF-XXX` (incremental).
+3. Set **Priority** and **Status** according to definitions in `README.md`.
+4. Commit the change to the `docs/refactoring/REFACTORING_BACKLOG.md` file.
+
+## Revision History
+
+| Date | Author | Change |
+|------|--------|--------|
+| 2026‑08‑01 | Antigravity (AGY) | Created backlog template with example rows |

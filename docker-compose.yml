@@ -1,0 +1,29 @@
+services:
+  api:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      # Keep browser and API token verification on the same Supabase project/key.
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    expose: ["8000"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8000/up"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+    ports: ["127.0.0.1:8080:80"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

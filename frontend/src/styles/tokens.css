@@ -1,0 +1,50 @@
+/* Canonical SOC5 visual tokens. */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500&family=Pacifico&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+:root {
+  /* Current dashboard interface */
+  --soc5-ink: #252527;
+  --soc5-muted: #8f9197;
+  --soc5-line: #e8e9e9;
+  --soc5-lime: #dfff35;
+  --soc5-lime-deep: #a5c412;
+  --soc5-sidebar: #202022;
+  --soc5-page: #f4f5f4;
+  --soc5-panel: #ffffff;
+
+  /* Shared typography */
+  --font-display: "Space Grotesk", "Manrope", ui-sans-serif, sans-serif;
+  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-outfit: "Outfit", sans-serif;
+  --font-script: "Pacifico", cursive;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --color-gray-500: rgb(102 112 133);
+  --color-gray-700: rgb(52 64 84);
+
+  /* Authentication surface compatibility tokens */
+  --auth-page: #5a6785;
+  --auth-deep: #3d4a69;
+  --auth-ink: #f4f7ff;
+  --auth-muted: #c3cde0;
+  --auth-faint: #9daabd;
+  --auth-accent: #2e7bff;
+  --auth-accent-2: #1a5ce4;
+  --auth-link: #79abff;
+  --auth-line: rgb(238 244 255 / 14%);
+  --auth-danger: #ff7a8a;
+
+  /* Existing utility aliases used by auth and chart fallbacks */
+  --color-page: var(--auth-page);
+  --color-deep: var(--auth-deep);
+  --color-ink: var(--auth-ink);
+  --color-muted: var(--auth-muted);
+  --color-faint: var(--auth-faint);
+  --color-accent: var(--auth-accent);
+  --color-accent-2: var(--auth-accent-2);
+  --color-link: var(--auth-link);
+  --color-line: var(--auth-line);
+  --color-danger: var(--auth-danger);
+  --color-bg-base: var(--soc5-page);
+  --color-primary: var(--soc5-lime-deep);
+}

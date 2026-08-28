@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { supabaseConfigError } from './lib/supabase';
+import './styles/tokens.css';
 import './styles/tailwind.css';
 import './styles/main.css';
 import "./styles/template-migration.css";

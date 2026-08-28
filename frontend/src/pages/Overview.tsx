@@ -1,14 +1,29 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Clock3, Route, Sparkles, Truck, X } from 'lucide-react';
+import { Truck, X } from 'lucide-react';
 import { RequestTable } from '../components/RequestTable';
 import { SkeletonTable } from '../components/SkeletonTable';
+import { ChartHeader } from '../components/dashboard/ChartHeader';
+import { MetricCard } from '../components/dashboard/MetricCard';
+import { Panel } from '../components/dashboard/Panel';
+import { QueuePreview } from '../components/dashboard/QueuePreview';
 import { api } from '../lib/api';
 import { useUiStore } from '../stores/ui';
 import type { AppView, Page, RequestAnalytics, RequestMetrics, Status, TruckRequest, User } from '../types';
 
-const INTRADAY_DATE = '2026-08-23';
 const INTRADAY_HOURS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5] as const;
+const CHART_RANGES = ['1D', '1W', '1M'] as const;
+type ChartRange = typeof CHART_RANGES[number];
+
+function getOperationalDate(now = new Date()) {
+  const operationalDate = new Date(now);
+  if (operationalDate.getHours() < 6) operationalDate.setDate(operationalDate.getDate() - 1);
+
+  const year = operationalDate.getFullYear();
+  const month = String(operationalDate.getMonth() + 1).padStart(2, '0');
+  const day = String(operationalDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function smoothPath(points: Array<{ x: number; y: number }>) {
   if (!points.length) return '';
@@ -23,7 +38,9 @@ function smoothPath(points: Array<{ x: number; y: number }>) {
 export function Overview({ onNavigate }: { user: User; onNavigate: (view: AppView) => void }) {
   const from = useUiStore(state => state.dateFrom);
   const to = useUiStore(state => state.dateTo);
+  const intradayDate = from === to && /^\d{4}-\d{2}-\d{2}$/.test(from) ? from : getOperationalDate();
   const [detailStatus, setDetailStatus] = useState<Status | 'ALL' | null>(null);
+  const [chartRange, setChartRange] = useState<ChartRange>('1D');
   const range = `date_from=${from}&date_to=${to}`;
   const requests = useQuery({
     queryKey: ['requests', 'dashboard'],
@@ -33,14 +50,8 @@ export function Overview({ onNavigate }: { user: User; onNavigate: (view: AppVie
   });
   const metrics = useQuery({ queryKey: ['request-metrics', from, to], queryFn: () => api<RequestMetrics>(`/requests/metrics?${range}`), refetchInterval: 15_000 });
   const analytics = useQuery({ queryKey: ['request-analytics', from, to], queryFn: () => api<RequestAnalytics>(`/requests/analytics?${range}`), refetchInterval: 15_000 });
-  const intraday = useQuery({ queryKey: ['intraday-dispatch', INTRADAY_DATE], queryFn: () => api<{ data: Array<{ hour: number; orderQty: number }> }>(`/dispatch/intraday?date=${INTRADAY_DATE}`), refetchInterval: 15_000, staleTime: 10_000 });
+  const intraday = useQuery({ queryKey: ['intraday-dispatch', intradayDate], queryFn: () => api<{ data: Array<{ hour: number; orderQty: number }> }>(`/dispatch/intraday?date=${intradayDate}`), refetchInterval: 15_000, staleTime: 10_000 });
   const details = useQuery({ queryKey: ['request-details', detailStatus, from, to], queryFn: () => api<Page<TruckRequest>>(`/requests?per_page=100&${range}${detailStatus !== 'ALL' ? `&status=${detailStatus}` : ''}`), enabled: detailStatus !== null });
-  const cards: Array<{ label: string; status: Status | 'ALL'; value: number; icon: ReactNode }> = [
-    { label: 'Total Request', status: 'ALL', value: metrics.data?.total ?? 0, icon: <img className="metric-icon-image" src="/dashboard-icon/light-bulb.png" alt="" aria-hidden="true" /> },
-    { label: 'Pending Request', status: 'PENDING', value: metrics.data?.by_status.PENDING ?? 0, icon: <Clock3 size={18} /> },
-    { label: 'For Docking', status: 'FOR_DOCKING', value: metrics.data?.by_status.FOR_DOCKING ?? 0, icon: <Truck size={18} /> },
-    { label: 'Docked', status: 'DOCKED', value: metrics.data?.by_status.DOCKED ?? 0, icon: <Truck size={18} /> },
-  ];
   const dispatchPoints = intraday.data?.data ?? INTRADAY_HOURS.map(hour => ({ hour, orderQty: 0 }));
   const maxDispatch = Math.max(1, ...dispatchPoints.map(point => point.orderQty));
   const peakDispatch = dispatchPoints.reduce((best, point) => point.orderQty > best.orderQty ? point : best, { hour: 0, orderQty: 0 });
@@ -74,149 +85,64 @@ export function Overview({ onNavigate }: { user: User; onNavigate: (view: AppVie
   const dockedRequests = metrics.data?.by_status.DOCKED ?? 0;
   const completionRate = totalRequests ? Math.round((dockedRequests / totalRequests) * 100) : 0;
   const activeSignal = dispatchPoints.reduce((sum, point) => sum + point.orderQty, 0);
+  const cards: Array<{ label: string; status: Status | 'ALL'; value: number; icon: ReactNode; chip: string; footnote: string; primary?: boolean }> = [
+    { label: 'Total Requests', status: 'ALL', value: totalRequests, icon: <img className="metric-icon-image" src="/dashboard-icon/ClipboardList.png" alt="" aria-hidden="true" />, chip: 'Overall volume', footnote: `${activeSignal} hourly events` },
+    { label: 'Pending Requests', status: 'PENDING', value: pendingRequests, icon: <img className="metric-icon-image" src="/dashboard-icon/Clock3.png" alt="" aria-hidden="true" />, chip: 'Needs action', footnote: `${totalRequests ? Math.round((pendingRequests / totalRequests) * 100) : 0}% of all requests`, primary: true },
+    { label: 'Awaiting Docking', status: 'FOR_DOCKING', value: forDockingRequests, icon: <img className="metric-icon-image" src="/dashboard-icon/truck.png" alt="" aria-hidden="true" />, chip: 'Dock queue', footnote: 'Waiting for dock confirmation' },
+    { label: 'Completed', status: 'DOCKED', value: dockedRequests, icon: <img className="metric-icon-image" src="/dashboard-icon/CircleCheckBig.png" alt="" aria-hidden="true" />, chip: 'Completed', footnote: `${completionRate}% completion rate` },
+  ];
+  const intradayStatus = intraday.isPending
+    ? 'Loading live dispatch data.'
+    : intraday.error
+      ? 'Dispatch feed unavailable.'
+      : 'Live dispatch data. Updates every 15 seconds.';
 
   return <div className="workspace-view dashboard-view dashboard-overview">
-    {(requests.error || metrics.error || analytics.error) && <p className="error notice">Dashboard data could not be loaded.</p>}
+    {(requests.error || metrics.error || analytics.error || intraday.error) && <p className="error notice" role="alert">Some dashboard data could not be loaded. Check the affected panel for details.</p>}
     <section className="scorecards-layout" aria-label="Dashboard metrics">
     <section className="overview-metrics" aria-label="Request metrics">
-      <button type="button" className="metric-card metric-card--primary" onClick={() => setDetailStatus('ALL')}>
-        <span className="metric-card-top">
-          <span className="metric-icon"><img className="metric-icon-image" src="/dashboard-icon/ClipboardList.png" alt="" aria-hidden="true" /></span>
-          <span className="metric-chip">Live summary</span>
-        </span>
-        <span className="metric-copy">
-          <small>Total Requests</small>
-          <strong>{metrics.isPending ? '-' : totalRequests.toLocaleString()}</strong>
-        </span>
-        <span className="metric-foot">
-          <span>{metrics.isPending ? '-' : activeSignal} hourly events</span>
-          <ArrowUpRight size={16} />
-        </span>
-      </button>
-      <button type="button" className="metric-card" onClick={() => setDetailStatus('PENDING')}>
-        <span className="metric-card-top">
-          <span className="metric-icon"><img className="metric-icon-image" src="/dashboard-icon/Clock3.png" alt="" aria-hidden="true" /></span>
-          <span className="metric-chip">Needs attention</span>
-        </span>
-        <span className="metric-copy">
-          <small>Pending Request</small>
-          <strong>{metrics.isPending ? '-' : pendingRequests.toLocaleString()}</strong>
-        </span>
-        <span className="metric-foot">
-          <span>{metrics.isPending ? '-' : `${totalRequests ? Math.round((pendingRequests / totalRequests) * 100) : 0}% of all requests`}</span>
-          <ArrowUpRight size={16} />
-        </span>
-      </button>
-      <button type="button" className="metric-card" onClick={() => setDetailStatus('FOR_DOCKING')}>
-        <span className="metric-card-top">
-          <span className="metric-icon"><img className="metric-icon-image" src="/dashboard-icon/truck.png" alt="" aria-hidden="true" /></span>
-          <span className="metric-chip">Dock queue</span>
-        </span>
-        <span className="metric-copy">
-          <small>For Docking</small>
-          <strong>{metrics.isPending ? '-' : forDockingRequests.toLocaleString()}</strong>
-        </span>
-        <span className="metric-foot">
-          <span>{metrics.isPending ? '-' : 'Waiting for dock assignment'}</span>
-          <ArrowUpRight size={16} />
-        </span>
-      </button>
-      <button type="button" className="metric-card" onClick={() => setDetailStatus('DOCKED')}>
-        <span className="metric-card-top">
-          <span className="metric-icon"><img className="metric-icon-image" src="/dashboard-icon/CircleCheckBig.png" alt="" aria-hidden="true" /></span>
-          <span className="metric-chip">Completed</span>
-        </span>
-        <span className="metric-copy">
-          <small>Docked</small>
-          <strong>{metrics.isPending ? '-' : dockedRequests.toLocaleString()}</strong>
-        </span>
-        <span className="metric-foot">
-          <span>{metrics.isPending ? '-' : `${completionRate}% completion rate`}</span>
-          <ArrowUpRight size={16} />
-        </span>
-      </button>
+      {cards.map(card => <MetricCard key={card.status} label={card.label} value={metrics.isPending ? '-' : card.value.toLocaleString()} icon={card.icon} chip={card.chip} footnote={metrics.isPending ? '-' : card.footnote} primary={card.primary} onClick={() => setDetailStatus(card.status)} />)}
     </section>
-    <section className="balance-shell" aria-label="Total dispatch">
+    <section className="balance-shell top-dispatch-chart" aria-label="Hourly dispatch volume">
       <article className="balance-card">
-        <div className="balance-head">
-          <div>
-            <h2>Total Dispatch</h2>
-            <p>Hourly dispatch volume</p>
-          </div>
-          <div className="balance-filters" aria-label="Balance filters">
-            <span>Live</span>
-            <span>{INTRADAY_DATE}</span>
-          </div>
+        <ChartHeader kicker="Dispatch activity" title="Hourly dispatch volume" description={`Live operational feed · ${intradayDate}`} controls={<div className="balance-filters" role="group" aria-label="Chart time ranges">{CHART_RANGES.map(range => <button key={range} type="button" disabled={range !== '1D'} aria-pressed={chartRange === range} title={range === '1D' ? 'Intraday view' : 'This feed currently supports intraday data only'} onClick={() => setChartRange(range)}>{range}</button>)}</div>} />
+        <div className="top-dispatch-summary">
+          <strong>{intraday.isPending ? '-' : activeSignal.toLocaleString()}</strong>
+          <span>Total orders · peak {peakDispatch.orderQty} at {peakDispatch.hour}:00</span>
+          <em className={`chart-sync-status${intraday.error ? ' is-error' : ''}`} role="status" aria-live="polite" aria-atomic="true">{intradayStatus}</em>
         </div>
-        <div className="balance-total">
-            <strong>{intraday.isPending ? '-' : activeSignal.toLocaleString()}</strong>
-        </div>
-        <div className="balance-account">
-          <div>
-            <span>Current period</span>
-            <strong>{from} to {to}</strong>
-          </div>
-          <button className="balance-details" type="button" onClick={() => onNavigate('lh-request')}>See Details</button>
-        </div>
+        <div className="line-chart top-dispatch-line-chart"><svg viewBox="0 0 700 190" role="img" aria-label="Intraday dispatch order quantity by hour"><defs><linearGradient id="lineAreaTop" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="var(--dispatch-accent)" stopOpacity=".20" /><stop offset="100%" stopColor="var(--dispatch-accent)" stopOpacity="0" /></linearGradient></defs><line x1="46" y1="160" x2="654" y2="160" /><line x1="46" y1="112" x2="654" y2="112" /><line x1="46" y1="64" x2="654" y2="64" />{areaPath && <path className="line-area" d={areaPath} />}<path className="line-stroke" d={linePath} />{chartPoints.map(point => <g key={point.label}><circle cx={point.x} cy={point.y} r="4"><title>{point.label}: {point.count} orders</title></circle><text x={point.x} y="178">{point.label}</text></g>)}{chartPoints.length > 0 && <g className="line-callout"><line x1={peakPoint.x} y1={peakPoint.y} x2={peakPoint.x} y2="160" /><rect x={Math.max(48, Math.min(peakPoint.x - 48, 604))} y={Math.max(18, peakPoint.y - 42)} width="96" height="34" rx="5" /><text x={Math.max(96, Math.min(peakPoint.x, 652))} y={Math.max(38, peakPoint.y - 22)}>{peakPoint.label}:00</text><text x={Math.max(96, Math.min(peakPoint.x, 652))} y={Math.max(52, peakPoint.y - 8)}>{peakPoint.count} orders</text></g>}</svg></div>
       </article>
-      <div className="balance-actions" aria-label="Balance actions">
-        <button type="button" onClick={() => onNavigate('lh-request')}>View Requests</button>
-        <button type="button" onClick={() => onNavigate('docking')}>Dock Queue</button>
-        <button type="button" className="balance-action-icon" aria-label="More balance actions">&bull;&bull;&bull;</button>
-      </div>
     </section>
     </section>
     <section className="dashboard-grid">
-      <article className="panel chart-panel line-panel">
+      <Panel className="chart-panel truck-mix-panel" kicker="Distribution" title="Truck mix" description="Selected date range">
+        <div className="donut-layout"><div className="donut" style={{ background: sizeTotal ? `conic-gradient(${gradients})` : 'var(--color-bg-base)' }}><span><strong>{sizeTotal}</strong><small>Total</small></span></div><div className="donut-legend" aria-label="Truck size breakdown">{sizes.map((size, index) => { const count = analytics.data?.truck_sizes[size] ?? 0; return <div key={size}><i style={{ background: `#${palette[index]}` }} /><span>{size}</span><strong>{count} <small>({sizeTotal ? Math.round(count / sizeTotal * 100) : 0}%)</small></strong></div>; })}</div></div>
+      </Panel>
+      <article className="panel dashboard-list-panel dashboard-list-panel--trips">
         <div className="panel-head">
           <div>
-            <p className="panel-kicker">Signal overview</p>
-            <h2>Hourly truck requests</h2>
-            <p>Google Sheet · intraday · {INTRADAY_DATE}</p>
+            <p className="panel-kicker">Linehaul activity</p>
+            <h2>Recent linehaul trips</h2>
+            <p>Latest trips with driver assignments</p>
           </div>
-          <div className="chart-tabs" aria-label="Chart time ranges"><span>1D</span><span>1W</span><span>1M</span></div>
-        </div>
-        <div className="panel-body panel-body--chart">
-          <div className="line-chart"><svg viewBox="0 0 700 190" role="img" aria-label="Intraday dispatch order quantity by hour"><defs><linearGradient id="lineArea" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="var(--dispatch-accent)" stopOpacity=".20" /><stop offset="100%" stopColor="var(--dispatch-accent)" stopOpacity="0" /></linearGradient></defs><line x1="46" y1="160" x2="654" y2="160" /><line x1="46" y1="112" x2="654" y2="112" /><line x1="46" y1="64" x2="654" y2="64" />{areaPath && <path className="line-area" d={areaPath} />}<path className="line-stroke" d={linePath} />{chartPoints.map(point => <g key={point.label}><circle cx={point.x} cy={point.y} r="4"><title>{point.label}: {point.count} orders</title></circle><text x={point.x} y="178">{point.label}</text></g>)}{chartPoints.length > 0 && <g className="line-callout"><line x1={peakPoint.x} y1={peakPoint.y} x2={peakPoint.x} y2="160" /><rect x={Math.max(48, Math.min(peakPoint.x - 48, 604))} y={Math.max(18, peakPoint.y - 42)} width="96" height="34" rx="5" /><text x={Math.max(96, Math.min(peakPoint.x, 652))} y={Math.max(38, peakPoint.y - 22)}>{peakPoint.label}:00</text><text x={Math.max(96, Math.min(peakPoint.x, 652))} y={Math.max(52, peakPoint.y - 8)}>{peakPoint.count} orders</text></g>}</svg></div>
-          <div className="chart-summary inline"><strong>{intraday.isPending ? '-' : activeSignal.toLocaleString()}</strong><span>Total order qty · peak {peakDispatch.orderQty} at {peakDispatch.hour}:00</span><em className={intraday.error ? 'is-error' : ''}>{intraday.error ? 'Sheet unavailable' : 'Auto-sync 15s'}</em></div>
-        </div>
-      </article>
-      <article className="panel chart-panel">
-        <div className="panel-head">
-          <div>
-            <p className="panel-kicker">Distribution</p>
-            <h2>Truck sizes</h2>
-            <p>Selected date range</p>
-          </div>
+          <button className="text-button" type="button" onClick={() => onNavigate('docking')}>View All</button>
         </div>
         <div className="panel-body">
-          <div className="donut-layout"><div className="donut" style={{ background: sizeTotal ? `conic-gradient(${gradients})` : 'var(--color-bg-base)' }}><span><strong>{sizeTotal}</strong><small>Total</small></span></div><div className="donut-legend">{sizes.map((size, index) => { const count = analytics.data?.truck_sizes[size] ?? 0; return <div key={size}><i style={{ background: `var(--color-primary)` }} /><span>{size}</span><strong>{count} <small>({sizeTotal ? Math.round(count / sizeTotal * 100) : 0}%)</small></strong></div>; })}</div></div>
+          <QueuePreview items={linehaulTrips} emptyMessage="No linehaul trips have been created yet." renderItem={request => <div className="linehaul-row" key={request.id}><span className="avatar">{(request.driver_id || request.created_by).slice(0, 1).toUpperCase()}</span><div><strong>{request.driver_id || 'Driver pending'}</strong><small>Doc Officer: {request.created_by}</small></div><span>{request.linehaul_trip_no || 'Trip pending'}</span><span>{request.cluster}</span></div>} />
         </div>
       </article>
       <article className="panel dashboard-list-panel">
         <div className="panel-head">
           <div>
-            <p className="panel-kicker">Operational queue</p>
-            <h2>Linehaul Trips</h2>
-            <p>Driver IDs from dock officer updates</p>
+            <p className="panel-kicker">Docking queue</p>
+            <h2>Trucks awaiting docking</h2>
+            <p>Assigned trucks ready for dock confirmation</p>
           </div>
           <button className="text-button" type="button" onClick={() => onNavigate('docking')}>View All</button>
         </div>
         <div className="panel-body">
-          <div className="dashboard-list">{linehaulTrips.length ? linehaulTrips.map(request => <div className="linehaul-row" key={request.id}><span className="avatar">{(request.driver_id || request.created_by).slice(0, 1).toUpperCase()}</span><div><strong>{request.driver_id || 'Driver pending'}</strong><small>Doc Officer: {request.created_by}</small></div><span>{request.linehaul_trip_no || 'Trip pending'}</span><span>{request.cluster}</span></div>) : <p className="compact-empty">No linehaul trips have been created yet.</p>}</div>
-        </div>
-      </article>
-      <article className="panel dashboard-list-panel">
-        <div className="panel-head">
-          <div>
-            <p className="panel-kicker">Assignments</p>
-            <h2>For Docking</h2>
-            <p>Assigned trucks with plate number</p>
-          </div>
-          <button className="text-button" type="button" onClick={() => onNavigate('docking')}>View All</button>
-        </div>
-        <div className="panel-body">
-          <div className="dashboard-list truck-list">{assignedTrucks.length ? assignedTrucks.map(request => <div className="truck-row" key={request.id}><span className="truck-dot"><Truck size={15} /></span><div><strong>{request.cluster}</strong><small>{request.status.replaceAll('_', ' ')}</small></div><span>{request.plate_number}</span><span>{request.truck_size}</span></div>) : <p className="compact-empty">No assigned trucks are ready for docking.</p>}</div>
+          <QueuePreview items={assignedTrucks} className="truck-list" emptyMessage="No assigned trucks are ready for docking." renderItem={request => <div className="truck-row" key={request.id}><span className="truck-dot"><Truck size={15} /></span><div><strong>{request.cluster}</strong><small>{request.status.replaceAll('_', ' ')}</small></div><span>{request.plate_number}</span><span>{request.truck_size}</span></div>} />
         </div>
       </article>
     </section>

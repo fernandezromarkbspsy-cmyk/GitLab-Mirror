@@ -2,6 +2,10 @@ import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type IncomingRow = {
+  status_desc?: string;
+  c_date_6am?: string;
+  pkg_vol?: number | string;
+  process_hours?: number | string;
   date?: string;
   dispatch_date?: string;
   hour?: number | string;
@@ -28,10 +32,29 @@ serve(async (req) => {
     }
 
     const rows = asRows(await req.json());
-    const normalized = rows.map((row) => ({
-      dispatch_date: row.dispatch_date ?? row.date,
-      hour: Number(row.hour),
-      order_qty: Number(String(row.order_qty ?? row.orderQty ?? 0).replaceAll(',', '')),
+    const aggregates = new Map<string, { dispatch_date: string; hour: number; order_qty: number }>();
+
+    for (const row of rows) {
+      if (row.status_desc && row.status_desc.trim() !== 'SOC_LHTransporting') continue;
+
+      const dispatchDate = row.c_date_6am ?? row.dispatch_date ?? row.date;
+      const hour = Number(row.process_hours ?? row.hour);
+      const orderQty = Number(String(row.pkg_vol ?? row.order_qty ?? row.orderQty ?? 0).replaceAll(',', ''));
+
+      if (
+        typeof dispatchDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dispatchDate)
+        || !Number.isInteger(hour) || hour < 0 || hour > 23
+        || !Number.isFinite(orderQty) || orderQty < 0
+      ) continue;
+
+      const key = `${dispatchDate}:${hour}`;
+      const current = aggregates.get(key);
+      if (current) current.order_qty += orderQty;
+      else aggregates.set(key, { dispatch_date: dispatchDate, hour, order_qty: orderQty });
+    }
+
+    const normalized = Array.from(aggregates.values()).map((row) => ({
+      ...row,
       synced_at: new Date().toISOString(),
     })).filter((row) => (
       typeof row.dispatch_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.dispatch_date)

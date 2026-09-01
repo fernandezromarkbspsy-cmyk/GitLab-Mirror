@@ -492,7 +492,7 @@ In Supabase:
 2. Site URL: `https://soc5outboundops.app`.
 3. Redirect URLs:
    - `https://soc5outboundops.app/**`
-   - `http://localhost:5173/**` only while local development is required
+   - `http://localhost:5172/**` only while local development is required
 4. Save.
 
 Keep `VITE_SUPABASE_URL` on the normal Supabase project URL. A paid Supabase

@@ -13,7 +13,7 @@ Use this setup when you want:
 
 The project runs these services locally:
 
-- Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:5172`
 - Backend: `http://127.0.0.1:8000`
 
 If you use Docker instead of the Vite dev server, the web container is on
@@ -37,7 +37,7 @@ Start with these values:
 ```dotenv
 # backend/.env
 APP_URL=http://127.0.0.1:8000
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5172
 
 # frontend/.env
 VITE_API_URL=/api
@@ -65,7 +65,7 @@ npm install
 npm run dev
 ```
 
-Confirm Vite is running on `http://localhost:5173`.
+Confirm Vite is running on `http://localhost:5172`.
 
 ## Step 3: Restore or create the tunnel credentials file
 
@@ -96,7 +96,7 @@ credentials-file: C:\Users\spxph4227\.cloudflared\0f1afc50-0389-4468-9de9-1e49e4
 
 ingress:
   - hostname: soc5outboundops.app
-    service: http://localhost:5173
+    service: http://localhost:5172
   - hostname: soc5outboundops.app
     path: /api/*
     service: http://127.0.0.1:8000

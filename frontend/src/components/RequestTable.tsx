@@ -2,6 +2,7 @@ import { Fragment, type ReactNode, useState } from 'react';
 import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronsUpDown, CircleDot, Clipboard, Clock3, Copy, Hash, Landmark, ListChecks, Truck, UserRound } from 'lucide-react';
 import type { RequestSort, SortDirection, TruckRequest } from '../types';
 import { StatusBadge } from './StatusBadge';
+import { Skiper87 } from './ui/skiper-ui/skiper87';
 
 type Props = {
   rows: TruckRequest[];
@@ -47,7 +48,7 @@ export function RequestTable({ rows, actions, emptyMessage = 'No requests found.
     return <button className={`sort-button ${active ? 'is-active' : ''}`} type="button" onClick={() => onSort(column.sortKey!)}>{content}<Icon size={13} /></button>;
   }
 
-  return <div className="table-wrap request-table-wrap"><table className="request-table"><thead><tr><th><span className="sr-only">Expand</span></th>{renderedColumns.map(column => <th key={column.key} className={`request-column request-column--${column.key}`}>{heading(column)}</th>)}{actions && <th><span className="sr-only">Actions</span></th>}</tr></thead><tbody>{rows.map(request => {
+  return <div className="table-wrap request-table-wrap"><Skiper87 className="request-table-scroll"><table className="request-table"><thead><tr><th><span className="sr-only">Expand</span></th>{renderedColumns.map(column => <th key={column.key} className={`request-column request-column--${column.key}`}>{heading(column)}</th>)}{actions && <th><span className="sr-only">Actions</span></th>}</tr></thead><tbody>{rows.map(request => {
     const expanded = expandedId === request.id;
     const detailId = `request-detail-${request.id}`;
     return <Fragment key={request.id}>
@@ -69,7 +70,7 @@ export function RequestTable({ rows, actions, emptyMessage = 'No requests found.
       </tr>
       {expanded && <tr className="request-detail-row" id={detailId}><td colSpan={renderedColumns.length + (actions ? 2 : 1)}><RequestDetails request={request} /></td></tr>}
     </Fragment>;
-  })}</tbody></table></div>;
+  })}</tbody></table></Skiper87></div>;
 }
 
 function empty(value: string | null | undefined) {

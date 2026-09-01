@@ -58,7 +58,7 @@ configuration in `tools/php.ini`.
    npm run dev
    ```
 
-5. Open `http://localhost:5173`.
+5. Open `http://localhost:5172`.
 
 Laravel runs on `http://127.0.0.1:8000`; Vite proxies browser `/api` requests to
 that address.

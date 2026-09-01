@@ -98,10 +98,10 @@ needs to create an Auth identity on first use.
 
 1. Open **Authentication > URL Configuration**.
 2. Set **Site URL**:
-   - Local: `http://localhost:5173`
+   - Local: `http://localhost:5172`
    - Production: `https://soc5outboundops.app`
 3. Under **Redirect URLs**, add the URLs used by each environment, for example:
-   - `http://localhost:5173/**`
+   - `http://localhost:5172/**`
    - `https://soc5outboundops.app/**`
 4. Save.
 
@@ -139,7 +139,7 @@ password; the Google button is shown only on the FTE tab.
 5. Under **Clients**, create an **OAuth client ID** with application type
    **Web application**.
 6. Add the application origins, without a trailing path:
-   - `http://localhost:5173`
+   - `http://localhost:5172`
    - `https://soc5outboundops.app`
 7. In Supabase, open **Authentication > Sign In / Providers > Google** and copy
    the callback URL shown there. Add that exact value under Google's
@@ -335,7 +335,7 @@ Create or update `backend/.env`:
 
 ```dotenv
 APP_URL=http://127.0.0.1:8000
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5172
 
 DB_HOST=YOUR_POOLER_HOST
 DB_PORT=6543
@@ -370,7 +370,7 @@ The row must have:
 Then test:
 
 1. Start Laravel and Vite.
-2. Open `http://localhost:5173`.
+2. Open `http://localhost:5172`.
 3. Select **FTE**.
 4. Choose **Continue with Google**, select the matching company account, and
    confirm the dashboard loads.

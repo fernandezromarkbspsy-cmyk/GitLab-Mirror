@@ -1,36 +1,26 @@
 import { FormEvent, useDeferredValue, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Truck, X, XCircle } from 'lucide-react';
-import { Pagination } from '../components/Pagination';
-import { ColumnVisibilityMenu } from '../components/ColumnVisibilityMenu';
+import { BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, CircleCheck, Clock3, Hash, ListChecks, MoreHorizontal, Tag, Truck, Users, X, XCircle } from 'lucide-react';
 import { Modal } from '../components/Modal';
-import { RequestFilters, statuses } from '../components/RequestFilters';
+import { statuses } from '../components/RequestFilters';
 import { RequestTable } from '../components/RequestTable';
 import { SkeletonTable } from '../components/SkeletonTable';
 import type { QueueSnapshot } from '../hooks/useQueueNotifications';
 import { api } from '../lib/api';
+import { LinehaulFilterPanel } from '../components/LinehaulFilterPanel';
 import { defaultRequestFilters, exportRequestsCsv, requestMetricsQueryString, requestQueryString } from '../lib/requests';
 import type { Page, RequestSort, TruckRequest, User } from '../types';
 
 type MmAction = 'assign-truck' | 'reject-mm';
 
-const defaultColumns = ['status', 'request_timestamp', 'cluster', 'dock_no', 'backlogs', 'plate_number', 'truck_size', 'truck_type'];
-const columnOptions = [
-  { key: 'status', label: 'Status' },
-  { key: 'request_timestamp', label: 'Request time' },
-  { key: 'cluster', label: 'Cluster' },
-  { key: 'dock_no', label: 'Dock #' },
-  { key: 'backlogs', label: 'Backlogs' },
-  { key: 'ob_fte', label: 'Ops FTE' },
-  { key: 'linehaul_trip_no', label: 'LHTrip #' },
-  { key: 'plate_number', label: 'Plate #' },
-  { key: 'mm_fte', label: 'FTE MM' },
-  { key: 'truck_size', label: 'Truck size' },
-  { key: 'truck_type', label: 'Truck type' },
-  { key: 'provide_time', label: 'Provide time' },
-  { key: 'docked_time', label: 'Docked time' },
-  { key: 'doc_officer', label: 'DOC officer' },
-];
+function formatDateTime(value?: string | null) {
+  if (!value) return '-';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+function displayValue(value?: string | null) {
+  return value?.trim() ? value : '-';
+}
 
 export function MidmileRequests({ user, queue }: { user: User; queue: QueueSnapshot }) {
   const queryClient = useQueryClient();
@@ -39,7 +29,7 @@ export function MidmileRequests({ user, queue }: { user: User; queue: QueueSnaps
   const [selected, setSelected] = useState<{ request: TruckRequest; action: MmAction } | null>(null);
   const [notice, setNotice] = useState('');
   const [exporting, setExporting] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState(defaultColumns);
+  const [openRow, setOpenRow] = useState<string | null>(null);
   const appliedFilters = { ...filters, search: deferredSearch };
   const requests = useQuery({
     queryKey: ['requests', 'midmile-all', appliedFilters],
@@ -70,15 +60,17 @@ export function MidmileRequests({ user, queue }: { user: User; queue: QueueSnaps
 
   const statusSummary = statuses.map(status => ({ value: status, count: status === 'ALL' ? (metrics.data?.total ?? 0) : (metrics.data?.by_status?.[status] ?? 0) }));
 
-  return <div className="workspace-view">
+  return <div className={`workspace-view lh-request-page${selected ? ' lh-drawer-open' : ''}`} aria-label="Linehaul request workspace"><section className="lh-request-workspace" aria-label="Midmile linehaul requests">
     {(notice || transition.error) && <p className={`notice${transition.error || notice.includes('failed') ? ' error' : ' success-notice'}`}>{transition.error?.message || notice}</p>}
 
-    <section className="panel data-panel queue-panel"><div className="panel-head"><div><div className="section-title"><h2>Pending confirmation</h2>{queue.count > 0 && <span className="count-badge">{queue.count}</span>}</div><p>Approved requests awaiting FTE Midmile confirmation</p></div></div>{queue.isPending ? <div className="table-loading-shell"><div className="table-loading-toolbar"><span className="skeleton-chip" /><span className="skeleton-chip" /><span className="skeleton-chip" /></div><SkeletonTable columns={4} rows={4} compact /></div> : queue.error ? <p className="state error">{queue.error.message}</p> : <RequestTable rows={queue.rows} emptyMessage="No approved requests are awaiting confirmation." actions={actions} />}</section>
+    <section className="panel data-panel queue-panel"><div><div className="section-title"><h2>Pending confirmation</h2>{queue.count > 0 && <span className="count-badge">{queue.count}</span>}</div><p>Approved requests awaiting FTE Midmile confirmation</p></div>{queue.isPending ? <div className="table-loading-shell"><div className="table-loading-toolbar"><span className="skeleton-chip" /><span className="skeleton-chip" /><span className="skeleton-chip" /></div><SkeletonTable columns={4} rows={4} compact /></div> : queue.error ? <p className="state error">{queue.error.message}</p> : queue.rows.length ? <RequestTable rows={queue.rows} actions={actions} /> : <div className="lh-empty-state">No approved requests are awaiting confirmation.</div>}</section>
 
-    <section className="request-list-section"><div className="request-toolbar-surface"><ColumnVisibilityMenu visible={visibleColumns} onChange={setVisibleColumns} options={columnOptions} /></div><RequestFilters filters={filters} exporting={exporting} statusSummary={statusSummary} onChange={setFilters} onExport={() => void exportCsv()} onRefresh={() => void requests.refetch()} /><section className="panel data-panel">{requests.isPending ? <div className="table-loading-shell"><div className="table-loading-toolbar"><span className="skeleton-chip" /><span className="skeleton-chip" /><span className="skeleton-chip" /><span className="skeleton-chip" /></div><SkeletonTable columns={visibleColumns.length + 2} rows={5} /></div> : requests.error ? <p className="state error">{requests.error.message}</p> : <><RequestTable rows={requests.data?.data ?? []} actions={actions} sort={filters.sort} direction={filters.direction} onSort={sortBy} visibleColumns={visibleColumns} emptyAction={<><button type="button" className="secondary-button" onClick={() => void requests.refetch()}>Refresh</button><button type="button" className="secondary-button" onClick={() => setFilters(defaultRequestFilters)}>Clear filters</button></>} /><Pagination page={requests.data!} onPageChange={page => setFilters(value => ({ ...value, page }))} /></>}</section></section>
+    <LinehaulFilterPanel filters={filters} exporting={exporting} onChange={setFilters} onSort={sortBy} onExport={() => void exportCsv()} onNotice={setNotice} />
+
+    <section className="lh-table-shell" aria-label="Midmile linehaul request records"><div className="lh-table-toolbar"><div className="lh-view-controls"><button className="lh-toolbar-icon" type="button" aria-label="Refresh records" onClick={() => void requests.refetch()}><Clock3 size={16} /></button><div className="lh-view-tabs"><button className="selected" type="button"><BadgeCheck size={15} />Table</button></div></div></div><div className="lh-records-table" role="table"><div className="lh-table-head lh-table-grid" role="row"><span><CircleCheck size={14} />Status</span><button type="button" onClick={() => sortBy('request_timestamp')}><Clock3 size={14} /><span>Request Time</span></button><button type="button" onClick={() => sortBy('cluster')}><Hash size={14} /><span>Cluster</span></button><span><BadgeCheck size={14} />Region</span><button type="button" onClick={() => sortBy('dock_no')}><Truck size={14} /><span>Dock #</span></button><button type="button" onClick={() => sortBy('backlogs')}><ListChecks size={14} /><span>Backlogs</span></button><span><Truck size={14} />LH Size</span><span><Users size={14} />SOC PIC</span><span><Tag size={14} />LH Trip #</span><button type="button" onClick={() => sortBy('plate_number')}><Hash size={14} /><span>Plate #</span></button><span /></div><div className="lh-table-body">{requests.isPending && <div className="lh-empty-state">Loading live requests...</div>}{requests.error && <div className="lh-empty-state">{requests.error.message}</div>}{!requests.isPending && !requests.error && (requests.data?.data ?? []).map((row, index) => <div className="lh-table-row lh-table-grid" role="row" tabIndex={0} key={row.id} style={{ '--row-index': index } as React.CSSProperties}><span><span className={`lh-status lh-status-${row.status.toLowerCase()}`}>{row.status.replaceAll('_', ' ')}</span></span><span>{formatDateTime(row.request_timestamp)}</span><span title={row.cluster}>{row.cluster}</span><span>{row.region}</span><span>{row.dock_no}</span><span>{row.backlogs.toLocaleString()}</span><span>{row.truck_size}</span><span>{displayValue(row.ob_fte)}</span><span>{displayValue(row.linehaul_trip_no)}</span><span>{displayValue(row.plate_number)}</span><span className="lh-row-menu-wrap"><button className="lh-row-more" type="button" aria-label={`Actions for request ${row.id}`} onClick={event => { event.stopPropagation(); setOpenRow(openRow === row.id ? null : row.id); }}><MoreHorizontal size={17} /></button>{openRow === row.id && row.status === 'APPROVED' && <span className="lh-row-menu"><button type="button" onClick={() => { setSelected({ request: row, action: 'assign-truck' }); setOpenRow(null); }}>Assign</button><button type="button" onClick={() => { setSelected({ request: row, action: 'reject-mm' }); setOpenRow(null); }}>Reject</button></span>}</span></div>)}{!requests.isPending && !requests.error && (requests.data?.data ?? []).length === 0 && <div className="lh-empty-state">No live requests match the current filters.</div>}</div></div><footer className="lh-table-footer"><span>{requests.data ? `Page ${requests.data.current_page} of ${requests.data.last_page}` : 'Page 1'}</span><div className="lh-pagination"><span>Show row</span><select value={String(filters.perPage)} onChange={event => setFilters(current => ({ ...current, perPage: Number(event.target.value), page: 1 }))}><option value="8">8</option><option value="10">10</option><option value="20">20</option></select><button type="button" disabled={!requests.data || requests.data.current_page <= 1} aria-label="Previous page" onClick={() => setFilters(current => ({ ...current, page: Math.max(1, current.page - 1) }))}><ChevronLeft size={16} aria-hidden="true" /></button><button type="button" disabled={!requests.data || requests.data.current_page >= requests.data.last_page} aria-label="Next page" onClick={() => setFilters(current => ({ ...current, page: current.page + 1 }))}><ChevronRight size={16} aria-hidden="true" /></button></div></footer></section>
 
     {selected && <MidmileActionDialog selection={selected} busy={transition.isPending} error={transition.error?.message} onClose={() => setSelected(null)} onSubmit={payload => transition.mutate({ ...selected, payload })} />}
-  </div>;
+  </section></div>;
 }
 
 function MidmileActionDialog({ selection, busy, error, onClose, onSubmit }: { selection: { request: TruckRequest; action: MmAction }; busy: boolean; error?: string; onClose: () => void; onSubmit: (payload: Record<string, unknown>) => void }) {

@@ -41,6 +41,7 @@ export function Overview({ onNavigate }: { user: User; onNavigate: (view: AppVie
   const intradayDate = from === to && /^\d{4}-\d{2}-\d{2}$/.test(from) ? from : getOperationalDate();
   const [detailStatus, setDetailStatus] = useState<Status | 'ALL' | null>(null);
   const [chartRange, setChartRange] = useState<ChartRange>('1D');
+  const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
   const range = `date_from=${from}&date_to=${to}`;
   const requests = useQuery({
     queryKey: ['requests', 'dashboard'],
@@ -96,6 +97,8 @@ export function Overview({ onNavigate }: { user: User; onNavigate: (view: AppVie
     : intraday.error
       ? 'Dispatch feed unavailable.'
       : 'Live dispatch data. Updates every 15 seconds.';
+  const activePoint = activePointIndex === null ? null : chartPoints[activePointIndex];
+  const formatHour = (hour: number) => `${hour % 12 || 12} ${hour >= 12 ? 'PM' : 'AM'}`;
 
   return <div className="workspace-view dashboard-view dashboard-overview">
     {(requests.error || metrics.error || analytics.error || intraday.error) && <p className="error notice" role="alert">Some dashboard data could not be loaded. Check the affected panel for details.</p>}
@@ -103,15 +106,11 @@ export function Overview({ onNavigate }: { user: User; onNavigate: (view: AppVie
     <section className="overview-metrics" aria-label="Request metrics">
       {cards.map(card => <MetricCard key={card.status} label={card.label} value={metrics.isPending ? '-' : card.value.toLocaleString()} icon={card.icon} chip={card.chip} footnote={metrics.isPending ? '-' : card.footnote} primary={card.primary} onClick={() => setDetailStatus(card.status)} />)}
     </section>
-    <section className="balance-shell top-dispatch-chart" aria-label="Hourly dispatch volume">
-      <article className="balance-card">
-        <ChartHeader kicker="Dispatch activity" title="Hourly dispatch volume" description={`Live operational feed · ${intradayDate}`} controls={<div className="balance-filters" role="group" aria-label="Chart time ranges">{CHART_RANGES.map(range => <button key={range} type="button" disabled={range !== '1D'} aria-pressed={chartRange === range} title={range === '1D' ? 'Intraday view' : 'This feed currently supports intraday data only'} onClick={() => setChartRange(range)}>{range}</button>)}</div>} />
-        <div className="top-dispatch-summary">
-          <strong>{intraday.isPending ? '-' : activeSignal.toLocaleString()}</strong>
-          <span>Total orders · peak {peakDispatch.orderQty} at {peakDispatch.hour}:00</span>
-          <em className={`chart-sync-status${intraday.error ? ' is-error' : ''}`} role="status" aria-live="polite" aria-atomic="true">{intradayStatus}</em>
-        </div>
-        <div className="line-chart top-dispatch-line-chart"><svg viewBox="0 0 700 190" role="img" aria-label="Intraday dispatch order quantity by hour"><defs><linearGradient id="lineAreaTop" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="var(--dispatch-accent)" stopOpacity=".20" /><stop offset="100%" stopColor="var(--dispatch-accent)" stopOpacity="0" /></linearGradient></defs><line x1="46" y1="160" x2="654" y2="160" /><line x1="46" y1="112" x2="654" y2="112" /><line x1="46" y1="64" x2="654" y2="64" />{areaPath && <path className="line-area" d={areaPath} />}<path className="line-stroke" d={linePath} />{chartPoints.map(point => <g key={point.label}><circle cx={point.x} cy={point.y} r="4"><title>{point.label}: {point.count} orders</title></circle><text x={point.x} y="178">{point.label}</text></g>)}{chartPoints.length > 0 && <g className="line-callout"><line x1={peakPoint.x} y1={peakPoint.y} x2={peakPoint.x} y2="160" /><rect x={Math.max(48, Math.min(peakPoint.x - 48, 604))} y={Math.max(18, peakPoint.y - 42)} width="96" height="34" rx="5" /><text x={Math.max(96, Math.min(peakPoint.x, 652))} y={Math.max(38, peakPoint.y - 22)}>{peakPoint.label}:00</text><text x={Math.max(96, Math.min(peakPoint.x, 652))} y={Math.max(52, peakPoint.y - 8)}>{peakPoint.count} orders</text></g>}</svg></div>
+    <section className="intraday-shell" aria-label="Intraday dispatch card">
+      <article className="intraday-card">
+        <ChartHeader kicker="Intraday Card" title="Hourly dispatch volume" description={`Live operational feed · ${intradayDate}`} controls={<div className="intraday-filters" role="group" aria-label="Chart time ranges">{CHART_RANGES.map(range => <button key={range} type="button" disabled={range !== '1D'} aria-pressed={chartRange === range} title={range === '1D' ? 'Intraday view' : 'This feed currently supports intraday data only'} onClick={() => setChartRange(range)}>{range}</button>)}</div>} />
+        <div className="intraday-summary"><div><span>Total dispatched</span><strong>{intraday.isPending ? '-' : activeSignal.toLocaleString()}</strong></div><div><span>Peak hour</span><strong>{peakDispatch.orderQty.toLocaleString()} <small>{formatHour(peakDispatch.hour)}</small></strong></div><span className={`intraday-live-status${intraday.error ? ' is-error' : ''}`}><i />{intradayStatus}</span></div>
+        <div className="line-chart top-dispatch-line-chart"><svg viewBox="0 0 700 190" role="img" aria-label="Intraday dispatch order quantity by hour"><defs><linearGradient id="lineAreaTop" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="var(--dispatch-accent)" stopOpacity=".20" /><stop offset="100%" stopColor="var(--dispatch-accent)" stopOpacity="0" /></linearGradient></defs><line className="chart-grid-line" x1="46" y1="160" x2="654" y2="160" /><line className="chart-grid-line" x1="46" y1="112" x2="654" y2="112" /><line className="chart-grid-line" x1="46" y1="64" x2="654" y2="64" /><text className="chart-y-label" x="38" y="163">0</text><text className="chart-y-label" x="38" y="115">{Math.round(maxDispatch / 2).toLocaleString()}</text><text className="chart-y-label" x="38" y="67">{maxDispatch.toLocaleString()}</text>{areaPath && <path className="line-area" d={areaPath} />}<path className="line-stroke" d={linePath} />{activePoint && <g className="chart-hover-state"><line x1={activePoint.x} y1="22" x2={activePoint.x} y2="160" /><circle cx={activePoint.x} cy={activePoint.y} r="7" /><rect x={Math.max(49, Math.min(activePoint.x - 51, 599))} y={Math.max(18, activePoint.y - 48)} width="102" height="32" rx="6" /><text x={Math.max(100, Math.min(activePoint.x, 648))} y={Math.max(38, activePoint.y - 28)}>{formatHour(Number(activePoint.label))}</text><text x={Math.max(100, Math.min(activePoint.x, 648))} y={Math.max(52, activePoint.y - 14)}>{activePoint.count.toLocaleString()} orders</text></g>}{chartPoints.map((point, index) => <g className={activePointIndex === index ? 'is-active' : ''} key={point.label} tabIndex={0} role="button" aria-label={`${formatHour(Number(point.label))}: ${point.count} orders`} onMouseEnter={() => setActivePointIndex(index)} onMouseLeave={() => setActivePointIndex(null)} onFocus={() => setActivePointIndex(index)} onBlur={() => setActivePointIndex(null)}><circle cx={point.x} cy={point.y} r="4"><title>{formatHour(Number(point.label))}: {point.count} orders</title></circle><text x={point.x} y="178">{formatHour(Number(point.label))}</text></g>)}</svg></div>
       </article>
     </section>
     </section>

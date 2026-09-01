@@ -10,10 +10,11 @@ type Props = {
   onSort: (sort: RequestSort) => void;
   onExport: () => void;
   onRefresh?: () => void;
+  onAddNew?: () => void;
   onNotice?: (message: string) => void;
 };
 
-export function LinehaulFilterPanel({ filters, exporting = false, onChange, onSort, onExport, onNotice }: Props) {
+export function LinehaulFilterPanel({ filters, exporting = false, onChange, onSort, onExport, onAddNew, onNotice }: Props) {
   const [openMenu, setOpenMenu] = useState<'status' | 'filters' | 'sort' | null>(null);
   const set = (values: Partial<RequestFilters>) => onChange({ ...filters, ...values, page: 1 });
 
@@ -39,6 +40,6 @@ export function LinehaulFilterPanel({ filters, exporting = false, onChange, onSo
     <div className="relative order-first w-full flex-1 lg:order-none lg:ml-auto lg:max-w-xs"><Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" aria-hidden="true" /><input aria-label="Search" placeholder="Search requests" className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-gray-300 focus:outline-none" type="text" value={filters.search} onChange={event => set({ search: event.target.value })} /></div>
     <button className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50" type="button" aria-label="Open settings" onClick={() => onNotice?.('Table settings opened')}><Settings2 className="h-4 w-4" aria-hidden="true" /></button>
     <button className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60" type="button" disabled={exporting} onClick={onExport}><Download size={16} />{exporting ? 'Exporting' : 'Export'}</button>
-    <button className="flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700" type="button" onClick={() => onNotice?.('Add new request opened')}><Plus size={16} />Add new</button>
+    <button className="flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700" type="button" onClick={onAddNew ?? (() => onNotice?.('Add new request opened'))}><Plus size={16} />Add new</button>
   </div>;
 }

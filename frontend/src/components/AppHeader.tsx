@@ -123,10 +123,10 @@ export function AppHeader({ user, view, onRoleChange, onSearch }: Props) {
           {count > 0 && <button className="text-button popover-footer-action" type="button" onClick={() => { readAll.mutate(); setMailOpen(false); }}>Mark all read</button>}
         </section>}
       </div>
-      <div className="profile-switcher">
+      {user.is_admin && <div className="profile-switcher">
         <button ref={profileButtonRef} className="topbar-user" type="button" aria-expanded={profileOpen} aria-controls={profileMenuId} onClick={()=>setProfileOpen(value=>!value)}><UserCircle size={22}/><div><strong>{user.name}</strong><small>{user.is_admin?'Administrator':user.role.replaceAll('_',' ')}</small></div><ChevronDown size={14} className="topbar-user-chevron" /></button>
         {profileOpen&&<section ref={profileMenuRef} id={profileMenuId} className="profile-menu" role="menu" aria-label="Profile"><header><ShieldCheck size={18}/><div><strong>Test role view</strong><small>Admin access remains enabled</small></div></header>{user.is_admin?roles.map(role=><button key={role.value} type="button" role="menuitem" onClick={()=>{setProfileOpen(false);void onRoleChange(role.value);profileButtonRef.current?.focus();}}><span>{role.label}</span>{user.role===role.value&&<Check size={16}/>}</button>):<p>Signed in as {user.role.replaceAll('_',' ')}</p>}</section>}
-      </div>
+      </div>}
     </div>
   </header>;
 }

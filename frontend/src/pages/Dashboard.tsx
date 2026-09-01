@@ -21,7 +21,7 @@ export function Dashboard({ user }: { user: User }) {
   const setViewRole = useUiStore(state => state.setViewRole);
   const activeUser = { ...user, role: user.is_admin && viewRole ? viewRole : user.role };
   const allowed = (candidate: AppView) => candidate === 'overview' || (candidate === 'lh-request' && (activeUser.role === 'ops_pic' || activeUser.role === 'fte_ops')) || (candidate === 'truck-request' && activeUser.role === 'fte_mm') || (candidate === 'docking' && (activeUser.role === 'doc_officer' || activeUser.role === 'dock_officer')) || (candidate === 'kpi' && activeUser.role === 'fte_ops') || (candidate === 'users' && (activeUser.role === 'fte_ops' || activeUser.role === 'fte_mm'));
-  const fromPath = (): AppView => ({'/outbound/lh-request':'lh-request','/midmile/truck-request':'truck-request','/docking':'docking','/kpi':'kpi','/users':'users'}[window.location.pathname] as AppView|undefined) ?? 'overview';
+  const fromPath = (): AppView => ({ '/outbound/lh-request': 'lh-request', '/midmile/truck-request': 'truck-request', '/docking': 'docking', '/kpi': 'kpi', '/users': 'users' }[window.location.pathname] as AppView | undefined) ?? 'overview';
   const [view, setView] = useState<AppView>(() => allowed(fromPath()) ? fromPath() : 'overview');
   const [menuOpen, setMenuOpen] = useState(false);
   const queue = useQueueNotifications(activeUser);
@@ -35,7 +35,7 @@ export function Dashboard({ user }: { user: User }) {
 
   function navigate(next: AppView, replace = false) {
     if (!allowed(next)) next = 'overview';
-    const paths:Record<AppView,string>={overview:'/dashboard','lh-request':'/outbound/lh-request','truck-request':'/midmile/truck-request',docking:'/docking',kpi:'/kpi',users:'/users'};
+    const paths: Record<AppView, string> = { overview: '/dashboard', 'lh-request': '/outbound/lh-request', 'truck-request': '/midmile/truck-request', docking: '/docking', kpi: '/kpi', users: '/users' };
     const path = paths[next];
     window.history[replace ? 'replaceState' : 'pushState']({}, '', path);
     setView(next);
@@ -72,7 +72,7 @@ function ViewLoading({ view }: { view: AppView }) {
   if (view === 'overview') {
     return <div className="workspace-view dashboard-view">
       <section className="overview-metrics" aria-hidden="true">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="metric-card"><span className="metric-card-top"><span className="metric-icon"><span className="skeleton-line skeleton-line--head" style={{ width: 18, height: 18, borderRadius: 999 }} /></span><span className="skeleton-chip" /></span><span className="metric-copy"><span className="skeleton-line skeleton-line--head" style={{ width: 88, marginBottom: 10 }} /><span className="skeleton-line" style={{ width: 64, height: 26 }} /></span><span className="metric-foot"><span className="skeleton-line" style={{ width: 140 }} /></span></div>)}</section>
-      <section className="balance-shell top-dispatch-chart" aria-hidden="true"><article className="balance-card"><div className="balance-head"><div><span className="skeleton-line skeleton-line--head" style={{ width: 150 }} /><span className="skeleton-line" style={{ width: 220, marginTop: 10 }} /></div><div className="balance-filters"><span className="skeleton-chip" /><span className="skeleton-chip" /><span className="skeleton-chip" /></div></div><div className="top-dispatch-summary"><span className="skeleton-line" style={{ width: 110, height: 26 }} /><span className="skeleton-line" style={{ width: 180 }} /></div><div className="line-chart top-dispatch-line-chart"><SkeletonTable columns={2} rows={3} compact /></div></article></section>
+      <section className="intraday-shell" aria-hidden="true"><article className="intraday-card"><div className="intraday-head"><div><span className="skeleton-line skeleton-line--head" style={{ width: 150 }} /><span className="skeleton-line" style={{ width: 220, marginTop: 10 }} /></div><div className="intraday-filters"><span className="skeleton-chip" /><span className="skeleton-chip" /><span className="skeleton-chip" /></div></div><div className="line-chart top-dispatch-line-chart"><SkeletonTable columns={2} rows={3} compact /></div></article></section>
       <section className="dashboard-grid"><article className="panel chart-panel truck-mix-panel"><div className="panel-head compact"><div><span className="skeleton-line skeleton-line--head" style={{ width: 110 }} /><span className="skeleton-line" style={{ width: 160, marginTop: 10 }} /></div></div><div className="table-loading-shell"><SkeletonTable columns={2} rows={3} compact /></div></article><article className="panel dashboard-list-panel dashboard-list-panel--trips"><div className="panel-head compact"><div><span className="skeleton-line skeleton-line--head" style={{ width: 120 }} /><span className="skeleton-line" style={{ width: 180, marginTop: 10 }} /></div></div><div className="dashboard-list"><SkeletonTable columns={4} rows={4} compact /></div></article><article className="panel dashboard-list-panel"><div className="panel-head compact"><div><span className="skeleton-line skeleton-line--head" style={{ width: 120 }} /><span className="skeleton-line" style={{ width: 180, marginTop: 10 }} /></div></div><div className="dashboard-list"><SkeletonTable columns={4} rows={4} compact /></div></article></section>
     </div>;
   }

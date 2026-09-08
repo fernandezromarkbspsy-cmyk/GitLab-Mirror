@@ -1,0 +1,3 @@
+import { create } from 'zustand';
+const today = () => { const value = new Date(); return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`; };
+export const useUiStore = create((set) => ({ sidebarOpen: false, soundEnabled: false, search: '', dateFrom: today(), dateTo: today(), viewRole: null, setViewRole: (viewRole) => set({ viewRole }), setSearch: (search) => set({ search }), setDateRange: (dateFrom, dateTo) => set({ dateFrom, dateTo }), resetDateRange: () => set({ dateFrom: today(), dateTo: today() }), toggleSidebar: () => set(s => ({ sidebarOpen: !s.sidebarOpen })), toggleSound: () => set(s => ({ soundEnabled: !s.soundEnabled })) }));

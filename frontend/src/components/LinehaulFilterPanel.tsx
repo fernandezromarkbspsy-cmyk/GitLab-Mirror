@@ -27,9 +27,9 @@ export function LinehaulFilterPanel({ filters, exporting = false, onChange, onSo
     </div>
     <div className="lh-filter-menu-wrap">
       <button className="lh-filter-control flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50" type="button" aria-expanded={openMenu === 'filters'} onClick={() => setOpenMenu(openMenu === 'filters' ? null : 'filters')}><Filter size={15} aria-hidden="true" /><span>All filter</span><ChevronDown size={14} aria-hidden="true" /></button>
-      {openMenu === 'filters' && <div className="lh-filter-popover" role="group" aria-label="Request filter controls">
+      {openMenu === 'filters' && <fieldset className="lh-filter-popover" aria-label="Request filter controls">
         <label>Date<input type="date" value={filters.dateFrom} onChange={event => set({ dateFrom: event.target.value, dateTo: event.target.value })} /></label>
-      </div>}
+      </fieldset>}
     </div>
     <div className="lh-filter-menu-wrap">
       <button className="lh-filter-control flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50" type="button" aria-expanded={openMenu === 'sort'} onClick={() => setOpenMenu(openMenu === 'sort' ? null : 'sort')}><ArrowUpDown size={15} aria-hidden="true" /><span>Sort by</span><ChevronDown size={14} aria-hidden="true" /></button>

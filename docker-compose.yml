@@ -2,10 +2,6 @@ services:
   api:
     build: ./backend
     env_file: ./backend/.env
-    environment:
-      # Keep browser and API token verification on the same Supabase project/key.
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
     command: php artisan serve --host=0.0.0.0 --port=8000
     expose: ["8000"]
     restart: unless-stopped

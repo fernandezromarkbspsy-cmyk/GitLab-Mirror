@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$env:PHPRC = Join-Path $PSScriptRoot 'tools'
+$env:PHPRC = Join-Path $PSScriptRoot 'tools\php.ini'
 Set-Location (Join-Path $PSScriptRoot 'backend')
 
 if (-not (Test-Path '.env')) {

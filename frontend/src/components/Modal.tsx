@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef } from "react";
 
 type Props = {
   open: boolean;
@@ -7,16 +7,29 @@ type Props = {
   className?: string;
   ariaLabelledBy?: string;
   ariaLabel?: string;
-  role?: 'dialog' | 'alertdialog';
+  role?: "dialog" | "alertdialog";
 };
 
 function getFocusable(container: HTMLElement) {
-  return Array.from(container.querySelectorAll<HTMLElement>(
-    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-  )).filter(element => !element.hasAttribute('disabled') && !element.getAttribute('aria-hidden'));
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter(
+    (element) =>
+      !element.hasAttribute("disabled") && !element.getAttribute("aria-hidden"),
+  );
 }
 
-export function Modal({ open, onClose, children, className = 'form-dialog', ariaLabelledBy, ariaLabel, role = 'dialog' }: Props) {
+export function Modal({
+  open,
+  onClose,
+  children,
+  className = "form-dialog",
+  ariaLabelledBy,
+  ariaLabel,
+    role,
+}: Props) {
   const panelRef = useRef<HTMLElement>(null);
   const lastActiveRef = useRef<HTMLElement | null>(null);
 
@@ -24,7 +37,7 @@ export function Modal({ open, onClose, children, className = 'form-dialog', aria
     if (!open) return;
     lastActiveRef.current = document.activeElement as HTMLElement | null;
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
 
     const focusPanel = window.setTimeout(() => {
       const panel = panelRef.current;
@@ -34,13 +47,13 @@ export function Modal({ open, onClose, children, className = 'form-dialog', aria
     }, 0);
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         event.preventDefault();
         onClose();
         return;
       }
 
-      if (event.key !== 'Tab') return;
+      if (event.key !== "Tab") return;
       const panel = panelRef.current;
       if (!panel) return;
       const focusable = getFocusable(panel);
@@ -62,10 +75,10 @@ export function Modal({ open, onClose, children, className = 'form-dialog', aria
       }
     }
 
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
     return () => {
       window.clearTimeout(focusPanel);
-      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
       lastActiveRef.current?.focus?.();
     };
@@ -73,17 +86,17 @@ export function Modal({ open, onClose, children, className = 'form-dialog', aria
 
   if (!open) return null;
 
-  return <div className="dialog-layer" role="presentation" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-    <section
-      ref={panelRef}
-      className={className}
-      role={role}
-      aria-modal="true"
+  return (
+    <div
+      className="dialog-layer"
+        role="dialog"
       aria-labelledby={ariaLabelledBy}
       aria-label={ariaLabel}
       tabIndex={-1}
     >
-      {children}
-    </section>
-  </div>;
+      <section ref={panelRef} className={className} tabIndex={-1}>
+        {children}
+      </section>
+    </div>
+  );
 }

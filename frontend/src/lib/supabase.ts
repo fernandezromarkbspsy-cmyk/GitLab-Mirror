@@ -2,9 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const validSupabaseUrl = typeof supabaseUrl === 'string' && /^https:\/\/[^/]+$/.test(supabaseUrl);
 
 export const supabaseConfigError = !supabaseUrl || !publishableKey
   ? 'Supabase browser environment variables are not configured.'
+  : !validSupabaseUrl
+    ? 'VITE_SUPABASE_URL must be a valid HTTPS origin.'
   : '';
 
 export const supabase = createClient(

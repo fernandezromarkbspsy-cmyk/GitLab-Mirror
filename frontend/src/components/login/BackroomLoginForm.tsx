@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowRight, Eye, EyeOff, IdCard, Loader2, Lock } from 'lucide-react';
+import { useState } from "react";
+import { ArrowRight, Eye, EyeOff, IdCard, Loader2, Lock } from "lucide-react";
 
 interface BackroomLoginFormProps {
   opsId: string;
@@ -46,13 +46,16 @@ export function BackroomLoginForm({
       </p>
 
       {/* Ops ID */}
-      <label className="mt-4 block text-[11.5px] font-semibold uppercase tracking-wider text-faint">
+      <label
+        htmlFor="backroom-ops-id"
+        className="mt-4 block text-[11.5px] font-semibold uppercase tracking-wider text-faint"
+      >
         Ops ID
       </label>
       <div
         className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/[0.11] focus-within:ring-4 focus-within:ring-accent/20 ${
-          shaking ? 'animate-shake' : ''
-        } ${error ? 'border-danger/70' : 'border-line'}`}
+          shaking ? "animate-shake" : ""
+        } ${error ? "border-danger/70" : "border-line"}`}
       >
         <span className="grid w-10 shrink-0 place-items-center text-faint">
           <IdCard className="h-4 w-4" />
@@ -61,6 +64,7 @@ export function BackroomLoginForm({
           value={opsId}
           onChange={(e) => onOpsIdChange(e.target.value.toUpperCase())}
           placeholder="SOC5-0000"
+          id="backroom-ops-id"
           aria-label="Ops ID"
           autoComplete="username"
           className="min-w-0 flex-1 bg-transparent pr-3 text-[13.5px] tracking-wide text-ink outline-none placeholder:text-faint uppercase"
@@ -68,22 +72,26 @@ export function BackroomLoginForm({
       </div>
 
       {/* Password */}
-      <label className="mt-3 block text-[11.5px] font-semibold uppercase tracking-wider text-faint">
+      <label
+        htmlFor="backroom-password"
+        className="mt-3 block text-[11.5px] font-semibold uppercase tracking-wider text-faint"
+      >
         Password
       </label>
       <div
         className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/[0.11] focus-within:ring-4 focus-within:ring-accent/20 ${
-          error ? 'border-danger/70' : 'border-line'
+          error ? "border-danger/70" : "border-line"
         }`}
       >
         <span className="grid w-10 shrink-0 place-items-center text-faint">
           <Lock className="h-4 w-4" />
         </span>
         <input
-          type={showPassword ? 'text' : 'password'}
+          type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => onPasswordChange(e.target.value)}
           placeholder="••••••••"
+          id="backroom-password"
           aria-label="Password"
           autoComplete="current-password"
           className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-faint"
@@ -91,10 +99,14 @@ export function BackroomLoginForm({
         <button
           type="button"
           onClick={onTogglePassword}
-          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          aria-label={showPassword ? "Hide password" : "Show password"}
           className="px-3 text-faint transition-colors hover:text-ink"
         >
-          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {showPassword ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
         </button>
       </div>
 
@@ -105,8 +117,8 @@ export function BackroomLoginForm({
           <span
             className={`grid h-4 w-4 place-items-center rounded border transition-all duration-200 ${
               true
-                ? 'border-accent bg-accent'
-                : 'border-white/30 bg-white/[0.07] group-hover:border-white/50'
+                ? "border-accent bg-accent"
+                : "border-white/30 bg-white/[0.07] group-hover:border-white/50"
             }`}
           >
             {true && (
@@ -126,7 +138,7 @@ export function BackroomLoginForm({
           Keep me signed in
         </label>
         <a
-          href="#"
+          href="/login"
           className="text-[12px] font-semibold text-link underline-offset-4 hover:underline"
         >
           Forgot password?
@@ -152,8 +164,11 @@ export function BackroomLoginForm({
       </button>
 
       <p className="mt-3 text-center text-[12px] text-muted">
-        Need an Ops ID?{' '}
-        <a href="#" className="font-semibold text-link underline-offset-4 hover:underline">
+        Need an Ops ID?{" "}
+        <a
+          href="/login"
+          className="font-semibold text-link underline-offset-4 hover:underline"
+        >
           Request access
         </a>
       </p>

@@ -72,7 +72,7 @@ export function LinehaulRequestDetailsPanel({ request, onClose, onNotice, positi
     </header>
     <div className="lh-details-panel-summary"><div className="lh-details-panel-avatar" aria-hidden="true">{request.cluster.charAt(0)}</div><div className="lh-details-panel-summary-copy"><strong>{request.cluster}</strong><span>{request.region}</span></div><span className={`lh-status lh-status-${request.status.toLowerCase()}`}>{status}</span></div>
     <div className="lh-details-panel-tabs" role="tablist" aria-label="Request detail sections">{tabs.map(tab => <button key={tab.id} className={activeTab === tab.id ? 'active' : ''} type="button" role="tab" aria-selected={activeTab === tab.id} aria-controls={`lh-panel-${tab.id}`} onClick={() => setActiveTab(tab.id)}>{tab.id === 'details' && <CheckCircle2 size={14} />}{tab.label}</button>)}</div>
-    {activeTab === 'details' && <dl id="lh-panel-details" className="lh-details-panel-fields" role="tabpanel">
+    {activeTab === 'details' && <div id="lh-panel-details" role="tabpanel"><dl className="lh-details-panel-fields">
       <div><dt><CalendarDays size={14} />Request time</dt><dd>{formatDateTime(request.request_timestamp)}</dd></div>
       <div><dt><Hash size={14} />Cluster</dt><dd>{valueOf(request.cluster)}</dd></div>
       <div><dt><MapPin size={14} />Region</dt><dd>{valueOf(request.region)}</dd></div>
@@ -82,7 +82,7 @@ export function LinehaulRequestDetailsPanel({ request, onClose, onNotice, positi
       <div><dt><UserRound size={14} />SOC PIC</dt><dd>{valueOf(request.ob_fte)}</dd></div>
       <div><dt><Hash size={14} />LH trip #</dt><dd>{valueOf(request.linehaul_trip_no)}</dd></div>
       <div><dt><Truck size={14} />Plate #</dt><dd>{valueOf(request.plate_number)}</dd></div>
-    </dl>}
+    </dl></div>}
     {activeTab === 'activity' && <div id="lh-panel-activity" className="lh-details-panel-tab-content" role="tabpanel"><CheckCircle2 size={18} /><strong>Request activity</strong><span>No activity has been recorded for this request.</span></div>}
     {activeTab === 'docs' && <div id="lh-panel-docs" className="lh-details-panel-tab-content" role="tabpanel"><ClipboardCopy size={18} /><strong>Request documents</strong><span>No documents are attached to this request.</span></div>}
     <footer className="lh-details-panel-footer"><button type="button" onClick={() => onNotice(`Exporting ${request.id}`)}><ArrowUp size={15} />Export</button><button type="button" onClick={() => { void navigator.clipboard?.writeText(request.id); onNotice(`Copied ${request.id}`); }}><ClipboardCopy size={15} />Copy ID</button><button type="button" onClick={() => window.print()}><Printer size={15} />Print</button></footer>

@@ -20,6 +20,6 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (!this.state.error) return this.props.children;
 
-    return <main className="state"><h1>Something went wrong</h1><p className="error">The application hit an unexpected error.</p><button onClick={() => window.location.reload()}>Reload</button> <button onClick={() => void supabase.auth.signOut()}>Sign out</button></main>;
+    return <main className="state"><h1>Something went wrong</h1><p className="error">The application hit an unexpected error.</p><button type="button" onClick={() => window.location.reload()}>Reload</button> <button type="button" onClick={() => void supabase.auth.signOut()}>Sign out</button></main>;
   }
 }

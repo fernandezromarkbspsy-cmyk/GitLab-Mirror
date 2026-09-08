@@ -1,5 +1,5 @@
-import { ArrowRight, AtSign, Loader2 } from 'lucide-react';
-import { OtpVerify } from './OtpVerify';
+import { ArrowRight, AtSign, Loader2 } from "lucide-react";
+import { OtpVerify } from "./OtpVerify";
 
 interface FteLoginFormProps {
   email: string;
@@ -28,14 +28,17 @@ export function FteLoginForm({
   onResendCode,
   onGoogleSignIn,
 }: FteLoginFormProps) {
-  const handleOtpSubmit = (event: React.FormEvent<HTMLFormElement>, otpCode: string) => {
+  const handleOtpSubmit = (
+    event: React.FormEvent<HTMLFormElement>,
+    otpCode: string,
+  ) => {
     onCodeChange(otpCode);
     onSubmit(event, otpCode);
   };
 
   const handleBackToEmail = () => {
-    onEmailChange('');
-    onCodeChange('');
+    onEmailChange("");
+    onCodeChange("");
   };
 
   if (codeSent) {
@@ -60,10 +63,15 @@ export function FteLoginForm({
         We'll send an OTP to your @spxexpress.com email — no password needed.
       </p>
 
-      <label htmlFor="email-input" className="mt-3 block text-[11.5px] font-semibold uppercase tracking-wider text-faint">
+      <label
+        htmlFor="email-input"
+        className="mt-3 block text-[11.5px] font-semibold uppercase tracking-wider text-faint"
+      >
         Work Email
       </label>
-      <div className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/20 ${error ? 'border-danger/70' : 'border-line'}`}>
+      <div
+        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/20 ${error ? "border-danger/70" : "border-line"}`}
+      >
         <span className="grid w-10 shrink-0 place-items-center text-faint">
           <AtSign className="h-4 w-4" />
         </span>
@@ -92,14 +100,17 @@ export function FteLoginForm({
           </>
         ) : (
           <>
-            Send OTP <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            Send OTP{" "}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </>
         )}
       </button>
 
       <div className="mt-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-line" />
-        <span className="text-[11px] uppercase tracking-wider text-faint">or</span>
+        <span className="text-[11px] uppercase tracking-wider text-faint">
+          or
+        </span>
         <div className="h-px flex-1 bg-line" />
       </div>
 
@@ -109,7 +120,7 @@ export function FteLoginForm({
         disabled={busy}
         className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-line bg-white/[0.07] font-display text-[14px] font-semibold text-ink transition-all duration-300 hover:bg-white/[0.11] disabled:cursor-wait disabled:opacity-50"
       >
-        <svg className="h-4 w-4" viewBox="0 0 24 24">
+        <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
           <path
             fill="#4285F4"
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -131,12 +142,18 @@ export function FteLoginForm({
       </button>
 
       <p className="mt-3 text-center text-[12px] text-muted">
-        By continuing you agree to the{' '}
-        <a href="#" className="font-semibold text-link underline-offset-4 hover:underline">
+        By continuing you agree to the{" "}
+        <a
+          href="/privacy"
+          className="font-semibold text-link underline-offset-4 hover:underline"
+        >
           Privacy Policy
-        </a>{' '}
-        &{' '}
-        <a href="#" className="font-semibold text-link underline-offset-4 hover:underline">
+        </a>{" "}
+        &{" "}
+        <a
+          href="/terms"
+          className="font-semibold text-link underline-offset-4 hover:underline"
+        >
           Terms of Use
         </a>
         .

@@ -1,9 +1,11 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AppHeader } from '../components/AppHeader';
 import { AppSidebar } from '../components/AppSidebar';
 import { SkeletonTable } from '../components/SkeletonTable';
 import { useQueueNotifications } from '../hooks/useQueueNotifications';
+import { getAppPath, getAppView } from '../lib/routes';
 import { supabase } from '../lib/supabase';
 import { useUiStore } from '../stores/ui';
 import type { AppView, Role, User } from '../types';
@@ -17,36 +19,32 @@ const UserManagement = lazy(() => import('./UserManagement').then(module => ({ d
 
 export function Dashboard({ user }: { user: User }) {
   const queryClient = useQueryClient();
+  const location = useLocation();
+  const routerNavigate = useNavigate();
   const viewRole = useUiStore(state => state.viewRole);
   const setViewRole = useUiStore(state => state.setViewRole);
   const activeUser = { ...user, role: user.is_admin && viewRole ? viewRole : user.role };
   const allowed = (candidate: AppView) => candidate === 'overview' || (candidate === 'lh-request' && (activeUser.role === 'ops_pic' || activeUser.role === 'fte_ops')) || (candidate === 'truck-request' && activeUser.role === 'fte_mm') || (candidate === 'docking' && (activeUser.role === 'doc_officer' || activeUser.role === 'dock_officer')) || (candidate === 'kpi' && activeUser.role === 'fte_ops') || (candidate === 'users' && (activeUser.role === 'fte_ops' || activeUser.role === 'fte_mm'));
-  const fromPath = (): AppView => ({ '/outbound/lh-request': 'lh-request', '/midmile/truck-request': 'truck-request', '/docking': 'docking', '/kpi': 'kpi', '/users': 'users' }[window.location.pathname] as AppView | undefined) ?? 'overview';
-  const [view, setView] = useState<AppView>(() => allowed(fromPath()) ? fromPath() : 'overview');
+  const requestedView = getAppView(location.pathname);
+  const view = allowed(requestedView) ? requestedView : 'overview';
   const [menuOpen, setMenuOpen] = useState(false);
   const queue = useQueueNotifications(activeUser);
 
   async function switchRole(role: Role) {
     setViewRole(role);
-    setView('overview');
-    window.history.pushState({}, '', '/dashboard');
+    routerNavigate(getAppPath('overview'));
     await queryClient.invalidateQueries();
   }
 
   function navigate(next: AppView, replace = false) {
     if (!allowed(next)) next = 'overview';
-    const paths: Record<AppView, string> = { overview: '/dashboard', 'lh-request': '/outbound/lh-request', 'truck-request': '/midmile/truck-request', docking: '/docking', kpi: '/kpi', users: '/users' };
-    const path = paths[next];
-    window.history[replace ? 'replaceState' : 'pushState']({}, '', path);
-    setView(next);
+    const path = getAppPath(next);
+    routerNavigate(path, { replace });
   }
 
   useEffect(() => {
-    navigate(view, true);
-    const onPopState = () => setView(allowed(fromPath()) ? fromPath() : 'overview');
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+    if (location.pathname !== getAppPath(view)) routerNavigate(getAppPath(view), { replace: true });
+  }, [location.pathname, routerNavigate, view]);
 
   return <div className="app-shell">
     <AppSidebar user={activeUser} activeView={view} open={menuOpen} onOpenChange={setMenuOpen} onNavigate={navigate} onSignOut={() => void supabase.auth.signOut()} pendingCount={queue.count} />

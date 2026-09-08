@@ -1,7 +1,7 @@
-import { Camera, MapPin } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { Reveal } from './Reveal';
-import trucksImage from '../../assets/trucks.jpg';
+import { Camera, MapPin } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { Reveal } from "./Reveal";
+import trucksImage from "../../assets/trucks.jpg";
 
 export function QrPanel() {
   return (
@@ -47,7 +47,6 @@ export function QrPanel() {
       {/* QR */}
       <Reveal delay={180} className="mt-5 flex flex-col items-center">
         <div
-          tabIndex={0}
           role="img"
           aria-label="QR code for mobile login"
           className="relative z-10 rounded-xl bg-white p-2.5 shadow-2xl shadow-[#141f3d]/40 ring-1 ring-white/50 outline-none transition-all duration-700 ease-out transform-gpu hover:z-20 hover:-translate-y-1 hover:scale-125 hover:shadow-[0_24px_48px_-18px_rgba(14,24,54,0.6)] focus-visible:z-20 focus-visible:-translate-y-1 focus-visible:scale-125 focus-visible:ring-4 focus-visible:ring-accent/30"
@@ -61,7 +60,9 @@ export function QrPanel() {
           />
           <div className="absolute inset-0 grid place-items-center">
             <div className="rounded bg-white px-1.5 py-1 shadow-md">
-              <span className="text-accent font-display text-xs font-bold">S5</span>
+              <span className="text-accent font-display text-xs font-bold">
+                S5
+              </span>
             </div>
           </div>
           <span className="qr-scan" aria-hidden />

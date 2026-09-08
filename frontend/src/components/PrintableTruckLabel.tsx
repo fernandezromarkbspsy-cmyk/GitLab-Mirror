@@ -45,7 +45,7 @@ function qrCells(value: string) {
 
 function DriverQr({ value }: { value: string }) {
   const cells = qrCells(value || 'DRIVER');
-  return <div className="driver-qr" aria-label={`Driver ID QR ${value}`}>{cells.map((active, index) => <i key={index} className={active ? 'on' : ''} />)}</div>;
+  return <div className="driver-qr" role="img" aria-label={`Driver ID QR ${value}`}>{cells.map((active, index) => <i key={index} className={active ? 'on' : ''} />)}</div>;
 }
 
 function loadSlots(kind: TemplateKind, values: string[]) {

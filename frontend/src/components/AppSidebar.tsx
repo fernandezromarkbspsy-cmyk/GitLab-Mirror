@@ -57,18 +57,14 @@ export function AppSidebar({
   const [expanded, setExpanded] = useState<MenuGroup | null>(() =>
     groupForView(activeView),
   );
-  const [hoveredGroup, setHoveredGroup] = useState<MenuGroup | null>(null);
-
   useEffect(() => {
     setExpanded(groupForView(activeView));
   }, [activeView]);
 
-  const visibleGroup = hoveredGroup ?? expanded;
-
   function toggleGroup(group: MenuGroup) {
     setExpanded((value) => (value === group ? null : group));
-    setHoveredGroup(null);
   }
+  const visibleGroup = expanded;
 
   function navigate(view: AppView) {
     onNavigate(view);
@@ -87,7 +83,9 @@ export function AppSidebar({
         <PanelLeftOpen size={18} />
         <span>Menu</span>
       </button>
-      <div
+      <button
+        type="button"
+        aria-label="Close navigation"
         className={`sidebar-scrim${open ? " is-open" : ""}`}
         onClick={() => onOpenChange(false)}
       />
@@ -126,11 +124,7 @@ export function AppSidebar({
             </button>
           </div>
           {showOutbound && (
-            <div
-              className="nav-section"
-              onMouseEnter={() => setHoveredGroup("outbound")}
-              onMouseLeave={() => setHoveredGroup(null)}
-            >
+            <div className="nav-section">
               <p>Outbound</p>
               <button
                 className={`nav-group-toggle${visibleGroup === "outbound" ? " is-open" : ""}`}
@@ -146,7 +140,8 @@ export function AppSidebar({
               {visibleGroup === "outbound" && (
                 <button
                   className={`nav-subitem${activeView === "lh-request" ? " active" : ""}`}
-                  onClick={() => navigate("lh-request")}
+                  type="button"
+                                  onClick={() => navigate("lh-request")}
                 >
                   <Route size={17} />
                   <span>LH Request</span>
@@ -160,11 +155,7 @@ export function AppSidebar({
             </div>
           )}
           {showMidmile && (
-            <div
-              className="nav-section"
-              onMouseEnter={() => setHoveredGroup("midmile")}
-              onMouseLeave={() => setHoveredGroup(null)}
-            >
+            <div className="nav-section">
               <p>Midmile</p>
               <button
                 className={`nav-group-toggle${visibleGroup === "midmile" ? " is-open" : ""}`}
@@ -180,7 +171,8 @@ export function AppSidebar({
               {visibleGroup === "midmile" && (
                 <button
                   className={`nav-subitem${activeView === "truck-request" ? " active" : ""}`}
-                  onClick={() => navigate("truck-request")}
+                  type="button"
+                                  onClick={() => navigate("truck-request")}
                 >
                   <Truck size={17} />
                   <span>Truck Request</span>
@@ -198,6 +190,7 @@ export function AppSidebar({
               <p>Docking</p>
               <button
                 className={`nav-link${activeView === "docking" ? " active" : ""}`}
+                type="button"
                 onClick={() => navigate("docking")}
               >
                 <ShipWheel size={18} />
@@ -213,6 +206,7 @@ export function AppSidebar({
               <p>Performance</p>
               <button
                 className={`nav-link${activeView === "kpi" ? " active" : ""}`}
+                type="button"
                 onClick={() => navigate("kpi")}
               >
                 <BarChart3 size={18} />
@@ -225,6 +219,7 @@ export function AppSidebar({
               <p>Administration</p>
               <button
                 className={`nav-link${activeView === "users" ? " active" : ""}`}
+                type="button"
                 onClick={() => navigate("users")}
               >
                 <Users size={18} />

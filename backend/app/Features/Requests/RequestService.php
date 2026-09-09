@@ -8,7 +8,7 @@ use Illuminate\Validation\ValidationException;
 
 final class RequestService
 {
-    public function __construct(private RequestRepository $requests) {}
+    public function __construct(private RequestRepository $requests, private RequestAuthorizer $authorizer) {}
 
     public function create(object $actor, array $data): object
     {
@@ -25,7 +25,7 @@ final class RequestService
 
     public function updateDetails(string $id, object $actor, array $data): object
     {
-        abort_unless($actor->role === 'fte_ops', 403, 'Only FTE Ops can edit requests.');
+        abort_unless($this->authorizer->canEdit($actor), 403, 'Only FTE Ops can edit requests.');
 
         return DB::transaction(function () use ($id, $actor, $data) {
             $request = $this->requests->lock($id);
@@ -41,20 +41,18 @@ final class RequestService
     {
         return DB::transaction(function () use ($id, $actor, $action, $input) {
             $request = $this->requests->lock($id);
-            [$from, $to, $role, $event] = match ($action) {
-                'approve' => [['PENDING', 'REJECTED_BY_MM'], 'APPROVED', 'fte_ops', 'REQUEST_APPROVED'],
-                'reject-ops' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'fte_ops', 'REQUEST_REJECTED_BY_OPS'],
-                'cancel' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', null, 'REQUEST_CANCELLED'],
-                'reject-mm' => [['APPROVED'], 'REJECTED_BY_MM', 'fte_mm', 'REQUEST_REJECTED_BY_MM'],
-                'assign-truck' => [['APPROVED'], 'FOR_DOCKING', 'fte_mm', 'TRUCK_ASSIGNED'],
-                'mark-docked' => [['ASSIGNED', 'FOR_DOCKING'], 'DOCKED', 'docking', 'TRUCK_DOCKED'],
-                'confirm' => [['DOCKED'], 'CONFIRMED', 'docking', 'REQUEST_CONFIRMED'],
+            [$from, $to, $event] = match ($action) {
+                'approve' => [['PENDING', 'REJECTED_BY_MM'], 'APPROVED', 'REQUEST_APPROVED'],
+                'reject-ops' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'REQUEST_REJECTED_BY_OPS'],
+                'cancel' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'REQUEST_CANCELLED'],
+                'reject-mm' => [['APPROVED'], 'REJECTED_BY_MM', 'REQUEST_REJECTED_BY_MM'],
+                'assign-truck' => [['APPROVED'], 'FOR_DOCKING', 'TRUCK_ASSIGNED'],
+                'mark-docked' => [['ASSIGNED', 'FOR_DOCKING'], 'DOCKED', 'TRUCK_DOCKED'],
+                'confirm' => [['DOCKED'], 'CONFIRMED', 'REQUEST_CONFIRMED'],
                 default => throw ValidationException::withMessages(['action' => 'Unknown action.']),
             };
             abort_unless(in_array($request->status, $from, true), 409, "Cannot {$action} a {$request->status} request.");
-            $ownsPending = $action === 'cancel' && $actor->role === 'ops_pic' && $request->created_by === $actor->id;
-            $hasRole = $role === 'docking' ? in_array($actor->role, ['doc_officer', 'dock_officer'], true) : $actor->role === $role;
-            abort_unless($ownsPending || ($role ? $hasRole : $actor->role === 'fte_ops'), 403);
+            abort_unless($this->authorizer->canTransition($actor, $action, $request), 403);
             if ($action === 'reject-mm' && blank($input['rejection_remarks'] ?? null)) {
                 throw ValidationException::withMessages(['rejection_remarks' => 'A rejection reason is required.']);
             }
@@ -81,9 +79,6 @@ final class RequestService
             }
             $updated = $this->requests->update($id, $fields);
             $this->event($id, $actor->id, $event, $request->status, $to, $input);
-            if ($action === 'assign-truck') {
-                $this->event($id, $actor->id, 'TRUCK_FOR_DOCKING', 'ASSIGNED', 'FOR_DOCKING', $input);
-            }
             $target = match ($to) {
                 'APPROVED' => 'fte_mm', 'REJECTED_BY_MM' => 'fte_ops', 'FOR_DOCKING' => 'doc_officer', 'CONFIRMED' => 'fte_ops', default => null
             };

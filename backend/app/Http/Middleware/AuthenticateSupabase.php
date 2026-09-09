@@ -34,7 +34,8 @@ final class AuthenticateSupabase
                 ->withToken($token)
                 ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
                 ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
-                ->connectTimeout(5)->timeout(10)
+                ->connectTimeout(config('services.supabase.connect_timeout', 5))
+                ->timeout(config('services.supabase.timeout', 10))
                 ->get($supabaseUrl.'/auth/v1/user');
         } catch (ConnectionException $exception) {
             Log::error('Unable to reach Supabase Auth.', [
@@ -68,7 +69,7 @@ final class AuthenticateSupabase
         $profile->is_admin = in_array(strtolower((string) $profile->email), array_map('strtolower', config('services.admin_emails', [])), true);
         $profile->original_role = $profile->role;
         $viewRole = $request->header('X-View-Role');
-        if ($profile->is_admin && in_array($viewRole, ['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer', 'dock_officer'], true)) {
+        if ($profile->is_admin && in_array($viewRole, ['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'], true)) {
             $profile->role = $viewRole;
         }
         $request->attributes->set('actor', $profile);

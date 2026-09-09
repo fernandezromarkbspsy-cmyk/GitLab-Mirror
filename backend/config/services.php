@@ -2,7 +2,7 @@
 
 return [
 
-    'admin_emails' => array_values(array_filter(array_map('trim', explode(',', env('ADMIN_EMAILS', 'romark.fernandez@spxexpress.com'))))),
+    'admin_emails' => array_values(array_filter(array_map('trim', explode(',', env('ADMIN_EMAILS', ''))))),
     'supabase' => [
         'url' => env('SUPABASE_URL'),
         'anon_key' => env('SUPABASE_PUBLISHABLE_KEY') ?: env('SUPABASE_ANON_KEY'),
@@ -13,8 +13,15 @@ return [
         // Keep TLS verification enabled; provide the CA bundle path when PHP
         // is not connected to the host operating system certificate store.
         'ca_bundle' => env('SUPABASE_CA_BUNDLE'),
+        'connect_timeout' => (int) env('SUPABASE_CONNECT_TIMEOUT', 5),
+        'timeout' => (int) env('SUPABASE_TIMEOUT', 10),
     ],
     'backroom' => [
         'initial_password' => env('BACKROOM_INITIAL_PASSWORD'),
+    ],
+    'seatalk' => [
+        'app_id' => env('SEATALK_APP_ID'),
+        'app_secret' => env('SEATALK_APP_SECRET'),
+        'redirect_uri' => env('SEATALK_REDIRECT_URI'),
     ],
 ];

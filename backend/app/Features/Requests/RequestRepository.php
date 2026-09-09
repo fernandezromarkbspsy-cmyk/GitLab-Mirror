@@ -11,6 +11,8 @@ final class RequestRepository
 {
     private const COLUMNS = ['id', 'request_timestamp', 'cluster', 'region', 'dock_no', 'backlogs', 'backlogs_timestamp', 'ob_fte', 'truck_size', 'truck_type', 'plate_number', 'provide_time', 'linehaul_trip_no', 'docked_time', 'status', 'rejection_remarks', 'driver_id', 'created_by', 'created_at', 'updated_at'];
 
+    public function __construct(private RequestAuthorizer $authorizer) {}
+
     public function paginate(object $actor, array $filters): LengthAwarePaginator
     {
         $query = DB::table('requests')->select(self::COLUMNS);
@@ -62,12 +64,28 @@ final class RequestRepository
         if ($actor->role === 'ops_pic' && ! ($actor->is_admin ?? false)) {
             $shiftQuery->where('created_by', $actor->id);
         }
-        $timestamps = $shiftQuery->pluck('request_timestamp');
+        if ($dateFrom = $filters['date_from'] ?? null) {
+            $shiftQuery->whereDate('request_timestamp', '>=', $dateFrom);
+        }
+        if ($dateTo = $filters['date_to'] ?? null) {
+            $shiftQuery->whereDate('request_timestamp', '<=', $dateTo);
+        }
         $counts = array_fill(0, 13, 0);
-        foreach ($timestamps as $timestamp) {
-            $index = $shiftStart->diffInHours(CarbonImmutable::parse($timestamp)->setTimezone('Asia/Manila'), false);
-            if ($index >= 0 && $index <= 12) {
-                $counts[$index]++;
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $hourly = $shiftQuery
+                ->selectRaw('floor(extract(epoch from (request_timestamp - ?::timestamptz)) / 3600)::int as hour_offset, count(*) as total', [$shiftStart->toIso8601String()])
+                ->groupBy('hour_offset')->pluck('total', 'hour_offset');
+            foreach ($hourly as $hour => $total) {
+                if ((int) $hour >= 0 && (int) $hour <= 12) {
+                    $counts[(int) $hour] = (int) $total;
+                }
+            }
+        } else {
+            foreach ($shiftQuery->pluck('request_timestamp') as $timestamp) {
+                $index = $shiftStart->diffInHours(CarbonImmutable::parse($timestamp)->setTimezone('Asia/Manila'), false);
+                if ($index >= 0 && $index <= 12) {
+                    $counts[$index]++;
+                }
             }
         }
 
@@ -108,11 +126,10 @@ final class RequestRepository
     public function findVisible(string $id, object $actor): object
     {
         $query = DB::table('requests')->select(self::COLUMNS)->where('id', $id);
-        if ($actor->role === 'ops_pic' && ! ($actor->is_admin ?? false)) {
-            $query->where('created_by', $actor->id);
-        }
+        $request = $query->firstOrFail();
+        abort_unless($this->authorizer->canView($actor, $request), 403);
 
-        return $query->firstOrFail();
+        return $request;
     }
 
     public function events(string $id, object $actor): Collection

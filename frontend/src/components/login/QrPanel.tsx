@@ -1,9 +1,13 @@
-import { Camera, MapPin } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { MapPin } from "lucide-react";
 import { Reveal } from "./Reveal";
+import { SeatalkQrLogin } from "./SeatalkQrLogin";
 import trucksImage from "../../assets/trucks.jpg";
 
-export function QrPanel() {
+interface QrPanelProps {
+  onSeatalkError?: (error: string) => void;
+}
+
+export function QrPanel({ onSeatalkError }: QrPanelProps) {
   return (
     <section className="relative hidden lg:flex flex-col overflow-hidden px-5 pb-24 pt-6 sm:px-7">
       <div
@@ -24,10 +28,10 @@ export function QrPanel() {
             className="h-[52px] w-[52px] shrink-0 rounded-xl object-cover shadow-lg shadow-accent/30"
           />
           <div>
-            <p className="font-display text-[17px] font-semibold tracking-wide text-ink">
+            <p className="font-display text-[17px] font-bold tracking-tight leading-snug text-ink">
               SOC 5 OUTBOUND
             </p>
-            <p className="text-[11.5px] text-faint">
+            <p className="text-[11.5px] font-medium text-faint leading-snug">
               Operations Management System
             </p>
           </div>
@@ -36,47 +40,19 @@ export function QrPanel() {
 
       {/* heading */}
       <Reveal delay={90} className="mt-5">
-        <h1 className="font-display text-[22px] font-semibold leading-tight text-ink">
+        <h1 className="font-display text-[22px] font-bold leading-tight tracking-tight text-ink">
           Login to continue
         </h1>
-        <p className="mt-1.5 text-[12.5px] text-muted">
-          Scan QR code or use your credentials to login
+        <p className="mt-2 text-[12.5px] text-muted leading-relaxed">
+          Scan QR code with Seatalk or use email/password below
         </p>
       </Reveal>
 
-      {/* QR */}
+      {/* QR - Seatalk Login */}
       <Reveal delay={180} className="mt-5 flex flex-col items-center">
-        <div
-          role="img"
-          aria-label="QR code for mobile login"
-          className="relative z-10 rounded-xl bg-white p-2.5 shadow-2xl shadow-[#141f3d]/40 ring-1 ring-white/50 outline-none transition-all duration-700 ease-out transform-gpu hover:z-20 hover:-translate-y-1 hover:scale-125 hover:shadow-[0_24px_48px_-18px_rgba(14,24,54,0.6)] focus-visible:z-20 focus-visible:-translate-y-1 focus-visible:scale-125 focus-visible:ring-4 focus-visible:ring-accent/30"
-        >
-          <QRCodeSVG
-            value="https://soc5-outbound.app/scan?session=demo-4821"
-            size={124}
-            bgColor="#ffffff"
-            fgColor="#0d1730"
-            level="M"
-          />
-          <div className="absolute inset-0 grid place-items-center">
-            <div className="rounded bg-white px-1.5 py-1 shadow-md">
-              <span className="text-accent font-display text-xs font-bold">
-                S5
-              </span>
-            </div>
-          </div>
-          <span className="qr-scan" aria-hidden />
-        </div>
-
-        <div className="mt-3.5 flex items-center gap-1.5">
-          <Camera className="h-4 w-4 text-link" strokeWidth={2.2} />
-          <span className="font-display text-[12.5px] font-semibold text-ink">
-            Use Camera App to Scan QR
-          </span>
-        </div>
-        <p className="mt-1 max-w-[215px] text-center text-[11.5px] leading-snug text-muted">
-          Click the generated link to redirect to the mobile app
-        </p>
+        <SeatalkQrLogin
+          onError={onSeatalkError || (() => {})}
+        />
       </Reveal>
 
       {/* freight scene */}

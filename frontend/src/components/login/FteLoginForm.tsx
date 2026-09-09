@@ -56,16 +56,16 @@ export function FteLoginForm({
 
   return (
     <form noValidate onSubmit={onSubmit} className="rise w-full">
-      <h2 className="font-display text-[17px] font-semibold text-ink">
+      <h2 className="font-display text-[17px] font-bold text-ink leading-snug tracking-tight">
         Continue with work email
       </h2>
-      <p className="mt-1 text-[12.5px] text-muted">
+      <p className="mt-1.5 text-[12.5px] text-muted leading-relaxed">
         We'll send an OTP to your @spxexpress.com email — no password needed.
       </p>
 
       <label
         htmlFor="email-input"
-        className="mt-3 block text-[11.5px] font-semibold uppercase tracking-wider text-faint"
+        className="mt-4 block text-[11.5px] font-bold uppercase tracking-wider text-faint"
       >
         Work Email
       </label>
@@ -86,21 +86,21 @@ export function FteLoginForm({
         />
       </div>
 
-      {error && <p className="mt-2 text-[12px] text-danger">{error}</p>}
+      {error && <p className="mt-2.5 text-[12px] font-medium text-danger leading-snug">{error}</p>}
 
       <button
         type="submit"
         disabled={busy}
-        className="btn-shine group mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-2 font-display text-[14px] font-semibold text-white shadow-lg shadow-accent/30 transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-wait disabled:opacity-85"
+        className="btn-shine group mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-2 font-display text-[14px] font-bold text-white shadow-lg shadow-accent/30 transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-wait disabled:opacity-85 tracking-tight"
       >
         {busy ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Sending OTP…
+            <span className="font-bold">Sending OTP…</span>
           </>
         ) : (
           <>
-            Send OTP{" "}
+            <span className="font-bold">Send OTP</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </>
         )}
@@ -108,7 +108,7 @@ export function FteLoginForm({
 
       <div className="mt-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-line" />
-        <span className="text-[11px] uppercase tracking-wider text-faint">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-faint">
           or
         </span>
         <div className="h-px flex-1 bg-line" />

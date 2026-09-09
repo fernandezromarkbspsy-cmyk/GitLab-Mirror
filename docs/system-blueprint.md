@@ -234,7 +234,6 @@ Role values:
 - ops_pic
 - fte_ops
 - fte_mm
-- dock_officer
 - doc_officer
 
 Lookup rules:

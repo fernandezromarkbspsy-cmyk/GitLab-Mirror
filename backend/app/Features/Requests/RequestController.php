@@ -86,7 +86,18 @@ final class RequestController
 
     public function action(Request $request, string $id, string $action): JsonResponse
     {
-        return response()->json($this->service->transition($id, $request->attributes->get('actor'), $action, $request->all()));
+        $data = $request->validate([
+            'rejection_remarks' => 'sometimes|string|max:2000',
+            'plate_number' => 'sometimes|string|max:50',
+            'provide_time' => 'sometimes|nullable|date',
+            'driver_id' => 'sometimes|string|max:120',
+            'linehaul_trip_no' => 'sometimes|string|max:120',
+            'truck_size' => 'sometimes|in:4W,6W,10W,6WF',
+            'truck_type' => 'sometimes|in:WETLEASE,DRYLEASE',
+            'docked_time' => 'sometimes|nullable|date',
+        ]);
+
+        return response()->json($this->service->transition($id, $request->attributes->get('actor'), $action, $data));
     }
 
     private function requestRules(): array

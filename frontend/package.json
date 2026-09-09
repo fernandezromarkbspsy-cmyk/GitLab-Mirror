@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.app.json --noEmit && vite build",
     "check:encoding": "node scripts/check-visible-text-encoding.mjs",
     "check:source": "node scripts/check-source-artifacts.mjs",
+    "check:robots": "node scripts/check-robots.mjs",
     "lint": "biome lint src scripts",
     "lint:a11y": "biome lint --only=a11y src",
     "format:check": "biome ci src/App.tsx src/lib/routes.ts src/lib/requests.test.ts scripts/check-source-artifacts.mjs",
@@ -16,6 +17,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@joint/core": "^4.3.3",
     "@supabase/supabase-js": "^2.112.4",
     "@tanstack/react-query": "^5.102.8",
     "clsx": "2.1.1",

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Features\Requests\RequestAuthorizer;
 use App\Features\Requests\RequestRepository;
 use App\Features\Requests\RequestService;
 use Illuminate\Database\Schema\Blueprint;
@@ -27,8 +28,9 @@ final class RequestWorkflowTest extends TestCase
         DB::purge('sqlite');
         DB::reconnect('sqlite');
         $this->createSchema();
-        $this->repository = new RequestRepository;
-        $this->service = new RequestService($this->repository);
+        $authorizer = new RequestAuthorizer;
+        $this->repository = new RequestRepository($authorizer);
+        $this->service = new RequestService($this->repository, $authorizer);
     }
 
     public function test_fte_ops_can_edit_a_pending_request(): void
@@ -77,6 +79,38 @@ final class RequestWorkflowTest extends TestCase
 
         $this->assertSame(1, $result->total());
         $this->assertSame('ABC-1234', $result->items()[0]->plate_number);
+    }
+
+    public function test_analytics_applies_date_filters(): void
+    {
+        $this->insertRequest(['truck_size' => '4W', 'request_timestamp' => '2026-06-15 08:00:00']);
+        $this->insertRequest(['truck_size' => '10W', 'request_timestamp' => '2026-05-15 08:00:00']);
+        $actor = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
+
+        $result = $this->repository->analytics($actor, [
+            'date_from' => '2026-06-01',
+            'date_to' => '2026-06-30',
+        ]);
+
+        $this->assertSame(1, (int) $result['truck_sizes']['4W']);
+        $this->assertArrayNotHasKey('10W', $result['truck_sizes']->all());
+    }
+
+    public function test_docking_assignment_notifies_doc_officer(): void
+    {
+        $request = $this->insertRequest(['status' => 'APPROVED']);
+        $actor = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
+
+        $this->service->transition($request->id, $actor, 'assign-truck', ['plate_number' => 'ABC-123']);
+
+        $this->assertDatabaseHas('notifications', ['request_id' => $request->id, 'target_role' => 'doc_officer']);
+        $this->assertDatabaseHas('request_events', [
+            'request_id' => $request->id,
+            'event_type' => 'TRUCK_ASSIGNED',
+            'from_status' => 'APPROVED',
+            'to_status' => 'FOR_DOCKING',
+        ]);
+        $this->assertDatabaseMissing('request_events', ['request_id' => $request->id, 'event_type' => 'TRUCK_FOR_DOCKING']);
     }
 
     private function insertRequest(array $overrides = []): object

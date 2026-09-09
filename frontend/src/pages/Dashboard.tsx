@@ -24,7 +24,7 @@ export function Dashboard({ user }: { user: User }) {
   const viewRole = useUiStore(state => state.viewRole);
   const setViewRole = useUiStore(state => state.setViewRole);
   const activeUser = { ...user, role: user.is_admin && viewRole ? viewRole : user.role };
-  const allowed = (candidate: AppView) => candidate === 'overview' || (candidate === 'lh-request' && (activeUser.role === 'ops_pic' || activeUser.role === 'fte_ops')) || (candidate === 'truck-request' && activeUser.role === 'fte_mm') || (candidate === 'docking' && (activeUser.role === 'doc_officer' || activeUser.role === 'dock_officer')) || (candidate === 'kpi' && activeUser.role === 'fte_ops') || (candidate === 'users' && (activeUser.role === 'fte_ops' || activeUser.role === 'fte_mm'));
+  const allowed = (candidate: AppView) => candidate === 'overview' || (candidate === 'lh-request' && (activeUser.role === 'ops_pic' || activeUser.role === 'fte_ops')) || (candidate === 'truck-request' && activeUser.role === 'fte_mm') || (candidate === 'docking' && activeUser.role === 'doc_officer') || (candidate === 'kpi' && activeUser.role === 'fte_ops') || (candidate === 'users' && (activeUser.role === 'fte_ops' || activeUser.role === 'fte_mm'));
   const requestedView = getAppView(location.pathname);
   const view = allowed(requestedView) ? requestedView : 'overview';
   const [menuOpen, setMenuOpen] = useState(false);

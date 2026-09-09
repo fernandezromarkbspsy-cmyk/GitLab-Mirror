@@ -64,7 +64,7 @@ function playNotificationSound(count: number) {
 }
 
 export function useQueueNotifications(user: User): QueueSnapshot {
-  const status: Status | null = user.role === 'fte_ops' ? 'PENDING' : user.role === 'fte_mm' ? 'APPROVED' : user.role === 'doc_officer' || user.role === 'dock_officer' ? 'FOR_DOCKING' : null;
+  const status: Status | null = user.role === 'fte_ops' ? 'PENDING' : user.role === 'fte_mm' ? 'APPROVED' : user.role === 'doc_officer' ? 'FOR_DOCKING' : null;
   const knownIds = useRef<Set<string> | null>(null);
   const [acknowledged, setAcknowledged] = useState<Set<string>>(() => new Set());
   const query = useQuery({

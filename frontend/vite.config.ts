@@ -12,12 +12,6 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    allowedHosts: ['.e2b.app', 'soc5outboundops.app', '.trycloudflare.com', 'muzzle-onion-regalia.ngrok-free.dev'],
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-      },
-    },
+    allowedHosts: ['.e2b.app', '.soc5outboundops.app', '.trycloudflare.com', 'muzzle-onion-regalia.ngrok-free.dev'],
   },
 });

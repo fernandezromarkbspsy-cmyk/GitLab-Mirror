@@ -11,11 +11,11 @@ final class NotificationController
     public function index(Request $request): JsonResponse
     {
         $actor = $request->attributes->get('actor');
-        $rows = DB::table('notifications')
-            ->where(fn ($query) => $query->where('user_id', $actor->id)->orWhere('target_role', $actor->role))
-            ->orderByDesc('created_at')->limit(50)->get();
+        $visible = fn ($query) => $query->where('user_id', $actor->id)->orWhere('target_role', $actor->role);
+        $rows = DB::table('notifications')->where($visible)->orderByDesc('created_at')->limit(50)->get();
+        $unread = DB::table('notifications')->whereNull('read_at')->where($visible)->count();
 
-        return response()->json(['data' => $rows, 'unread' => $rows->whereNull('read_at')->count()]);
+        return response()->json(['data' => $rows, 'unread' => $unread]);
     }
 
     public function read(Request $request, int $id): JsonResponse

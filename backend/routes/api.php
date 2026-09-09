@@ -1,9 +1,11 @@
 <?php
 
-use App\Features\Kpi\KpiController;
+use App\Features\Auth\SeatalkController;
 use App\Features\Dispatch\DispatchController;
+use App\Features\Kpi\KpiController;
 use App\Features\Notifications\NotificationController;
 use App\Features\Requests\RequestController;
+use App\Features\Users\AccessRequestController;
 use App\Features\Users\UserController;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -19,6 +21,14 @@ Route::get('/auth/status', function () {
 
     return response()->json(['configured' => true]);
 });
+
+// SeaTalk login routes are public only for the short-lived QR transaction.
+Route::post('/auth/seatalk/transactions', [SeatalkController::class, 'createLoginTransaction'])->middleware('throttle:10,1');
+Route::get('/auth/seatalk/transactions/{transactionId}', [SeatalkController::class, 'transactionStatus'])
+    ->whereUuid('transactionId')
+    ->middleware('throttle:60,1');
+Route::get('/auth/seatalk/callback', [SeatalkController::class, 'callback'])->middleware('throttle:10,1');
+Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
 Route::middleware(['supabase.auth'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));

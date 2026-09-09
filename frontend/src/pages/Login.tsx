@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { isAuthError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { LoginCard } from '../components/login/LoginCard';
@@ -144,10 +144,18 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
     }
   }
 
+  const handleSeatalkError = useCallback((error: string) => {
+    setError(error || 'Seatalk authentication failed. Please try another login method.');
+  }, []);
+
   return (
-    <LoginCard modal={modal} visible={visible}>
+    <LoginCard
+      modal={modal}
+      visible={visible}
+      onSeatalkError={handleSeatalkError}
+    >
       <div className="mb-4">
-        <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">
+        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
           Login as
         </span>
         <UserTypeToggle value={type} onChange={switchType} />

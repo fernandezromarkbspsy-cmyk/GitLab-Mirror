@@ -46,7 +46,6 @@ final class UserController
             Log::warning('Unable to create Supabase Backroom user.', [
                 'status' => $response->status(),
                 'ops_id' => $opsId,
-                'body' => $response->json(),
             ]);
             abort(422, 'Unable to create authentication account.');
         }
@@ -84,8 +83,9 @@ final class UserController
     public function update(Request $request, string $id): JsonResponse
     {
         $this->authorize($request);
-        $data = $request->validate(['name' => 'required|string|min:2|max:120', 'role' => ['required', Rule::in(['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer', 'dock_officer'])]]);
-        DB::table('profiles')->where('id', $id)->update($data + ['updated_at' => now()]);
+        $data = $request->validate(['name' => 'required|string|min:2|max:120', 'role' => ['required', Rule::in(['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'])]]);
+        $updated = DB::table('profiles')->where('id', $id)->update($data + ['updated_at' => now()]);
+        abort_unless($updated, 404, 'User not found.');
         $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_UPDATED', $data);
 
         return response()->json(DB::table('profiles')->where('id', $id)->firstOrFail());
@@ -95,7 +95,8 @@ final class UserController
     {
         $this->authorize($request);
         abort_if($request->attributes->get('actor')->id === $id, 409, 'You cannot disable your own account.');
-        DB::table('profiles')->where('id', $id)->update(['is_active' => false, 'updated_at' => now()]);
+        $updated = DB::table('profiles')->where('id', $id)->update(['is_active' => false, 'updated_at' => now()]);
+        abort_unless($updated, 404, 'User not found.');
         $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_DISABLED');
 
         return response()->json(['ok' => true]);

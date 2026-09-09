@@ -9,7 +9,7 @@
 ## 1. Executive Summary
 
 ### 1.1 Project Mission & Context
-`SOC5-Outbound` is a high-throughput, enterprise internal logistics platform designed to orchestrate outbound linehaul operations, mid-mile truck dispatching, docking confirmations, real-time KPI metrics, and operational user governance across role-based boundaries (`ops_pic`, `fte_ops`, `fte_mm`, `doc_officer`, `dock_officer`).
+`SOC5-Outbound` is a high-throughput, enterprise internal logistics platform designed to orchestrate outbound linehaul operations, mid-mile truck dispatching, docking confirmations, real-time KPI metrics, and operational user governance across role-based boundaries (`ops_pic`, `fte_ops`, `fte_mm`, `doc_officer`).
 
 The primary objective of this frontend modernization project is to transform the existing user interface into a state-of-the-art, premium logistics operations dashboard inspired by the **Pivora CRM Dashboard**. The new visual architecture introduces modern aesthetics—including curated color palettes (Electric Purple accents), generous white space, crisp geometric typography scales, micro-interactions, elevated telemetry cards, and refined data tables—while strictly maintaining **100% of existing backend contracts, Laravel controllers, Supabase subscriptions, Zustand store schemas, authentication flows, and business validation logic**.
 

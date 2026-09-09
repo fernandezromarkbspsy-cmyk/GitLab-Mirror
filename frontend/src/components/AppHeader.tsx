@@ -32,7 +32,6 @@ const roles: Array<{ value: Role; label: string }> = [
   { value: "fte_mm", label: "FTE Midmile" },
   { value: "ops_pic", label: "Ops PIC" },
   { value: "doc_officer", label: "Document Officer" },
-  { value: "dock_officer", label: "Dock Officer" },
 ];
 const page = {
   overview: { name: "Dashboard", section: "Overview" },

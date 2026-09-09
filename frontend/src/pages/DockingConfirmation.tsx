@@ -20,7 +20,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       api<Page<TruckRequest>>(
         "/requests?per_page=100&sort=created_at&direction=desc",
       ),
-    enabled: user.role === "doc_officer" || user.role === "dock_officer",
+    enabled: user.role === "doc_officer",
   });
   const action = useMutation({
     mutationFn: ({

@@ -1,6 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Truck, X } from "lucide-react";
+import {
+  CheckCircle2,
+  ClipboardList,
+  Clock3,
+  Truck,
+  X,
+} from "lucide-react";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
 import { ChartHeader } from "../components/dashboard/ChartHeader";
@@ -174,14 +180,7 @@ export function Overview({
       label: "Total Requests",
       status: "ALL",
       value: totalRequests,
-      icon: (
-        <img
-          className="metric-icon-image"
-          src="/dashboard-icon/ClipboardList.png"
-          alt=""
-          aria-hidden="true"
-        />
-      ),
+      icon: <ClipboardList size={22} aria-hidden="true" />,
       chip: "Overall volume",
       footnote: `${activeSignal} hourly events`,
     },
@@ -189,14 +188,7 @@ export function Overview({
       label: "Pending Requests",
       status: "PENDING",
       value: pendingRequests,
-      icon: (
-        <img
-          className="metric-icon-image"
-          src="/dashboard-icon/Clock3.png"
-          alt=""
-          aria-hidden="true"
-        />
-      ),
+      icon: <Clock3 size={22} aria-hidden="true" />,
       chip: "Needs action",
       footnote: `${totalRequests ? Math.round((pendingRequests / totalRequests) * 100) : 0}% of all requests`,
       primary: true,
@@ -205,14 +197,7 @@ export function Overview({
       label: "Awaiting Docking",
       status: "FOR_DOCKING",
       value: forDockingRequests,
-      icon: (
-        <img
-          className="metric-icon-image"
-          src="/dashboard-icon/truck.png"
-          alt=""
-          aria-hidden="true"
-        />
-      ),
+      icon: <Truck size={22} aria-hidden="true" />,
       chip: "Dock queue",
       footnote: "Waiting for dock confirmation",
     },
@@ -220,14 +205,7 @@ export function Overview({
       label: "Completed",
       status: "DOCKED",
       value: dockedRequests,
-      icon: (
-        <img
-          className="metric-icon-image"
-          src="/dashboard-icon/CircleCheckBig.png"
-          alt=""
-          aria-hidden="true"
-        />
-      ),
+      icon: <CheckCircle2 size={22} aria-hidden="true" />,
       chip: "Completed",
       footnote: `${completionRate}% completion rate`,
     },

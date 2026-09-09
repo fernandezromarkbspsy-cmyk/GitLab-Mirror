@@ -1,13 +1,11 @@
 /* Canonical SOC5 visual tokens. */
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500&family=Pacifico&family=Space+Grotesk:wght@400;500;600;700&display=swap");
-
 :root {
   /* Current dashboard interface */
   --soc5-ink: #252527;
-  --soc5-muted: #8f9197;
+  --soc5-muted: #687078;
   --soc5-line: #e8e9e9;
   --soc5-lime: #dfff35;
-  --soc5-lime-deep: #a5c412;
+  --soc5-lime-deep: #536500;
   --soc5-sidebar: #202022;
   --soc5-page: #f4f5f4;
   --soc5-panel: #ffffff;
@@ -16,7 +14,6 @@
   --font-display: "Space Grotesk", "Manrope", ui-sans-serif, sans-serif;
   --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-outfit: "Outfit", sans-serif;
-  --font-script: "Pacifico", cursive;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --color-gray-500: rgb(102 112 133);

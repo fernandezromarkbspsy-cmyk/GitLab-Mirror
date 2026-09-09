@@ -24,7 +24,7 @@ function formatDateTime(value?: string | null) {
 export function LinehaulRequestDetailsPanel({ request, onClose, onNotice, position, onPositionChange }: Props) {
   const panelRef = useRef<HTMLElement>(null);
   const dragRef = useRef<{ pointerId: number; offsetX: number; offsetY: number } | null>(null);
-  const [activeTab, setActiveTab] = useState<'details' | 'activity' | 'docs'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'docs'>('details');
   const status = request.status.replaceAll('_', ' ');
 
   useEffect(() => {
@@ -49,21 +49,40 @@ export function LinehaulRequestDetailsPanel({ request, onClose, onNotice, positi
       onPositionChange({ x: Math.max(8, Math.min(x, workspaceBounds.width / scale - panelBounds.width / scale - 8)), y: Math.max(8, Math.min(y, workspaceBounds.height / scale - panelBounds.height / scale - 8)) });
     };
     const stopDragging = (event: PointerEvent) => { if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null; };
-    window.addEventListener('pointermove', movePanel);
-    window.addEventListener('pointerup', stopDragging);
-    window.addEventListener('pointercancel', stopDragging);
-    return () => { window.removeEventListener('pointermove', movePanel); window.removeEventListener('pointerup', stopDragging); window.removeEventListener('pointercancel', stopDragging); };
+    window.addEventListener('pointermove', movePanel, true);
+    window.addEventListener('pointerup', stopDragging, true);
+    window.addEventListener('pointercancel', stopDragging, true);
+    return () => { window.removeEventListener('pointermove', movePanel, true); window.removeEventListener('pointerup', stopDragging, true); window.removeEventListener('pointercancel', stopDragging, true); };
   }, [onPositionChange]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      const workspace = panel?.parentElement;
+      if (!panel || !workspace) return;
+      const workspaceBounds = workspace.getBoundingClientRect();
+      const panelBounds = panel.getBoundingClientRect();
+      const scale = window.matchMedia('(min-width: 821px)').matches ? 0.75 : 1;
+      const maxX = workspaceBounds.width / scale - panelBounds.width / scale - 8;
+      const maxY = workspaceBounds.height / scale - panelBounds.height / scale - 8;
+      onPositionChange({
+        x: Math.max(8, Math.min(position.x, maxX)),
+        y: Math.max(8, Math.min(position.y, maxY)),
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTab, onPositionChange]);
 
   function startDragging(event: React.PointerEvent<HTMLElement>) {
     if ((event.target as HTMLElement).closest('button')) return;
     const rect = panelRef.current?.getBoundingClientRect();
     if (!rect) return;
+    event.preventDefault();
     dragRef.current = { pointerId: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
     event.currentTarget.setPointerCapture?.(event.pointerId);
   }
 
-  const tabs = [{ id: 'details' as const, label: 'Request details' }, { id: 'activity' as const, label: 'Activity' }, { id: 'docs' as const, label: 'Docs' }];
+  const tabs = [{ id: 'details' as const, label: 'Request details' }, { id: 'docs' as const, label: 'Docs' }];
 
   return <section ref={panelRef} className="lh-request-details-panel" style={{ left: position.x, top: position.y }} aria-label={`Details for request ${request.id}`}>
     <header className="lh-details-panel-header" onPointerDown={startDragging}>
@@ -83,7 +102,6 @@ export function LinehaulRequestDetailsPanel({ request, onClose, onNotice, positi
       <div><dt><Hash size={14} />LH trip #</dt><dd>{valueOf(request.linehaul_trip_no)}</dd></div>
       <div><dt><Truck size={14} />Plate #</dt><dd>{valueOf(request.plate_number)}</dd></div>
     </dl></div>}
-    {activeTab === 'activity' && <div id="lh-panel-activity" className="lh-details-panel-tab-content" role="tabpanel"><CheckCircle2 size={18} /><strong>Request activity</strong><span>No activity has been recorded for this request.</span></div>}
     {activeTab === 'docs' && <div id="lh-panel-docs" className="lh-details-panel-tab-content" role="tabpanel"><ClipboardCopy size={18} /><strong>Request documents</strong><span>No documents are attached to this request.</span></div>}
     <footer className="lh-details-panel-footer"><button type="button" onClick={() => onNotice(`Exporting ${request.id}`)}><ArrowUp size={15} />Export</button><button type="button" onClick={() => { void navigator.clipboard?.writeText(request.id); onNotice(`Copied ${request.id}`); }}><ClipboardCopy size={15} />Copy ID</button><button type="button" onClick={() => window.print()}><Printer size={15} />Print</button></footer>
   </section>;

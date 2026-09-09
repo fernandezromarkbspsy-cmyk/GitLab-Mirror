@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\ProvisionBackroomUsers;
+use App\Console\Commands\VerifyProductionConfig;
 use App\Http\Middleware\AuthenticateSupabase;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -10,7 +11,7 @@ use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(api: __DIR__.'/../routes/api.php', health: '/up')
-    ->withCommands([ProvisionBackroomUsers::class])
+    ->withCommands([ProvisionBackroomUsers::class, VerifyProductionConfig::class])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['supabase.auth' => AuthenticateSupabase::class]);
         $middleware->prependToPriorityList(ThrottleRequests::class, AuthenticateSupabase::class);

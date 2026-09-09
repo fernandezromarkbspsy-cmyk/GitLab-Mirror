@@ -19,14 +19,12 @@ const roles: Role[] = [
   "fte_ops",
   "fte_mm",
   "doc_officer",
-  "dock_officer",
 ];
 const roleLabels: Record<Role, string> = {
   ops_pic: "Ops PIC",
   fte_ops: "FTE Operations",
   fte_mm: "FTE Midmile",
   doc_officer: "DOC Officer",
-  dock_officer: "Dock Officer",
 };
 
 function initials(name: string) {

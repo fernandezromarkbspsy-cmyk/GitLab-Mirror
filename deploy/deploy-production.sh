@@ -69,7 +69,7 @@ for variable in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY; do
   fi
 done
 
-for variable in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY; do
+for variable in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY ADMIN_EMAILS; do
   if ! grep -Eq "^${variable}=.+" backend/.env; then
     echo "Deployment refused: $variable is missing or empty in $APP_DIR/backend/.env." >&2
     exit 1
@@ -163,6 +163,9 @@ if ! docker compose exec -T api \
   docker compose logs --tail=100 api
   exit 1
 fi
+
+echo "Checking production application configuration..."
+docker compose exec -T api php artisan system:verify-config --production
 
 echo "Waiting for the public health endpoint..."
 for attempt in {1..24}; do

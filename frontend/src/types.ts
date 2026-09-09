@@ -1,4 +1,4 @@
-export type Role = 'ops_pic'|'fte_ops'|'fte_mm'|'doc_officer'|'dock_officer';
+export type Role = 'ops_pic'|'fte_ops'|'fte_mm'|'doc_officer';
 export type Status = 'PENDING'|'APPROVED'|'CANCELLED'|'REJECTED_BY_MM'|'ASSIGNED'|'FOR_DOCKING'|'DOCKED'|'CONFIRMED';
 export interface User {id:string;name:string;role:Role;original_role?:Role;is_admin?:boolean;email?:string;ops_id?:string;must_change_password?:boolean;is_active?:boolean;password_changed_at?:string|null}
 export interface TruckRequest {id:string;request_timestamp?:string;cluster:string;region:string;dock_no:string;backlogs:number;backlogs_timestamp?:string|null;ob_fte?:string|null;truck_size:string;truck_type:string;plate_number?:string|null;provide_time?:string|null;linehaul_trip_no?:string|null;docked_time?:string|null;status:Status;rejection_remarks?:string|null;driver_id?:string|null;created_by:string;created_at:string;updated_at?:string}

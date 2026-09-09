@@ -31,7 +31,6 @@ ops_pic
 fte_ops
 fte_mm
 doc_officer
-dock_officer
 See [role-guard.tsx](C:/Users/spxph4227/Desktop/tasko-modern-task-management-bv/components/auth/role-guard.tsx) and [domain.ts](C:/Users/spxph4227/Desktop/tasko-modern-task-management-bv/lib/domain.ts).
 3. Sidebar information architecture
 The desktop sidebar is fixed at 256px wide. It disappears below the lg breakpoint and becomes a slide-out mobile sheet.
@@ -40,7 +39,7 @@ Area	Page	Allowed roles
 Overview	Dashboard	All authenticated users
 Outbound	LH Request	ops_pic, fte_ops
 Midmile	Truck Request	fte_mm
-Docking	Docking Confirmation	doc_officer, dock_officer
+Docking	Docking Confirmation	doc_officer
 KPI	Analytics	fte_ops
 User Management	Team	fte_ops, fte_mm
 Settings, Help, Logout	General	All users

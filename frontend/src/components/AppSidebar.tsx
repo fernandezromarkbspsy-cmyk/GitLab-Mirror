@@ -28,7 +28,6 @@ const roleNames = {
   fte_ops: "FTE Ops",
   fte_mm: "FTE Midmile",
   doc_officer: "Document Officer",
-  dock_officer: "Dock Officer",
 } as const;
 
 type MenuGroup = "outbound" | "midmile";
@@ -50,8 +49,7 @@ export function AppSidebar({
 }: Props) {
   const showOutbound = user.role === "ops_pic" || user.role === "fte_ops";
   const showMidmile = user.role === "fte_mm";
-  const showDocking =
-    user.role === "doc_officer" || user.role === "dock_officer";
+  const showDocking = user.role === "doc_officer";
   const showKpi = user.role === "fte_ops";
   const showUsers = user.role === "fte_ops" || user.role === "fte_mm";
   const [expanded, setExpanded] = useState<MenuGroup | null>(() =>
@@ -80,7 +78,7 @@ export function AppSidebar({
         aria-label="Open navigation"
         onClick={() => onOpenChange(true)}
       >
-        <PanelLeftOpen size={18} />
+        <PanelLeftOpen size={18} aria-hidden="true" />
         <span>Menu</span>
       </button>
       <button

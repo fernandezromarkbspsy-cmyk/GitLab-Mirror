@@ -14,12 +14,12 @@ serve(async (req) => {
     let rows = Array.isArray(body) ? body : [body];
 
 
-    // Remove duplicate cluster_name inside the payload
+    // Remove duplicate hub_name inside the payload
     // Keeps the LAST occurrence
     const uniqueRows = [
       ...new Map(
         rows.map(row => [
-          row.cluster_name,
+          row.hub_name,
           row
         ])
       ).values()
@@ -29,7 +29,7 @@ serve(async (req) => {
     const { error } = await supabase
       .from("clusters")
       .upsert(uniqueRows, {
-        onConflict: "cluster_name",
+        onConflict: "hub_name",
         ignoreDuplicates: false,
       });
 

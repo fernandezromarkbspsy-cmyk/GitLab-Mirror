@@ -26,15 +26,15 @@ serve(async (req) => {
       .map((row) => {
         const clusterName = String(row.cluster_name ?? "").trim();
         const region = String(row.region ?? "").trim();
-        const dockNumber = String(row.dock_number ?? "").trim();
+        const dockNumber = String(row.dock_number ?? "").trim() || null;
         const rawBacklogs = row.backlogs;
         const backlogs =
           rawBacklogs === "" || rawBacklogs == null
             ? 0
             : Number(rawBacklogs);
 
-        if (!clusterName || !region || !dockNumber) {
-          throw new Error("cluster_name, region, and dock_number are required");
+        if (!clusterName || !region) {
+          throw new Error("cluster_name and region are required");
         }
 
         if (!Number.isInteger(backlogs) || backlogs < 0) {
@@ -70,7 +70,7 @@ serve(async (req) => {
     const { error } = await supabase
       .from("clusters")
       .upsert(uniqueRows, {
-        onConflict: "hub_name",
+        onConflict: "cluster_name",
         ignoreDuplicates: false,
       });
 

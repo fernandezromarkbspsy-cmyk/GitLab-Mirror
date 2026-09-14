@@ -10,7 +10,7 @@ Columns:
 4. `backlogs`
 5. `backlogs_ts`
 
-The sheet does not contain a separate `hub_name` column, so the sync function derives `hub_name` from `cluster_name`. This matches the current lookup identity used by `sync-clusters`.
+The sheet does not contain a separate `hub_name` column, so the sync function derives `hub_name` from `cluster_name`. `cluster_name` is the unique upsert identity used by `sync-clusters`.
 
 ## Apps Script
 
@@ -44,7 +44,7 @@ function syncClusters() {
     .map(row => ({
       cluster_name: String(row[0]).trim(),
       region: String(row[1]).trim(),
-      dock_number: String(row[2]).trim(),
+      dock_number: String(row[2]).trim() || null,
       backlogs: row[3] === '' ? 0 : Number(row[3]),
       backlogs_ts: row[4] instanceof Date
         ? row[4].toISOString()

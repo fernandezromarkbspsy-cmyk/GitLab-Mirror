@@ -9,7 +9,9 @@ alter table public.clusters
 alter table public.clusters alter column dock_number drop not null;
 alter table public.clusters alter column backlogs drop not null;
 
--- hub_name is unique in the source and is the stable upsert/import key.
+-- The legacy import schema used hub_name as the stable upsert/import key.
+-- Migration 003 moves that uniqueness constraint to cluster_name for the
+-- Google Sheet sync.
 create unique index if not exists clusters_hub_name_uidx
   on public.clusters (hub_name);
 create index if not exists clusters_region_active_idx

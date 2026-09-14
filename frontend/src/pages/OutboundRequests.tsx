@@ -1,4 +1,4 @@
-import { FormEvent, useDeferredValue, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import {
   BadgeCheck,
@@ -54,7 +54,7 @@ type RequestPayload = {
   backlogs: number;
   backlogs_timestamp?: FormDataEntryValue | null;
   truck_size: FormDataEntryValue | null;
-  truck_type: FormDataEntryValue | null;
+  truck_type: "WETLEASE";
 };
 
 export function OutboundRequests({
@@ -485,7 +485,7 @@ function requestPayload(form: HTMLFormElement): RequestPayload {
     backlogs: Number(data.get("backlogs")),
     backlogs_timestamp: data.get("backlogs_timestamp"),
     truck_size: data.get("truck_size"),
-    truck_type: data.get("truck_type"),
+    truck_type: "WETLEASE",
   };
 }
 
@@ -502,7 +502,7 @@ function InlineCreateRow({
 }) {
   const [clusterText, setClusterText] = useState("");
   const [selected, setSelected] = useState<ClusterLookup | null>(null);
-  const clusterSearch = useDeferredValue(clusterText);
+  const clusterSearch = clusterText.trim();
   const lookup = useQuery({
     queryKey: ["clusters", clusterSearch],
     queryFn: () =>
@@ -536,7 +536,17 @@ function InlineCreateRow({
           }}
           placeholder="Type 3 chars"
         />
-        {lookup.data && !selected && (
+        {clusterSearch.length >= 3 && lookup.isFetching && !lookup.data && (
+          <div className="cluster-suggestions">
+            <p>Searching...</p>
+          </div>
+        )}
+        {lookup.isError && (
+          <div className="cluster-suggestions">
+            <p>Unable to load clusters.</p>
+          </div>
+        )}
+        {lookup.data && !selected && !lookup.isFetching && (
           <div className="cluster-suggestions">
             {lookup.data.data.length ? (
               lookup.data.data.map((cluster) => (
@@ -547,7 +557,7 @@ function InlineCreateRow({
                 >
                   <strong>{cluster.cluster_name}</strong>
                   <span>
-                    {cluster.hub_name} / {cluster.region}
+                    Dock {cluster.dock_number} / {cluster.region}
                   </span>
                 </button>
               ))
@@ -605,13 +615,6 @@ function InlineCreateRow({
           <option>6W</option>
           <option>10W</option>
           <option>6WF</option>
-        </select>
-      </label>
-      <label>
-        Truck Type
-        <select name="truck_type" defaultValue="WETLEASE">
-          <option>WETLEASE</option>
-          <option>DRYLEASE</option>
         </select>
       </label>
       {error && <p className="error notice">{error}</p>}

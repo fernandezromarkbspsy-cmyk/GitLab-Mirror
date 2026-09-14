@@ -5,9 +5,10 @@ import trucksImage from "../../assets/trucks.jpg";
 
 interface QrPanelProps {
   onSeatalkError?: (error: string) => void;
+  enabled?: boolean;
 }
 
-export function QrPanel({ onSeatalkError }: QrPanelProps) {
+export function QrPanel({ onSeatalkError, enabled = true }: QrPanelProps) {
   return (
     <section className="relative hidden lg:flex flex-col overflow-hidden px-5 pb-24 pt-6 sm:px-7">
       <div
@@ -52,6 +53,7 @@ export function QrPanel({ onSeatalkError }: QrPanelProps) {
       <Reveal delay={180} className="mt-5 flex flex-col items-center">
         <SeatalkQrLogin
           onError={onSeatalkError || (() => {})}
+          enabled={enabled}
         />
       </Reveal>
 

@@ -1,29 +1,23 @@
 import { useState } from "react";
-import { ArrowRight, Eye, EyeOff, IdCard, Loader2, Lock } from "lucide-react";
+import { ArrowRight, IdCard, Loader2 } from "lucide-react";
 import { api } from "../../lib/api";
 
 interface BackroomLoginFormProps {
   opsId: string;
-  password: string;
-  showPassword: boolean;
   busy: boolean;
   error: string;
   onOpsIdChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
-  onTogglePassword: () => void;
   onSubmit: (e: React.FormEvent) => void;
+  onForgotPassword: () => void;
 }
 
 export function BackroomLoginForm({
   opsId,
-  password,
-  showPassword,
   busy,
   error,
   onOpsIdChange,
-  onPasswordChange,
-  onTogglePassword,
   onSubmit,
+  onForgotPassword,
 }: BackroomLoginFormProps) {
   const [shaking, setShaking] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
@@ -147,45 +141,6 @@ export function BackroomLoginForm({
         />
       </div>
 
-      {/* Password */}
-      <label
-        htmlFor="backroom-password"
-        className="mt-3.5 block text-[11.5px] font-bold uppercase tracking-wider text-faint"
-      >
-        Password
-      </label>
-      <div
-        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/[0.11] focus-within:ring-4 focus-within:ring-accent/20 ${
-          error ? "border-danger/70" : "border-line"
-        }`}
-      >
-        <span className="grid w-10 shrink-0 place-items-center text-faint">
-          <Lock className="h-4 w-4" />
-        </span>
-        <input
-          type={showPassword ? "text" : "password"}
-          value={password}
-          onChange={(e) => onPasswordChange(e.target.value)}
-          placeholder="••••••••"
-          id="backroom-password"
-          aria-label="Password"
-          autoComplete="current-password"
-          className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-faint"
-        />
-        <button
-          type="button"
-          onClick={onTogglePassword}
-          aria-label={showPassword ? "Hide password" : "Show password"}
-          className="px-3 text-faint transition-colors hover:text-ink"
-        >
-          {showPassword ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
-        </button>
-      </div>
-
       {error && <p className="mt-2.5 text-[12px] font-medium text-danger leading-snug">{error}</p>}
 
       <div className="mt-3.5 flex items-center justify-between">
@@ -213,12 +168,9 @@ export function BackroomLoginForm({
           <input type="checkbox" className="sr-only" defaultChecked />
           Keep me signed in
         </label>
-        <a
-          href="/login"
-          className="text-[12px] font-bold text-link underline-offset-4 hover:underline tracking-tight"
-        >
+        <button type="button" onClick={onForgotPassword} className="text-[12px] font-bold text-link underline-offset-4 hover:underline tracking-tight">
           Forgot password?
-        </a>
+        </button>
       </div>
 
       <button

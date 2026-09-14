@@ -31,7 +31,7 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
       <section>
         <p className="eyebrow">FIRST LOGIN</p>
         <h1>Secure your account</h1>
-        <p>Replace the shared initial password before continuing.</p>
+        <p>Set a permanent password before continuing.</p>
       </section>
       <form onSubmit={submit}>
         <h2>Change password</h2>

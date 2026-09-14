@@ -23,6 +23,7 @@ import type {
 
 type Props = {
   user: User;
+  preview?: boolean;
   view: AppView;
   onRoleChange: (role: Role) => void;
   onSearch: () => void;
@@ -46,7 +47,7 @@ function formatDate(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }
 
-export function AppHeader({ user, view, onRoleChange, onSearch }: Props) {
+export function AppHeader({ user, preview = false, view, onRoleChange, onSearch }: Props) {
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -72,6 +73,7 @@ export function AppHeader({ user, view, onRoleChange, onSearch }: Props) {
     queryFn: () =>
       api<{ data: AppNotification[]; unread: number }>("/notifications"),
     refetchInterval: 5_000,
+    enabled: !preview,
   });
   const read = useMutation({
     mutationFn: (id: number) =>

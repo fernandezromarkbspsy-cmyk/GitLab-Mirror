@@ -74,6 +74,26 @@ final class ProvisionBackroomUsers extends Command
                 $authUserId = $response->json('id');
                 $created++;
             } else {
+                $mustChangePassword = DB::table('profiles')
+                    ->where('id', $authUserId)
+                    ->value('must_change_password');
+
+                if ($mustChangePassword !== false) {
+                    $response = Http::withHeaders([
+                        'apikey' => $key,
+                        'Authorization' => 'Bearer '.$key,
+                    ])->timeout(15)->put($url.'/auth/v1/admin/users/'.$authUserId, [
+                        'password' => $initialPassword,
+                    ]);
+
+                    if (! $response->successful()) {
+                        $this->error($opsId.': Supabase user password repair failed');
+                        $failed++;
+
+                        continue;
+                    }
+                }
+
                 $repaired++;
             }
 

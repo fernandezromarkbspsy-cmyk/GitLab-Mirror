@@ -55,9 +55,11 @@ function smoothPath(points: Array<{ x: number; y: number }>) {
 
 export function Overview({
   onNavigate,
+  preview = false,
 }: {
   user: User;
   onNavigate: (view: AppView) => void;
+  preview?: boolean;
 }) {
   const from = useUiStore((state) => state.dateFrom);
   const to = useUiStore((state) => state.dateTo);
@@ -76,16 +78,19 @@ export function Overview({
       ),
     placeholderData: (previous) => previous,
     refetchInterval: 15_000,
+    enabled: !preview,
   });
   const metrics = useQuery({
     queryKey: ["request-metrics", from, to],
     queryFn: () => api<RequestMetrics>(`/requests/metrics?${range}`),
     refetchInterval: 15_000,
+    enabled: !preview,
   });
   const analytics = useQuery({
     queryKey: ["request-analytics", from, to],
     queryFn: () => api<RequestAnalytics>(`/requests/analytics?${range}`),
     refetchInterval: 15_000,
+    enabled: !preview,
   });
   const intraday = useQuery({
     queryKey: ["intraday-dispatch", intradayDate],
@@ -95,6 +100,7 @@ export function Overview({
       ),
     refetchInterval: 15_000,
     staleTime: 10_000,
+    enabled: !preview,
   });
   const details = useQuery({
     queryKey: ["request-details", detailStatus, from, to],

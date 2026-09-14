@@ -17,7 +17,7 @@ const DockingConfirmation = lazy(() => import('./DockingConfirmation').then(modu
 const Kpi = lazy(() => import('./Kpi').then(module => ({ default: module.Kpi })));
 const UserManagement = lazy(() => import('./UserManagement').then(module => ({ default: module.UserManagement })));
 
-export function Dashboard({ user }: { user: User }) {
+export function Dashboard({ user, preview = false }: { user: User; preview?: boolean }) {
   const queryClient = useQueryClient();
   const location = useLocation();
   const routerNavigate = useNavigate();
@@ -50,10 +50,10 @@ export function Dashboard({ user }: { user: User }) {
     <AppSidebar user={activeUser} activeView={view} open={menuOpen} onOpenChange={setMenuOpen} onNavigate={navigate} onSignOut={() => void supabase.auth.signOut()} pendingCount={queue.count} />
     <main className="app-content" aria-label="Primary content">
       <div className="app-content-inner">
-        <AppHeader user={activeUser} view={view} onRoleChange={switchRole} onSearch={() => navigate(activeUser.role === 'fte_mm' ? 'truck-request' : 'lh-request')} />
+        <AppHeader user={activeUser} preview={preview} view={view} onRoleChange={switchRole} onSearch={() => navigate(activeUser.role === 'fte_mm' ? 'truck-request' : 'lh-request')} />
         <section className="app-workspace" aria-live="polite">
           <Suspense fallback={<ViewLoading view={view} />}>
-            {view === 'overview' && <Overview user={activeUser} onNavigate={navigate} />}
+            {view === 'overview' && <Overview user={activeUser} onNavigate={navigate} preview={preview} />}
             {view === 'lh-request' && <OutboundRequests user={activeUser} queue={queue} />}
             {view === 'truck-request' && <MidmileRequests user={activeUser} queue={queue} />}
             {view === 'docking' && <DockingConfirmation user={activeUser} />}

@@ -29,6 +29,7 @@ export function LoginCard({
           <div className="relative grid lg:grid-cols-[1fr_1fr]">
             <QrPanel 
               onSeatalkError={onSeatalkError}
+              enabled={visible}
             />
             <div aria-hidden className="absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 bg-line lg:block" />
             <div className="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 lg:block">

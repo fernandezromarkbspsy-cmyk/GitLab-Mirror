@@ -1,14 +1,15 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { KeyRound } from 'lucide-react';
 import { isAuthError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { LoginCard } from '../components/login/LoginCard';
 import { UserTypeToggle } from '../components/login/UserTypeToggle';
 import { FteLoginForm } from '../components/login/FteLoginForm';
 import { BackroomLoginForm } from '../components/login/BackroomLoginForm';
+import { api } from '../lib/api';
 
 export type UserType = 'fte' | 'backroom';
 
-const backroomEmail = (opsId: string) => `${opsId.trim().toLowerCase()}@backroom.soc5.internal`;
 const authErrorMessages: Record<string, string> = {
   email_address_not_authorized: 'Email delivery is not configured for this address. Ask an administrator to enable custom SMTP in Supabase.',
   email_provider_disabled: 'Email sign-in is disabled in Supabase Authentication settings.',
@@ -46,10 +47,9 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
   const [codeSent, setCodeSent] = useState(false);
   const [resendAfter, setResendAfter] = useState(0);
   const [opsId, setOpsId] = useState('');
-  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   useEffect(() => {
     if (resendAfter <= 0) return;
@@ -106,6 +106,17 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
     }
   }
 
+  async function startBackroomSession(nextOpsId: string) {
+    const normalizedOpsId = nextOpsId.trim().toLowerCase();
+    if (!/^ops[0-9]+$/i.test(normalizedOpsId)) throw new Error('Enter a valid Ops ID.');
+    const session = await api<{ access_token: string; refresh_token: string }>('/auth/backroom/login', {
+      method: 'POST',
+      body: JSON.stringify({ ops_id: normalizedOpsId, mode: 'first-login' }),
+    });
+    const { error: sessionError } = await supabase.auth.setSession(session);
+    if (sessionError) throw sessionError;
+  }
+
   async function submit(event: FormEvent, submittedCode?: string) {
     event.preventDefault();
     setError('');
@@ -129,8 +140,7 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
           if (verifyError) throw verifyError;
         }
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email: backroomEmail(opsId), password });
-        if (signInError) throw signInError;
+        await startBackroomSession(opsId);
       }
     } catch (cause) {
       const fallback = type === 'fte'
@@ -180,15 +190,26 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
         <BackroomLoginForm
           key="backroom"
           opsId={opsId}
-          password={password}
-          showPassword={showPassword}
           busy={busy}
           error={error}
           onOpsIdChange={setOpsId}
-          onPasswordChange={setPassword}
-          onTogglePassword={() => setShowPassword(!showPassword)}
           onSubmit={submit}
+          onForgotPassword={() => setForgotOpen(true)}
         />
+      )}
+      {forgotOpen && type === 'backroom' && (
+        <div className="login-modal-layer is-visible" role="dialog" aria-modal="true" aria-label="Forgot password">
+          <section className="login-modal-card max-w-[360px] p-6">
+            <div className="mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-full bg-accent/15 text-accent">
+              <KeyRound size={23} aria-hidden="true" />
+            </div>
+            <h2 className="mt-4 text-center font-display text-[18px] font-bold text-ink">Forgot password?</h2>
+            <p className="mt-2 text-center text-[12.5px] leading-relaxed text-muted">To reset your password, please reach out to your FTE for assistance.</p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setForgotOpen(false)} className="rounded-xl bg-accent px-4 py-2 text-[12px] font-bold text-white">Close</button>
+            </div>
+          </section>
+        </div>
       )}
     </LoginCard>
   );

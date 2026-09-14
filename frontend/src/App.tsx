@@ -195,7 +195,7 @@ function UnauthenticatedEntry() {
     <Fragment>
       <div className="dashboard-preview">
         <Suspense fallback={<LoginBackdrop />}>
-          <Dashboard user={previewUser} />
+          <Dashboard user={previewUser} preview />
         </Suspense>
       </div>
       <Suspense fallback={<LoginBackdrop />}>

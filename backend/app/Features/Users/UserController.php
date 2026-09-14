@@ -102,6 +102,34 @@ final class UserController
         return response()->json(['ok' => true]);
     }
 
+    public function resetPassword(Request $request, string $id): JsonResponse
+    {
+        $this->authorize($request);
+        $profile = DB::table('profiles')->where('id', $id)->where('role', 'ops_pic')->where('is_active', true)->first(['id', 'ops_id']);
+        abort_unless($profile, 404, 'Active Backroom user not found.');
+
+        $url = rtrim((string) config('services.supabase.url'), '/');
+        $key = (string) config('services.supabase.service_key');
+        $initialPassword = (string) config('services.backroom.initial_password');
+        abort_if($url === '' || $key === '' || $initialPassword === '', 503, 'Backroom provisioning is not configured.');
+
+        $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
+            ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
+            ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
+            ->timeout(10)
+            ->put($url.'/auth/v1/admin/users/'.$profile->id, ['password' => $initialPassword]);
+        abort_unless($response->successful(), 502, 'Unable to reset the Backroom password.');
+
+        DB::table('profiles')->where('id', $profile->id)->update([
+            'must_change_password' => true,
+            'password_changed_at' => null,
+            'updated_at' => now(),
+        ]);
+        $this->userEvent($profile->id, $request->attributes->get('actor')->id, 'PASSWORD_RESET', ['ops_id' => $profile->ops_id]);
+
+        return response()->json(['ok' => true]);
+    }
+
     private function authorize(Request $request): void
     {
         abort_unless(in_array($request->attributes->get('actor')->role, ['fte_ops', 'fte_mm'], true), 403, 'Only FTE users can manage users.');

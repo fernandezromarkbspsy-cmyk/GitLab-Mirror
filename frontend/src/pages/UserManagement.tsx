@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
+  RotateCcw,
   Search,
   ShieldCheck,
   UserRound,
@@ -53,6 +54,7 @@ function formatJoinedDate(value: string) {
 export function UserManagement() {
   const client = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const [resetUser, setResetUser] = useState<ManagedUser | null>(null);
   const [search, setSearch] = useState("");
   const users = useQuery({
     queryKey: ["users"],
@@ -75,6 +77,13 @@ export function UserManagement() {
     mutationFn: (id: string) =>
       api(`/users/${id}/disable`, { method: "PATCH" }),
     onSuccess: () => client.invalidateQueries({ queryKey: ["users"] }),
+  });
+  const reset = useMutation({
+    mutationFn: (id: string) => api(`/users/${id}/reset-password`, { method: "POST" }),
+    onSuccess: async () => {
+      setResetUser(null);
+      await client.invalidateQueries({ queryKey: ["users"] });
+    },
   });
 
   const allUsers = users.data?.data ?? [];
@@ -139,9 +148,9 @@ export function UserManagement() {
         </div>
       </section>
 
-      {(update.error || disable.error) && (
+      {(update.error || disable.error || reset.error) && (
         <p className="notice error users-notice">
-          {(update.error || disable.error)?.message}
+          {(update.error || disable.error || reset.error)?.message}
         </p>
       )}
       <section className="panel data-panel users-table-panel">
@@ -256,15 +265,18 @@ export function UserManagement() {
                       </td>
                       <td className="users-actions">
                         {user.is_active && (
-                          <button
-                            className="table-action reject"
-                            type="button"
-                            aria-label={`Disable ${user.name}`}
-                            onClick={() => disable.mutate(user.id)}
-                          >
-                            <UserX size={15} />
-                            Disable
-                          </button>
+                          <>
+                            {user.role === "ops_pic" && (
+                              <button className="table-action" type="button" aria-label={`Reset password for ${user.name}`} onClick={() => setResetUser(user)}>
+                                <RotateCcw size={15} />
+                                Reset Password
+                              </button>
+                            )}
+                            <button className="table-action reject" type="button" aria-label={`Disable ${user.name}`} onClick={() => disable.mutate(user.id)}>
+                              <UserX size={15} />
+                              Disable
+                            </button>
+                          </>
                         )}
                       </td>
                     </tr>
@@ -283,6 +295,20 @@ export function UserManagement() {
           onSubmit={(body) => create.mutate(body)}
         />
       )}
+      <Modal open={resetUser !== null} onClose={() => setResetUser(null)} ariaLabel="Reset user password" className="form-dialog compact">
+        <div className="dialog-head">
+          <div>
+            <p className="users-page-kicker">Account recovery</p>
+            <h2>Reset User Password</h2>
+          </div>
+          <button className="icon-button" type="button" onClick={() => setResetUser(null)} aria-label="Cancel password reset"><X size={18} /></button>
+        </div>
+        <p>Reset {resetUser?.name}'s password to the configured first-login password? They will create a new permanent password at their next sign-in.</p>
+        <div className="dialog-actions">
+          <button type="button" className="secondary-button" onClick={() => setResetUser(null)}>Cancel</button>
+          <button type="button" disabled={reset.isPending} onClick={() => resetUser && reset.mutate(resetUser.id)}>{reset.isPending ? "Resetting..." : "Confirm"}</button>
+        </div>
+      </Modal>
     </div>
   );
 }

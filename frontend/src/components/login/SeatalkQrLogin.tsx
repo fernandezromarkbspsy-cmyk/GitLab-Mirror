@@ -9,9 +9,10 @@ import {
 
 interface SeatalkQrLoginProps {
   onError: (error: string) => void;
+  enabled?: boolean;
 }
 
-export function SeatalkQrLogin({ onError }: SeatalkQrLoginProps) {
+export function SeatalkQrLogin({ onError, enabled = true }: SeatalkQrLoginProps) {
   const [transaction, setTransaction] = useState<SeatalkLoginTransaction | null>(null);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
@@ -44,6 +45,11 @@ export function SeatalkQrLogin({ onError }: SeatalkQrLoginProps) {
   }, [onError, stopPolling]);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     let disposed = false;
 
     const initialize = async () => {
@@ -64,7 +70,7 @@ export function SeatalkQrLogin({ onError }: SeatalkQrLoginProps) {
       disposed = true;
       stopPolling();
     };
-  }, [onError, pollTransaction, stopPolling]);
+  }, [enabled, onError, pollTransaction, stopPolling]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {

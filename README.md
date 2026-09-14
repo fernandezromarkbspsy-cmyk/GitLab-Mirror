@@ -58,7 +58,15 @@ configuration in `tools/php.ini`.
    npm run dev
    ```
 
-5. Open `http://localhost:5172`.
+5. Start the Cloudflare Tunnel in a third terminal after configuring
+   [`docs/tunnel-setup.md`](docs/tunnel-setup.md):
+
+   ```powershell
+   cloudflared tunnel run <TUNNEL_UUID>
+   ```
+
+6. Open `http://localhost:5173`, or the Cloudflare hostname when the tunnel is
+   running.
 
 Laravel runs on `http://127.0.0.1:8000`; Vite proxies browser `/api` requests to
 that address.

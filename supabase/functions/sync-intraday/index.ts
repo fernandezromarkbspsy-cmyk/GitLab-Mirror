@@ -26,8 +26,22 @@ function asRows(body: unknown): IncomingRow[] {
 
 serve(async (req) => {
   try {
+    if (req.method !== 'POST') {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+        status: 405,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const expectedSecret = Deno.env.get('INTRADAY_SYNC_SECRET');
-    if (expectedSecret && req.headers.get('x-sync-secret') !== expectedSecret) {
+    if (!expectedSecret) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured: missing INTRADAY_SYNC_SECRET' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (req.headers.get('x-sync-secret') !== expectedSecret) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 

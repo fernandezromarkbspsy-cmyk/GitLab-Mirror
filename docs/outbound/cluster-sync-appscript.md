@@ -14,7 +14,7 @@ The sheet does not contain a separate `hub_name` column, so the sync function de
 
 ## Apps Script
 
-Store the Supabase anon key in Apps Script **Script Properties** as `SUPABASE_ANON_KEY`.
+Store the cluster sync secret in Apps Script **Script Properties** as `CLUSTER_SYNC_SECRET`.
 
 ```javascript
 const SUPABASE_URL = 'https://jbbqdthptwnlhetwhfng.supabase.co';
@@ -51,11 +51,11 @@ function syncClusters() {
         : (row[4] === '' ? null : String(row[4])),
     }));
 
-  const anonKey = PropertiesService
+  const secret = PropertiesService
     .getScriptProperties()
-    .getProperty('SUPABASE_ANON_KEY');
+    .getProperty('CLUSTER_SYNC_SECRET');
 
-  if (!anonKey) throw new Error('Missing Script Property: SUPABASE_ANON_KEY');
+  if (!secret) throw new Error('Missing Script Property: CLUSTER_SYNC_SECRET');
 
   const response = UrlFetchApp.fetch(
     `${SUPABASE_URL}/functions/v1/sync-clusters`,
@@ -63,7 +63,7 @@ function syncClusters() {
       method: 'post',
       contentType: 'application/json',
       headers: {
-        Authorization: `Bearer ${anonKey}`,
+        'x-sync-secret': secret,
       },
       payload: JSON.stringify(rows),
       muteHttpExceptions: true,

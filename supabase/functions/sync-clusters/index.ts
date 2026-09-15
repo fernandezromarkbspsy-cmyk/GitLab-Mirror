@@ -18,6 +18,21 @@ serve(async (req) => {
       });
     }
 
+    const expectedSecret = Deno.env.get("CLUSTER_SYNC_SECRET");
+    if (!expectedSecret) {
+      return new Response(
+        JSON.stringify({ error: "Server misconfigured: missing CLUSTER_SYNC_SECRET" }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (req.headers.get("x-sync-secret") !== expectedSecret) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     const body = await req.json();
     const inputRows = Array.isArray(body) ? body : [body];
 

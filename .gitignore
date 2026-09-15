@@ -1,6 +1,13 @@
 # Environment files and secrets
 .env
 .env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+.env.production
+.envrc
 !.env.example
 *.pem
 *.key
@@ -58,9 +65,13 @@ coverage/
 clover.xml
 junit.xml
 
-# Supabase local development
+# Supabase local development and secrets
 supabase/.branches/
 supabase/.temp/
+supabase/config.toml
+supabase/.env
+supabase/.env.local
+supabase/.env.*
 
 # Infrastructure and local deployment overrides
 .terraform/
@@ -88,5 +99,8 @@ Desktop.ini
 *.pid
 *.seed
 *.retry
+*.sqlite
+*.sqlite3
+*.lcov
 # Added by code-review-graph
 .code-review-graph/

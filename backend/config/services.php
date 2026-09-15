@@ -15,9 +15,9 @@ return [
         'ca_bundle' => env('SUPABASE_CA_BUNDLE'),
         'connect_timeout' => (int) env('SUPABASE_CONNECT_TIMEOUT', 5),
         'timeout' => (int) env('SUPABASE_TIMEOUT', 10),
-    ],
-    'backroom' => [
-        'initial_password' => env('BACKROOM_INITIAL_PASSWORD'),
+        // Cache a validated access token for this many seconds to avoid a
+        // Supabase round-trip on every request. Set to 0 to disable caching.
+        'token_cache_ttl' => (int) env('SUPABASE_TOKEN_CACHE_TTL', 30),
     ],
     'seatalk' => [
         'app_id' => env('SEATALK_APP_ID'),

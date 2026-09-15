@@ -56,15 +56,23 @@ export function UserManagement() {
   const [creating, setCreating] = useState(false);
   const [resetUser, setResetUser] = useState<ManagedUser | null>(null);
   const [search, setSearch] = useState("");
+  const [issuedCredential, setIssuedCredential] = useState<{
+    name: string;
+    password: string;
+  } | null>(null);
   const users = useQuery({
     queryKey: ["users"],
     queryFn: () => api<{ data: ManagedUser[] }>("/users"),
   });
   const create = useMutation({
-    mutationFn: (body: unknown) =>
-      api("/users", { method: "POST", body: JSON.stringify(body) }),
-    onSuccess: async () => {
+    mutationFn: (body: { name: string; ops_id: string }) =>
+      api<{ name: string; initial_password: string }>("/users", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: async (data) => {
       setCreating(false);
+      setIssuedCredential({ name: data.name, password: data.initial_password });
       await client.invalidateQueries({ queryKey: ["users"] });
     },
   });
@@ -79,8 +87,15 @@ export function UserManagement() {
     onSuccess: () => client.invalidateQueries({ queryKey: ["users"] }),
   });
   const reset = useMutation({
-    mutationFn: (id: string) => api(`/users/${id}/reset-password`, { method: "POST" }),
-    onSuccess: async () => {
+    mutationFn: (id: string) =>
+      api<{ initial_password: string }>(`/users/${id}/reset-password`, {
+        method: "POST",
+      }),
+    onSuccess: async (data) => {
+      setIssuedCredential({
+        name: resetUser?.name ?? "User",
+        password: data.initial_password,
+      });
       setResetUser(null);
       await client.invalidateQueries({ queryKey: ["users"] });
     },
@@ -303,10 +318,24 @@ export function UserManagement() {
           </div>
           <button className="icon-button" type="button" onClick={() => setResetUser(null)} aria-label="Cancel password reset"><X size={18} /></button>
         </div>
-        <p>Reset {resetUser?.name}'s password to the configured first-login password? They will create a new permanent password at their next sign-in.</p>
+        <p>Reset {resetUser?.name}'s password to a new one-time password? They will create a new permanent password at their next sign-in.</p>
         <div className="dialog-actions">
           <button type="button" className="secondary-button" onClick={() => setResetUser(null)}>Cancel</button>
           <button type="button" disabled={reset.isPending} onClick={() => resetUser && reset.mutate(resetUser.id)}>{reset.isPending ? "Resetting..." : "Confirm"}</button>
+        </div>
+      </Modal>
+      <Modal open={issuedCredential !== null} onClose={() => setIssuedCredential(null)} ariaLabel="One-time password issued" className="form-dialog compact">
+        <div className="dialog-head">
+          <div>
+            <p className="users-page-kicker">Share securely</p>
+            <h2>One-time password for {issuedCredential?.name}</h2>
+          </div>
+          <button className="icon-button" type="button" onClick={() => setIssuedCredential(null)} aria-label="Close"><X size={18} /></button>
+        </div>
+        <p>This password is shown only once. Share it with {issuedCredential?.name} through a secure channel — it will not be shown again.</p>
+        <p className="user-issued-password"><code>{issuedCredential?.password}</code></p>
+        <div className="dialog-actions">
+          <button type="button" onClick={() => setIssuedCredential(null)}>Done</button>
         </div>
       </Modal>
     </div>
@@ -337,12 +366,15 @@ function CreateUser({
   busy: boolean;
   error?: string;
   onClose: () => void;
-  onSubmit: (body: unknown) => void;
+  onSubmit: (body: { name: string; ops_id: string }) => void;
 }) {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    onSubmit({ name: data.get("name"), ops_id: data.get("ops_id") });
+    onSubmit({
+      name: String(data.get("name") ?? ""),
+      ops_id: String(data.get("ops_id") ?? ""),
+    });
   }
   return (
     <Modal

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
 
@@ -32,9 +33,9 @@ final class UserController
         $email = $opsId.'@backroom.soc5.internal';
         $url = rtrim((string) config('services.supabase.url'), '/');
         $key = (string) config('services.supabase.service_key');
-        $initialPassword = (string) config('services.backroom.initial_password');
-        abort_if($url === '' || $key === '' || $initialPassword === '', 503, 'Backroom provisioning is not configured.');
+        abort_if($url === '' || $key === '', 503, 'Backroom provisioning is not configured.');
 
+        $initialPassword = Str::password(20);
         $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
             ->timeout(10)->post($url.'/auth/v1/admin/users', [
                 'email' => $email,
@@ -77,7 +78,13 @@ final class UserController
 
         $this->userEvent($profile, $actor->id, 'USER_CREATED', ['name' => $data['name'], 'ops_id' => $opsId]);
 
-        return response()->json(['id' => $profile, 'name' => $data['name'], 'ops_id' => $opsId, 'must_change_password' => true], 201);
+        return response()->json([
+            'id' => $profile,
+            'name' => $data['name'],
+            'ops_id' => $opsId,
+            'must_change_password' => true,
+            'initial_password' => $initialPassword,
+        ], 201);
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -111,14 +118,14 @@ final class UserController
 
         $url = rtrim((string) config('services.supabase.url'), '/');
         $key = (string) config('services.supabase.service_key');
-        $initialPassword = (string) config('services.backroom.initial_password');
-        abort_if($url === '' || $key === '' || $initialPassword === '', 503, 'Backroom provisioning is not configured.');
+        abort_if($url === '' || $key === '', 503, 'Backroom provisioning is not configured.');
 
+        $newPassword = Str::password(20);
         $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
             ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
             ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
             ->timeout(10)
-            ->put($url.'/auth/v1/admin/users/'.$profile->id, ['password' => $initialPassword]);
+            ->put($url.'/auth/v1/admin/users/'.$profile->id, ['password' => $newPassword]);
         abort_unless($response->successful(), 502, 'Unable to reset the Backroom password.');
 
         DB::table('profiles')->where('id', $profile->id)->update([
@@ -128,7 +135,7 @@ final class UserController
         ]);
         $this->userEvent($profile->id, $request->attributes->get('actor')->id, 'PASSWORD_RESET', ['ops_id' => $profile->ops_id]);
 
-        return response()->json(['ok' => true]);
+        return response()->json(['ok' => true, 'initial_password' => $newPassword]);
     }
 
     private function authorize(Request $request): void

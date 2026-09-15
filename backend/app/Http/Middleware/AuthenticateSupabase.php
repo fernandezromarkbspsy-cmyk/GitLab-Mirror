@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -29,36 +30,52 @@ final class AuthenticateSupabase
             abort(503, 'Authentication service is not configured.');
         }
 
-        try {
-            $response = Http::withHeaders(['apikey' => $supabaseKey])
-                ->withToken($token)
-                ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
-                ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
-                ->connectTimeout(config('services.supabase.connect_timeout', 5))
-                ->timeout(config('services.supabase.timeout', 10))
-                ->get($supabaseUrl.'/auth/v1/user');
-        } catch (ConnectionException $exception) {
-            Log::error('Unable to reach Supabase Auth.', [
-                'url' => $supabaseUrl,
-                'error' => $exception->getMessage(),
-            ]);
+        $cacheKey = 'supabase_auth_user:'.hash('sha256', $token);
+        $cacheTtl = (int) config('services.supabase.token_cache_ttl', 30);
+        $cached = $cacheTtl > 0 ? Cache::get($cacheKey) : null;
 
-            abort(503, 'Authentication service is temporarily unavailable.');
+        if ($cached !== null) {
+            $authUserId = $cached['id'];
+            $supabaseUpdatedAt = $cached['updated_at'];
+        } else {
+            try {
+                $response = Http::withHeaders(['apikey' => $supabaseKey])
+                    ->withToken($token)
+                    ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
+                    ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
+                    ->connectTimeout(config('services.supabase.connect_timeout', 5))
+                    ->timeout(config('services.supabase.timeout', 10))
+                    ->get($supabaseUrl.'/auth/v1/user');
+            } catch (ConnectionException $exception) {
+                Log::error('Unable to reach Supabase Auth.', [
+                    'url' => $supabaseUrl,
+                    'error' => $exception->getMessage(),
+                ]);
+
+                abort(503, 'Authentication service is temporarily unavailable.');
+            }
+
+            if (! $response->successful()) {
+                Log::warning('Supabase rejected an authentication token.', [
+                    'status' => $response->status(),
+                ]);
+                abort(401, 'Invalid or expired session.');
+            }
+
+            $authUserId = $response->json('id');
+            $supabaseUpdatedAt = $response->json('updated_at');
+
+            if ($cacheTtl > 0) {
+                Cache::put($cacheKey, ['id' => $authUserId, 'updated_at' => $supabaseUpdatedAt], $cacheTtl);
+            }
         }
 
-        if (! $response->successful()) {
-            Log::warning('Supabase rejected an authentication token.', [
-                'status' => $response->status(),
-            ]);
-            abort(401, 'Invalid or expired session.');
-        }
-
         try {
-            $profile = DB::table('profiles')->where('id', $response->json('id'))
+            $profile = DB::table('profiles')->where('id', $authUserId)
                 ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_changed_at', 'created_at']);
         } catch (QueryException $exception) {
             Log::error('Unable to load the authenticated Supabase profile.', [
-                'auth_user_id' => $response->json('id'),
+                'auth_user_id' => $authUserId,
                 'sql_state' => $exception->errorInfo[0] ?? null,
                 'error' => $exception->getMessage(),
             ]);
@@ -73,7 +90,7 @@ final class AuthenticateSupabase
             $profile->role = $viewRole;
         }
         $request->attributes->set('actor', $profile);
-        $request->attributes->set('supabase_user_updated_at', $response->json('updated_at'));
+        $request->attributes->set('supabase_user_updated_at', $supabaseUpdatedAt);
 
         if ($profile->must_change_password) {
             $allowed = [

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 final class ProvisionBackroomUsers extends Command
 {
@@ -22,9 +23,8 @@ final class ProvisionBackroomUsers extends Command
 
         $url = rtrim((string) config('services.supabase.url'), '/');
         $key = (string) config('services.supabase.service_key');
-        $initialPassword = (string) config('services.backroom.initial_password');
-        if ($url === '' || $key === '' || $initialPassword === '') {
-            $this->error('SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and BACKROOM_INITIAL_PASSWORD must be configured.');
+        if ($url === '' || $key === '') {
+            $this->error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured.');
 
             return self::FAILURE;
         }
@@ -53,6 +53,8 @@ final class ProvisionBackroomUsers extends Command
             $authUserId = $user->auth_user_id;
             $opsId = strtolower($user->ops_id);
 
+            $initialPassword = Str::password(20);
+
             if (! $authUserId) {
                 $response = Http::withHeaders([
                     'apikey' => $key,
@@ -73,6 +75,7 @@ final class ProvisionBackroomUsers extends Command
 
                 $authUserId = $response->json('id');
                 $created++;
+                $this->line($opsId.': initial password '.$initialPassword);
             } else {
                 $mustChangePassword = DB::table('profiles')
                     ->where('id', $authUserId)
@@ -92,6 +95,8 @@ final class ProvisionBackroomUsers extends Command
 
                         continue;
                     }
+
+                    $this->line($opsId.': initial password '.$initialPassword);
                 }
 
                 $repaired++;

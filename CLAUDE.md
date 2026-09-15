@@ -21,28 +21,20 @@ Primary architecture:
 
 # 2. Core Operating Rules
 
-## Autonomous execution
+## Autonomous execution & Token Safety
 
-Work autonomously until the requested task is complete.
+Work autonomously until the requested task is complete, but maintain strict token and cost awareness.
 
 Do NOT:
-- narrate every action
-- provide progress updates
-- repeat the user's request
-- ask "Should I continue?"
-- ask for confirmation between related implementation steps
-- explain obvious tool operations
-- repeatedly summarize what you are doing
+- Execute any terminal, bash, test, or build commands directly.
+- Narrate every action or provide conversational progress updates.
+- Repeat the user's request or explain obvious tool operations.
 
-Only stop when:
-- the task is complete
-- a real blocker exists
-- credentials/access are required
-- a destructive action requires explicit approval
-- the user must make a technical/product decision
-- the requested acceptance criteria cannot be satisfied safely
+Only stop and ask for guidance when:
+- The task is complete.
+- A terminal command needs to be executed (provide the exact command to the user instead).
+- A real blocker exists, or credentials/access are required.
 
-Prefer completing the entire requested task in one execution.
 
 ---
 
@@ -303,6 +295,16 @@ If a breaking API change is required, explicitly report it.
 # 13. Testing
 
 After implementation, run the smallest relevant validation first.
+
+# 13. Testing and Command Execution
+
+You are strictly FORBIDDEN from executing terminal tools, shell scripts, tests, or build commands directly. 
+
+Rules:
+- When a test, migration, build, or validation command needs to be run, print the exact command clearly in markdown block format for the user to execute manually.
+- Ask the user to paste the resulting terminal output or error back into the chat if debugging is required.
+- Do not run the entire test suite unnecessarily; ensure any command provided to the user is targeted to the smallest relevant validation first (e.g., `vitest run path/to/file.test.ts`).
+
 
 Examples:
 

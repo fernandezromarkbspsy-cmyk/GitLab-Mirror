@@ -32,7 +32,7 @@ Route::get('/auth/seatalk/transactions/{transactionId}', [SeatalkController::cla
 Route::get('/auth/seatalk/callback', [SeatalkController::class, 'callback'])->middleware('throttle:10,1');
 Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
-Route::middleware(['supabase.auth'])->group(function (): void {
+Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
     Route::post('/auth/password-changed', function (Request $request) {
         $actor = $request->attributes->get('actor');

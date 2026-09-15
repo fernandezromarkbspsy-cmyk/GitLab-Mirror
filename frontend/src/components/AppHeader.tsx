@@ -110,6 +110,7 @@ export function AppHeader({ user, preview = false, view, onRoleChange, onSearch 
         oscillator.connect(gain).connect(context.destination);
         oscillator.start();
         oscillator.stop(context.currentTime + 0.18);
+        oscillator.onended = () => void context.close();
       }
     }
   }, [alerts, client]);

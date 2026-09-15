@@ -1,4 +1,4 @@
-FROM php:8.4-fpm-alpine AS runtime
+FROM php:8.3-fpm-alpine AS runtime
 RUN apk add --no-cache curl libcurl libpq libxml2 oniguruma \
  && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS curl-dev libpq-dev libxml2-dev linux-headers oniguruma-dev \
  && docker-php-ext-install curl dom mbstring opcache pdo_pgsql \

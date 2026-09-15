@@ -24,4 +24,11 @@ return [
         'app_secret' => env('SEATALK_APP_SECRET'),
         'redirect_uri' => env('SEATALK_REDIRECT_URI'),
     ],
+    'google_sheets' => [
+        'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID', '1Po3LyyOAJ8Q-EbX_807RSxrA_grwmsdlsPPP4FFFBig'),
+        'sheet_name' => env('GOOGLE_SHEETS_SHEET_NAME', 'Sheet1'),
+        'credentials_json' => env('GOOGLE_SHEETS_CREDENTIALS_JSON'),
+        'credentials_path' => env('GOOGLE_SHEETS_CREDENTIALS_PATH'),
+        'sync_enabled' => (bool) env('GOOGLE_SHEETS_SYNC_ENABLED', false),
+    ],
 ];

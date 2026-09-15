@@ -23,7 +23,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
-import { defaultRequestFilters, exportRequestsCsv } from "../lib/requests";
+import { defaultRequestFilters, openRequestsSheet } from "../lib/requests";
 import type {
   ClusterLookup,
   Page,
@@ -47,6 +47,7 @@ function displayValue(value?: string | null) {
 function statusLabel(status: TruckRequest["status"]) {
   return status.replaceAll("_", " ");
 }
+
 type RequestPayload = {
   cluster: FormDataEntryValue | null;
   region: FormDataEntryValue | null;
@@ -164,16 +165,8 @@ export function OutboundRequests({
       });
     setSelectedRow(row);
   }
-  async function exportRows() {
-    try {
-      await exportRequestsCsv(
-        filters,
-        `lh-requests-${new Date().toISOString().slice(0, 10)}.csv`,
-      );
-      showToast("Linehaul request list exported");
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "CSV export failed");
-    }
+  function exportRows() {
+    openRequestsSheet();
   }
 
   return (

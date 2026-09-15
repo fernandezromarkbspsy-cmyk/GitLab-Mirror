@@ -16,7 +16,9 @@ final class RequestService
 
         return DB::transaction(function () use ($actor, $data) {
             $request = $this->requests->insert($data + ['id' => (string) Str::uuid(), 'created_by' => $actor->id, 'status' => 'PENDING']);
-            $this->event($request->id, $actor->id, 'REQUEST_CREATED', null, 'PENDING');
+            $this->event($request->id, $actor->id, 'REQUEST_CREATED', null, 'PENDING', [
+                'lh_type_request' => $data['truck_type'] ?? null,
+            ]);
             $this->notify($request->id, 'fte_ops', 'REQUEST_CREATED', 'New request', 'A truck request needs review.');
 
             return $request;

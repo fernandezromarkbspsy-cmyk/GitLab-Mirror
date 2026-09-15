@@ -24,7 +24,7 @@ import { api } from "../lib/api";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import {
   defaultRequestFilters,
-  exportRequestsCsv,
+  openRequestsSheet,
   requestQueryString,
 } from "../lib/requests";
 import type { Page, RequestSort, TruckRequest, User } from "../types";
@@ -55,7 +55,6 @@ export function MidmileRequests({
     action: MmAction;
   } | null>(null);
   const [notice, setNotice] = useState("");
-  const [exporting, setExporting] = useState(false);
   const [openRow, setOpenRow] = useState<string | null>(null);
   const appliedFilters = { ...filters, search: deferredSearch };
   const requests = useQuery({
@@ -123,19 +122,8 @@ export function MidmileRequests({
       page: 1,
     }));
   }
-  async function exportCsv() {
-    setExporting(true);
-    setNotice("");
-    try {
-      await exportRequestsCsv(
-        appliedFilters,
-        `truck-requests-${new Date().toISOString().slice(0, 10)}.csv`,
-      );
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "CSV export failed.");
-    } finally {
-      setExporting(false);
-    }
+  function exportSheet() {
+    openRequestsSheet();
   }
 
   return (
@@ -186,10 +174,9 @@ export function MidmileRequests({
 
         <LinehaulFilterPanel
           filters={filters}
-          exporting={exporting}
           onChange={setFilters}
           onSort={sortBy}
-          onExport={() => void exportCsv()}
+          onExport={exportSheet}
           onNotice={setNotice}
         />
 

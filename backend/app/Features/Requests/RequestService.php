@@ -46,8 +46,8 @@ final class RequestService
                 'reject-ops' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'REQUEST_REJECTED_BY_OPS'],
                 'cancel' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'REQUEST_CANCELLED'],
                 'reject-mm' => [['APPROVED'], 'REJECTED_BY_MM', 'REQUEST_REJECTED_BY_MM'],
-                'assign-truck' => [['APPROVED'], 'FOR_DOCKING', 'TRUCK_ASSIGNED'],
-                'mark-docked' => [['ASSIGNED', 'FOR_DOCKING'], 'DOCKED', 'TRUCK_DOCKED'],
+                'assign-truck' => [['APPROVED'], 'ASSIGNED', 'TRUCK_ASSIGNED'],
+                'mark-docked' => [['FOR_DOCKING'], 'FOR_DOCKING', 'TRUCK_DOCKED'],
                 'confirm' => [['DOCKED'], 'CONFIRMED', 'REQUEST_CONFIRMED'],
                 default => throw ValidationException::withMessages(['action' => 'Unknown action.']),
             };
@@ -64,6 +64,15 @@ final class RequestService
             }
 
             $fields = array_intersect_key($input, array_flip(['rejection_remarks', 'plate_number', 'provide_time', 'driver_id', 'linehaul_trip_no', 'truck_size', 'truck_type', 'docked_time']));
+            if ($action === 'mark-docked') {
+                $driverId = $input['driver_id'] ?? $request->driver_id;
+                $tripNo = $input['linehaul_trip_no'] ?? $request->linehaul_trip_no;
+                if (blank($driverId) || blank($tripNo)) {
+                    $updated = $this->requests->update($id, $fields);
+
+                    return $updated;
+                }
+            }
             $fields['status'] = $to;
             if ($to === 'APPROVED') {
                 $fields['approved_at'] = now();
@@ -79,7 +88,11 @@ final class RequestService
             }
             $updated = $this->requests->update($id, $fields);
             $this->event($id, $actor->id, $event, $request->status, $to, $input);
-            $target = match ($to) {
+            if ($action === 'assign-truck') {
+                $updated = $this->requests->update($id, ['status' => 'FOR_DOCKING']);
+                $this->event($id, $actor->id, 'TRUCK_FOR_DOCKING', 'ASSIGNED', 'FOR_DOCKING');
+            }
+            $target = match ($action === 'assign-truck' ? 'FOR_DOCKING' : $to) {
                 'APPROVED' => 'fte_mm', 'REJECTED_BY_MM' => 'fte_ops', 'FOR_DOCKING' => 'doc_officer', 'CONFIRMED' => 'fte_ops', default => null
             };
             if ($target) {

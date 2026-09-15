@@ -22,7 +22,11 @@ final class RequestAuthorizer
             return $actor->role === 'ops_pic' && $request->created_by === $actor->id;
         }
 
-        if (in_array($action, ['mark-docked', 'confirm'], true)) {
+        if ($action === 'mark-docked') {
+            return in_array($actor->role, ['doc_officer', 'ops_pic'], true);
+        }
+
+        if ($action === 'confirm') {
             return $actor->role === 'doc_officer';
         }
 

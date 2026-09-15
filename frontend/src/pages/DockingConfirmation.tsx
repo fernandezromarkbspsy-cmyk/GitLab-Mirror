@@ -20,7 +20,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       api<Page<TruckRequest>>(
         "/requests?per_page=100&sort=created_at&direction=desc",
       ),
-    enabled: user.role === "doc_officer",
+    enabled: user.role === "doc_officer" || user.role === "ops_pic",
   });
   const action = useMutation({
     mutationFn: ({
@@ -45,11 +45,10 @@ export function DockingConfirmation({ user }: { user: User }) {
   const rows = (queue.data?.data ?? []).filter(
     (request) =>
       request.status === "FOR_DOCKING" ||
-      request.status === "ASSIGNED" ||
       request.status === "DOCKED",
   );
   const actions = (request: TruckRequest) =>
-    request.status === "DOCKED" ? (
+    request.status === "DOCKED" && user.role === "doc_officer" ? (
       <button
         type="button"
         className="table-action approve"
@@ -58,7 +57,7 @@ export function DockingConfirmation({ user }: { user: User }) {
         <CheckCircle2 size={15} />
         Confirm
       </button>
-    ) : (
+    ) : request.status === "FOR_DOCKING" ? (
       <button
         type="button"
         className="table-action assign"
@@ -67,7 +66,7 @@ export function DockingConfirmation({ user }: { user: User }) {
         <ShipWheel size={15} />
         Dock truck
       </button>
-    );
+    ) : null;
 
   return (
     <div className="workspace-view">
@@ -96,8 +95,9 @@ export function DockingConfirmation({ user }: { user: User }) {
         )}
       </section>
       {selected && (
-        <DockDialog
+      <DockDialog
           request={selected}
+          role={user.role}
           busy={action.isPending}
           onClose={() => setSelected(null)}
           onSubmit={(payload) =>
@@ -115,21 +115,15 @@ export function DockingConfirmation({ user }: { user: User }) {
   );
 }
 
-function datetimeLocal(value?: string | null) {
-  const date = value ? new Date(value) : new Date();
-  if (Number.isNaN(date.getTime())) return "";
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
-}
-
 function DockDialog({
   request,
+  role,
   busy,
   onClose,
   onSubmit,
 }: {
   request: TruckRequest;
+  role: User["role"];
   busy: boolean;
   onClose: () => void;
   onSubmit: (payload: Record<string, unknown>) => void;
@@ -138,9 +132,9 @@ function DockDialog({
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     onSubmit({
-      driver_id: data.get("driver_id"),
-      linehaul_trip_no: data.get("linehaul_trip_no"),
-      docked_time: data.get("docked_time"),
+      ...(role === "doc_officer"
+        ? { driver_id: data.get("driver_id") }
+        : { linehaul_trip_no: data.get("linehaul_trip_no") }),
     });
   }
   return (
@@ -166,31 +160,25 @@ function DockDialog({
         </button>
       </div>
       <form onSubmit={submit}>
-        <label>
-          Driver ID
-          <input
-            name="driver_id"
-            required
-            defaultValue={request.driver_id ?? ""}
-          />
-        </label>
-        <label>
-          LH Trip Number
-          <input
-            name="linehaul_trip_no"
-            required
-            defaultValue={request.linehaul_trip_no ?? ""}
-          />
-        </label>
-        <label>
-          Docked Time
-          <input
-            name="docked_time"
-            type="datetime-local"
-            required
-            defaultValue={datetimeLocal(request.docked_time)}
-          />
-        </label>
+        {role === "doc_officer" ? (
+          <label>
+            Driver ID
+            <input
+              name="driver_id"
+              required
+              defaultValue={request.driver_id ?? ""}
+            />
+          </label>
+        ) : (
+          <label>
+            LH Trip Number
+            <input
+              name="linehaul_trip_no"
+              required
+              defaultValue={request.linehaul_trip_no ?? ""}
+            />
+          </label>
+        )}
         <div className="dialog-actions">
           <button type="button" className="secondary-button" onClick={onClose}>
             Cancel

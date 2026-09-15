@@ -108,9 +108,34 @@ final class RequestWorkflowTest extends TestCase
             'request_id' => $request->id,
             'event_type' => 'TRUCK_ASSIGNED',
             'from_status' => 'APPROVED',
+            'to_status' => 'ASSIGNED',
+        ]);
+        $this->assertDatabaseHas('request_events', [
+            'request_id' => $request->id,
+            'event_type' => 'TRUCK_FOR_DOCKING',
+            'from_status' => 'ASSIGNED',
             'to_status' => 'FOR_DOCKING',
         ]);
-        $this->assertDatabaseMissing('request_events', ['request_id' => $request->id, 'event_type' => 'TRUCK_FOR_DOCKING']);
+        $this->assertSame('FOR_DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
+    }
+
+    public function test_request_becomes_docked_only_after_driver_and_trip_are_present(): void
+    {
+        $request = $this->insertRequest(['status' => 'FOR_DOCKING']);
+        $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
+        $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
+
+        $this->service->transition($request->id, $docOfficer, 'mark-docked', ['driver_id' => 'DRV-1']);
+        $this->assertSame('FOR_DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
+
+        $this->service->transition($request->id, $opsPic, 'mark-docked', ['linehaul_trip_no' => 'LH-1']);
+        $this->assertSame('DOCKED', DB::table('requests')->where('id', $request->id)->value('status'));
+        $this->assertDatabaseHas('request_events', [
+            'request_id' => $request->id,
+            'event_type' => 'TRUCK_DOCKED',
+            'from_status' => 'FOR_DOCKING',
+            'to_status' => 'DOCKED',
+        ]);
     }
 
     private function insertRequest(array $overrides = []): object

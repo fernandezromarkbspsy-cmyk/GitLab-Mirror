@@ -76,6 +76,7 @@ export function OutboundRequests({
   const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
   const [panelPosition, setPanelPosition] = useState({ x: 24, y: 112 });
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<TruckRequest | null>(null);
   const [toast, setToast] = useState("");
   const requests = useQuery({
     queryKey: ["requests", "outbound-all", filters],
@@ -112,6 +113,17 @@ export function OutboundRequests({
     onSuccess: async () => {
       setCreating(false);
       await refreshData("LH request created.");
+    },
+  });
+  const updateRequest = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: RequestPayload }) =>
+      api<TruckRequest>(`/requests/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: async () => {
+      setEditing(null);
+      await refreshData("LH request updated.");
     },
   });
   function updateSearch(value: string) {
@@ -180,6 +192,20 @@ export function OutboundRequests({
           }}
           onNotice={showToast}
         />
+        {editing && (
+          <div className="lh-table-create-row">
+            <InlineEditRow
+              request={editing}
+              busy={updateRequest.isPending}
+              error={updateRequest.error?.message}
+              onCancel={() => {
+                updateRequest.reset();
+                setEditing(null);
+              }}
+              onSubmit={(payload) => updateRequest.mutate({ id: editing.id, payload })}
+            />
+          </div>
+        )}
         {creating && (
           <div className="lh-table-create-row">
             <InlineCreateRow
@@ -362,7 +388,11 @@ export function OutboundRequests({
                             </button>
                             <button
                               type="button"
-                              onClick={() => showToast(`Editing ${row.id}`)}
+                              onClick={() => {
+                                updateRequest.reset();
+                                setEditing(row);
+                                setOpenRow(null);
+                              }}
                             >
                               Edit
                             </button>
@@ -624,6 +654,73 @@ function InlineCreateRow({
           Cancel
         </button>
         <button type="submit" disabled={busy || !selected}>
+          <Save size={15} />
+          {busy ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function InlineEditRow({
+  request,
+  busy,
+  error,
+  onCancel,
+  onSubmit,
+}: {
+  request: TruckRequest;
+  busy: boolean;
+  error?: string;
+  onCancel: () => void;
+  onSubmit: (payload: RequestPayload) => void;
+}) {
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSubmit(requestPayload(event.currentTarget));
+  }
+
+  return (
+    <form className="inline-create-row" onSubmit={submit}>
+      <label>
+        Cluster
+        <input name="cluster" required maxLength={120} defaultValue={request.cluster} />
+      </label>
+      <label>
+        Region
+        <input name="region" required maxLength={120} defaultValue={request.region} />
+      </label>
+      <label>
+        Dock No
+        <input name="dock_no" required maxLength={50} defaultValue={request.dock_no} />
+      </label>
+      <label>
+        Backlogs
+        <input name="backlogs" type="number" required min={0} defaultValue={request.backlogs} />
+      </label>
+      <label>
+        Truck Size
+        <select name="truck_size" defaultValue={request.truck_size}>
+          <option>4W</option>
+          <option>6W</option>
+          <option>10W</option>
+          <option>6WF</option>
+        </select>
+      </label>
+      <label>
+        Truck Type
+        <select name="truck_type" defaultValue={request.truck_type}>
+          <option>WETLEASE</option>
+          <option>DRYLEASE</option>
+        </select>
+      </label>
+      {error && <p className="error notice">{error}</p>}
+      <div className="inline-create-actions">
+        <button className="secondary-button" type="button" onClick={onCancel}>
+          <X size={15} />
+          Cancel
+        </button>
+        <button type="submit" disabled={busy}>
           <Save size={15} />
           {busy ? "Saving..." : "Save"}
         </button>

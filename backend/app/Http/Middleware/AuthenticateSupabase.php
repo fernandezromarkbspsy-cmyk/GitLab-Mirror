@@ -72,7 +72,7 @@ final class AuthenticateSupabase
 
         try {
             $profile = DB::table('profiles')->where('id', $authUserId)
-                ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_changed_at', 'created_at']);
+                ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_reset_at', 'password_changed_at', 'created_at']);
         } catch (QueryException $exception) {
             Log::error('Unable to load the authenticated Supabase profile.', [
                 'auth_user_id' => $authUserId,

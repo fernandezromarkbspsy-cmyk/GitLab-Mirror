@@ -101,6 +101,22 @@ final class BackroomLoginTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_completed_backroom_user_can_sign_in_without_first_login_mode(): void
+    {
+        $this->insertProfile(['must_change_password' => false]);
+        Http::fake([
+            'https://test-project.supabase.co/auth/v1/token*' => Http::response([
+                'access_token' => 'normal-access-token',
+                'refresh_token' => 'normal-refresh-token',
+            ]),
+        ]);
+
+        $this->postJson('/api/auth/backroom/login', [
+            'ops_id' => 'ops123',
+            'password' => 'permanent-password',
+        ])->assertOk()->assertJsonPath('access_token', 'normal-access-token');
+    }
+
     public function test_repeated_attempts_for_the_same_ops_id_are_rate_limited(): void
     {
         $this->insertProfile();

@@ -8,7 +8,6 @@ use App\Features\Notifications\NotificationController;
 use App\Features\Requests\RequestController;
 use App\Features\Users\AccessRequestController;
 use App\Features\Users\UserController;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -37,11 +36,12 @@ Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::post('/auth/password-changed', function (Request $request) {
         $actor = $request->attributes->get('actor');
         abort_unless($actor->role === 'ops_pic', 403, 'Only Backroom accounts use this flow.');
-        $authUpdatedAt = $request->attributes->get('supabase_user_updated_at');
-        abort_unless($authUpdatedAt, 409, 'Password change could not be verified.');
-        abort_unless(CarbonImmutable::parse($authUpdatedAt)->greaterThan(CarbonImmutable::parse($actor->created_at)), 409, 'Change your password before continuing.');
-
-        DB::table('profiles')->where('id', $actor->id)->update(['must_change_password' => false, 'password_changed_at' => now(), 'updated_at' => now()]);
+        abort_unless($actor->must_change_password && $actor->password_reset_at, 409, 'Change your password before continuing.');
+        $updated = DB::table('profiles')
+            ->where('id', $actor->id)
+            ->where('must_change_password', true)
+            ->update(['must_change_password' => false, 'password_changed_at' => now(), 'updated_at' => now()]);
+        abort_unless($updated, 409, 'Password change could not be verified.');
 
         return response()->json(['ok' => true]);
     });

@@ -58,7 +58,7 @@ final class UserController
                 $profile = DB::table('profiles')->insertGetId([
                     'id' => $authUserId, 'name' => $data['name'], 'role' => 'ops_pic',
                     'ops_id' => $opsId, 'email' => null, 'is_active' => true,
-                    'must_change_password' => true, 'created_at' => now(), 'updated_at' => now(),
+                    'must_change_password' => true, 'password_reset_at' => now(), 'created_at' => now(), 'updated_at' => now(),
                 ], 'id');
 
                 if (DB::getSchemaBuilder()->hasTable('user_imports')) {
@@ -113,7 +113,7 @@ final class UserController
     public function resetPassword(Request $request, string $id): JsonResponse
     {
         $this->authorize($request);
-        $profile = DB::table('profiles')->where('id', $id)->where('role', 'ops_pic')->where('is_active', true)->first(['id', 'ops_id']);
+        $profile = DB::table('profiles')->where('id', $id)->where('role', 'ops_pic')->where('is_active', true)->first(['id', 'ops_id', 'must_change_password', 'password_changed_at', 'password_reset_at']);
         abort_unless($profile, 404, 'Active Backroom user not found.');
 
         $url = rtrim((string) config('services.supabase.url'), '/');
@@ -121,18 +121,42 @@ final class UserController
         abort_if($url === '' || $key === '', 503, 'Backroom provisioning is not configured.');
 
         $newPassword = Str::password(20);
-        $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
-            ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
-            ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
-            ->timeout(10)
-            ->put($url.'/auth/v1/admin/users/'.$profile->id, ['password' => $newPassword]);
-        abort_unless($response->successful(), 502, 'Unable to reset the Backroom password.');
-
+        $resetAt = now();
         DB::table('profiles')->where('id', $profile->id)->update([
             'must_change_password' => true,
             'password_changed_at' => null,
-            'updated_at' => now(),
+            'password_reset_at' => $resetAt,
+            'updated_at' => $resetAt,
         ]);
+
+        $restoreResetState = function () use ($profile): void {
+            $restored = DB::table('profiles')->where('id', $profile->id)->update([
+                'must_change_password' => $profile->must_change_password,
+                'password_changed_at' => $profile->password_changed_at,
+                'password_reset_at' => $profile->password_reset_at,
+                'updated_at' => now(),
+            ]);
+            if (! $restored) {
+                Log::critical('Backroom password reset rollback failed.', ['user_id' => $profile->id, 'ops_id' => $profile->ops_id]);
+            }
+        };
+
+        try {
+            $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
+                ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
+                ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
+                ->timeout(10)
+                ->put($url.'/auth/v1/admin/users/'.$profile->id, ['password' => $newPassword]);
+        } catch (Throwable $exception) {
+            $restoreResetState();
+            Log::warning('Unable to reach Supabase during Backroom password reset.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
+            abort(502, 'Unable to reset the Backroom password.');
+        }
+
+        if (! $response->successful()) {
+            $restoreResetState();
+            abort(502, 'Unable to reset the Backroom password.');
+        }
         $this->userEvent($profile->id, $request->attributes->get('actor')->id, 'PASSWORD_RESET', ['ops_id' => $profile->ops_id]);
 
         return response()->json(['ok' => true, 'initial_password' => $newPassword]);

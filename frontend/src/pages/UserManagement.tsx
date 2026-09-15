@@ -2,6 +2,8 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
+  Check,
+  Copy,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -60,6 +62,7 @@ export function UserManagement() {
     name: string;
     password: string;
   } | null>(null);
+  const [credentialCopied, setCredentialCopied] = useState(false);
   const users = useQuery({
     queryKey: ["users"],
     queryFn: () => api<{ data: ManagedUser[] }>("/users"),
@@ -96,10 +99,26 @@ export function UserManagement() {
         name: resetUser?.name ?? "User",
         password: data.initial_password,
       });
+      setCredentialCopied(false);
       setResetUser(null);
       await client.invalidateQueries({ queryKey: ["users"] });
     },
   });
+
+  async function copyIssuedCredential() {
+    if (!issuedCredential) return;
+    try {
+      await navigator.clipboard.writeText(issuedCredential.password);
+      setCredentialCopied(true);
+    } catch {
+      setCredentialCopied(false);
+    }
+  }
+
+  function closeIssuedCredential() {
+    setIssuedCredential(null);
+    setCredentialCopied(false);
+  }
 
   const allUsers = users.data?.data ?? [];
   const query = search.trim().toLowerCase();
@@ -310,7 +329,7 @@ export function UserManagement() {
           onSubmit={(body) => create.mutate(body)}
         />
       )}
-      <Modal open={resetUser !== null} onClose={() => setResetUser(null)} ariaLabel="Reset user password" className="form-dialog compact">
+      <Modal open={resetUser !== null} onClose={() => !reset.isPending && setResetUser(null)} ariaLabel="Reset user password" className="form-dialog compact">
         <div className="dialog-head">
           <div>
             <p className="users-page-kicker">Account recovery</p>
@@ -319,23 +338,30 @@ export function UserManagement() {
           <button className="icon-button" type="button" onClick={() => setResetUser(null)} aria-label="Cancel password reset"><X size={18} /></button>
         </div>
         <p>Reset {resetUser?.name}'s password to a new one-time password? They will create a new permanent password at their next sign-in.</p>
+        {reset.error && <p className="notice error" role="alert">{reset.error.message}</p>}
         <div className="dialog-actions">
-          <button type="button" className="secondary-button" onClick={() => setResetUser(null)}>Cancel</button>
+          <button type="button" className="secondary-button" disabled={reset.isPending} onClick={() => setResetUser(null)}>Cancel</button>
           <button type="button" disabled={reset.isPending} onClick={() => resetUser && reset.mutate(resetUser.id)}>{reset.isPending ? "Resetting..." : "Confirm"}</button>
         </div>
       </Modal>
-      <Modal open={issuedCredential !== null} onClose={() => setIssuedCredential(null)} ariaLabel="One-time password issued" className="form-dialog compact">
+      <Modal open={issuedCredential !== null} onClose={closeIssuedCredential} ariaLabel="One-time password issued" className="form-dialog compact">
         <div className="dialog-head">
           <div>
             <p className="users-page-kicker">Share securely</p>
             <h2>One-time password for {issuedCredential?.name}</h2>
           </div>
-          <button className="icon-button" type="button" onClick={() => setIssuedCredential(null)} aria-label="Close"><X size={18} /></button>
+          <button className="icon-button" type="button" onClick={closeIssuedCredential} aria-label="Close"><X size={18} /></button>
         </div>
         <p>This password is shown only once. Share it with {issuedCredential?.name} through a secure channel — it will not be shown again.</p>
-        <p className="user-issued-password"><code>{issuedCredential?.password}</code></p>
+        <div className="user-issued-password">
+          <code>{issuedCredential?.password}</code>
+          <button type="button" className="secondary-button" onClick={() => void copyIssuedCredential()} aria-label="Copy one-time password">
+            {credentialCopied ? <Check size={15} /> : <Copy size={15} />}
+            {credentialCopied ? "Copied" : "Copy"}
+          </button>
+        </div>
         <div className="dialog-actions">
-          <button type="button" onClick={() => setIssuedCredential(null)}>Done</button>
+          <button type="button" onClick={closeIssuedCredential}>Done</button>
         </div>
       </Modal>
     </div>

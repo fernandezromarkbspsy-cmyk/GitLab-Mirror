@@ -14,7 +14,7 @@ final class BackroomController
         $data = $request->validate([
             'ops_id' => ['required', 'string', 'max:40', 'regex:/^ops[0-9]+$/i'],
             'password' => ['required', 'string', 'max:200'],
-            'mode' => ['required', 'string', 'in:first-login'],
+            'mode' => ['sometimes', 'string', 'in:first-login,normal'],
         ]);
         $opsId = strtolower(trim($data['ops_id']));
         $profile = DB::table('profiles')
@@ -24,7 +24,9 @@ final class BackroomController
             ->first(['id', 'must_change_password']);
 
         abort_unless($profile, 404, 'Ops ID was not found or is inactive.');
-        abort_unless($profile->must_change_password, 409, 'This account has already completed first login.');
+        if (($data['mode'] ?? null) === 'first-login') {
+            abort_unless($profile->must_change_password, 409, 'This account has already completed first login.');
+        }
 
         $supabaseUrl = rtrim((string) config('services.supabase.url'), '/');
         $anonKey = (string) config('services.supabase.anon_key');

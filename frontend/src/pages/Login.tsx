@@ -114,7 +114,7 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
     if (!nextPassword) throw new Error('Enter your password.');
     const session = await api<{ access_token: string; refresh_token: string }>('/auth/backroom/login', {
       method: 'POST',
-      body: JSON.stringify({ ops_id: normalizedOpsId, password: nextPassword, mode: 'first-login' }),
+      body: JSON.stringify({ ops_id: normalizedOpsId, password: nextPassword }),
     });
     const { error: sessionError } = await supabase.auth.setSession(session);
     if (sessionError) throw sessionError;

@@ -111,9 +111,10 @@ final class ProvisionBackroomUsers extends Command
                     'ops_id' => $opsId,
                     'is_active' => true,
                     'must_change_password' => true,
+                    'password_reset_at' => now(),
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]], ['id'], ['name', 'role', 'ops_id', 'is_active', 'must_change_password', 'updated_at']);
+                ]], ['id'], ['name', 'role', 'ops_id', 'is_active', 'must_change_password', 'password_reset_at', 'updated_at']);
 
                 DB::table('user_imports')->where('id', $user->id)->update([
                     'auth_user_id' => $authUserId,

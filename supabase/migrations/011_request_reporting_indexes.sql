@@ -3,4 +3,4 @@ create index if not exists requests_request_timestamp_idx
   on public.requests(request_timestamp desc);
 
 create index if not exists requests_status_request_timestamp_idx
-  on public.requests(status, request_timestamp desc);
+  on public.requests(status, request_timestamp desc); 

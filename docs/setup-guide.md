@@ -70,7 +70,7 @@ Example template:
 ```
 
 4. Open **Authentication > URL Configuration**. Set the Site URL to
-   `http://localhost:5172` for local development and add the deployed HTTPS URL
+   `http://localhost:5173` for local development and add the deployed HTTPS URL
    before production use.
 5. Open **Authentication > SMTP Settings** and configure a custom SMTP service
    for real SPX addresses. Supabase's built-in test mailer only delivers to
@@ -115,7 +115,7 @@ Set the following values in `backend/.env`:
 
 ```dotenv
 APP_URL=http://127.0.0.1:8000
-FRONTEND_URL=http://localhost:5172
+FRONTEND_URL=http://localhost:5173
 
 DB_HOST=your-pooler-host.supabase.com
 DB_PORT=6543
@@ -181,7 +181,7 @@ cd frontend
 npm run dev
 ```
 
-Open `http://localhost:5172`. The frontend proxies `/api` to Laravel at
+Open `http://localhost:5173`. The frontend proxies `/api` to Laravel at
 `http://127.0.0.1:8000`.
 
 ## 6. First FTE login

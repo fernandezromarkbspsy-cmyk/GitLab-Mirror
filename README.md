@@ -62,7 +62,7 @@ configuration in `tools/php.ini`.
    [`docs/tunnel-setup.md`](docs/tunnel-setup.md):
 
    ```powershell
-   cloudflared tunnel run <TUNNEL_UUID>
+   cloudflared tunnel run 0f1afc50-0389-4468-9de9-1e49e48a3626
    ```
 
 6. Open `http://localhost:5173`, or the Cloudflare hostname when the tunnel is

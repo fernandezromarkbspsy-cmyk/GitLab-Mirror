@@ -78,7 +78,7 @@ insert into seed_users (
   ('e4fecd4fdfc1af6228081a15', 'Dimalaluan,Glenda', 'ops_pic', null, 'ops81920', false, true, true, null, null, null, 'clerk', now(), now()),
   ('fb6aca15cdff4776995759a0', 'Gernale,Gemmalyn', 'ops_pic', null, 'ops113988', false, true, true, null, null, null, 'clerk', now(), now()),
   ('369ac76ba2173c8ad0f7b2b7', 'Bayona,Arbhee John', 'ops_pic', null, 'ops93568', false, true, true, null, null, null, 'clerk', now(), now()),
-  ('2600ecbdd51721a74e380a28', 'Malacas, Leonalyn', 'ops_pic', null, 'ops176188', false, true, true, null, null, null, 'clerk', now(), now()),
+  ('2600ecbdd51731a74e380a28', 'Malacas, Leonalyn', 'ops_pic', null, 'ops176188', false, true, true, null, null, null, 'clerk', now(), now()),
   ('f5f0d163611c5dff2a41abf3', 'Labado Jr.,Rolando', 'ops_pic', null, 'ops74697', false, true, true, null, null, null, 'clerk', now(), now()),
   ('3e379164d1e810ac3f752b7c', 'Algura,Reymund Campus', 'ops_pic', null, 'ops194930', false, true, true, null, null, null, 'clerk', now(), now()),
   ('06f3e96eacbe3ee98c6c3eae', 'Tayao,Analiza', 'ops_pic', null, 'ops6580', false, true, true, null, null, null, 'clerk', now(), now()),

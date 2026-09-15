@@ -14,7 +14,7 @@ Replace the production origin only if the deployment uses another hostname.
 
 | Setting | Value |
 | --- | --- |
-| Local application origin | `http://localhost:5172` |
+| Local application origin | `http://localhost:5173` |
 | Production application origin | `https://soc5outboundops.app` |
 | Supabase project URL | `https://jbbqdthptwnlhetwhfng.supabase.co` |
 | Google authorized redirect URI | `https://jbbqdthptwnlhetwhfng.supabase.co/auth/v1/callback` |
@@ -141,7 +141,7 @@ additional verification requirements.
 5. Under **Authorized JavaScript origins**, add these as separate entries:
 
    ```text
-   http://localhost:5172
+   http://localhost:5173
    https://soc5outboundops.app
    ```
 
@@ -157,7 +157,7 @@ additional verification requirements.
 
 Origins contain only scheme, host, and port—no path or trailing slash. Redirect
 URIs include the full `/auth/v1/callback` path and must match exactly. Do not add
-`http://localhost:5172` as a Google redirect URI for this hosted-Supabase flow.
+`http://localhost:5173` as a Google redirect URI for this hosted-Supabase flow.
 
 ## 9. Enable Google in Supabase
 
@@ -192,7 +192,7 @@ The client secret is stored by Supabase. Do not add it to `frontend/.env`,
 3. Under **Redirect URLs**, add:
 
    ```text
-   http://localhost:5172/**
+   http://localhost:5173/**
    https://soc5outboundops.app/**
    ```
 
@@ -234,7 +234,7 @@ the enforcement points.
 ### Allowed FTE
 
 1. Start Laravel and Vite.
-2. Open `http://localhost:5172` in a private browser window.
+2. Open `http://localhost:5173` in a private browser window.
 3. Select **FTE > Continue with Google**.
 4. Select an active allowlisted FTE account.
 5. Confirm Google returns to the application and the dashboard loads.
@@ -317,7 +317,7 @@ inspect Supabase Auth and Postgres logs for the provisioning-trigger error.
 
 ### Local login redirects to production
 
-Confirm `http://localhost:5172/**` exists in Supabase Redirect URLs and that the
+Confirm `http://localhost:5173/**` exists in Supabase Redirect URLs and that the
 app was opened with that exact origin. Restart Vite after environment changes.
 
 ## Official references

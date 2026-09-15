@@ -47,6 +47,7 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
   const [codeSent, setCodeSent] = useState(false);
   const [resendAfter, setResendAfter] = useState(0);
   const [opsId, setOpsId] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -62,6 +63,7 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
     setError('');
     setCodeSent(false);
     setCode('');
+    setPassword('');
     setResendAfter(0);
   }
 
@@ -106,12 +108,13 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
     }
   }
 
-  async function startBackroomSession(nextOpsId: string) {
+  async function startBackroomSession(nextOpsId: string, nextPassword: string) {
     const normalizedOpsId = nextOpsId.trim().toLowerCase();
     if (!/^ops[0-9]+$/i.test(normalizedOpsId)) throw new Error('Enter a valid Ops ID.');
+    if (!nextPassword) throw new Error('Enter your password.');
     const session = await api<{ access_token: string; refresh_token: string }>('/auth/backroom/login', {
       method: 'POST',
-      body: JSON.stringify({ ops_id: normalizedOpsId, mode: 'first-login' }),
+      body: JSON.stringify({ ops_id: normalizedOpsId, password: nextPassword, mode: 'first-login' }),
     });
     const { error: sessionError } = await supabase.auth.setSession(session);
     if (sessionError) throw sessionError;
@@ -140,7 +143,7 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
           if (verifyError) throw verifyError;
         }
       } else {
-        await startBackroomSession(opsId);
+        await startBackroomSession(opsId, password);
       }
     } catch (cause) {
       const fallback = type === 'fte'
@@ -190,9 +193,11 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
         <BackroomLoginForm
           key="backroom"
           opsId={opsId}
+          password={password}
           busy={busy}
           error={error}
           onOpsIdChange={setOpsId}
+          onPasswordChange={setPassword}
           onSubmit={submit}
           onForgotPassword={() => setForgotOpen(true)}
         />

@@ -1,21 +1,25 @@
 import { useState } from "react";
-import { ArrowRight, IdCard, Loader2 } from "lucide-react";
+import { ArrowRight, IdCard, KeyRound, Loader2 } from "lucide-react";
 import { api } from "../../lib/api";
 
 interface BackroomLoginFormProps {
   opsId: string;
+  password: string;
   busy: boolean;
   error: string;
   onOpsIdChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onForgotPassword: () => void;
 }
 
 export function BackroomLoginForm({
   opsId,
+  password,
   busy,
   error,
   onOpsIdChange,
+  onPasswordChange,
   onSubmit,
   onForgotPassword,
 }: BackroomLoginFormProps) {
@@ -138,6 +142,32 @@ export function BackroomLoginForm({
           aria-label="Ops ID"
           autoComplete="username"
           className="min-w-0 flex-1 bg-transparent pr-3 text-[13.5px] tracking-wide text-ink outline-none placeholder:text-faint uppercase"
+        />
+      </div>
+
+      <label
+        htmlFor="backroom-password"
+        className="mt-3.5 block text-[11.5px] font-bold uppercase tracking-wider text-faint"
+      >
+        Password
+      </label>
+      <div
+        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/[0.11] focus-within:ring-4 focus-within:ring-accent/20 ${
+          shaking ? "animate-shake" : ""
+        } ${error ? "border-danger/70" : "border-line"}`}
+      >
+        <span className="grid w-10 shrink-0 place-items-center text-faint">
+          <KeyRound className="h-4 w-4" />
+        </span>
+        <input
+          id="backroom-password"
+          type="password"
+          value={password}
+          onChange={(event) => onPasswordChange(event.target.value)}
+          aria-label="Password"
+          autoComplete="current-password"
+          required
+          className="min-w-0 flex-1 bg-transparent pr-3 text-[13.5px] tracking-wide text-ink outline-none placeholder:text-faint"
         />
       </div>
 

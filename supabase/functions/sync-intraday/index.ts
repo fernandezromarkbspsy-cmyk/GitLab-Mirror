@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_SYNC_SOURCES = new Set(["google-apps-script"]);
+
 type IncomingRow = {
   status_desc?: string;
   c_date_6am?: string;
@@ -33,7 +35,15 @@ serve(async (req) => {
       });
     }
 
-    const expectedSecret = Deno.env.get('INTRADAY_SYNC_SECRET');
+    const syncSource = (req.headers.get('x-sync-source') ?? '').trim().toLowerCase();
+    if (!syncSource || !ALLOWED_SYNC_SOURCES.has(syncSource)) {
+      return new Response(JSON.stringify({ error: 'Forbidden: unknown sync source' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const expectedSecret = Deno.env.get('INTRADAY_SYNC_SECRET')?.trim();
     if (!expectedSecret) {
       return new Response(JSON.stringify({ error: 'Server misconfigured: missing INTRADAY_SYNC_SECRET' }), {
         status: 500,
@@ -41,7 +51,8 @@ serve(async (req) => {
       });
     }
 
-    if (req.headers.get('x-sync-secret') !== expectedSecret) {
+    const providedSecret = (req.headers.get('x-sync-secret') ?? '').trim();
+    if (providedSecret !== expectedSecret) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 

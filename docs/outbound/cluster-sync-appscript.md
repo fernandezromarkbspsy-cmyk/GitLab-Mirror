@@ -63,6 +63,7 @@ function syncClusters() {
       method: 'post',
       contentType: 'application/json',
       headers: {
+        'x-sync-source': 'google-apps-script',
         'x-sync-secret': secret,
       },
       payload: JSON.stringify(rows),

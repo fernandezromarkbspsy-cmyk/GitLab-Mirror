@@ -8,6 +8,7 @@ const ALLOWED_FIELDS = new Set([
   "backlogs",
   "backlogs_ts",
 ]);
+const ALLOWED_SYNC_SOURCES = new Set(["google-apps-script"]);
 
 serve(async (req) => {
   try {
@@ -18,7 +19,15 @@ serve(async (req) => {
       });
     }
 
-    const expectedSecret = Deno.env.get("CLUSTER_SYNC_SECRET");
+    const syncSource = (req.headers.get("x-sync-source") ?? "").trim().toLowerCase();
+    if (!syncSource || !ALLOWED_SYNC_SOURCES.has(syncSource)) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: unknown sync source" }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    const expectedSecret = Deno.env.get("CLUSTER_SYNC_SECRET")?.trim();
     if (!expectedSecret) {
       return new Response(
         JSON.stringify({ error: "Server misconfigured: missing CLUSTER_SYNC_SECRET" }),
@@ -26,7 +35,8 @@ serve(async (req) => {
       );
     }
 
-    if (req.headers.get("x-sync-secret") !== expectedSecret) {
+    const providedSecret = (req.headers.get("x-sync-secret") ?? "").trim();
+    if (providedSecret !== expectedSecret) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json" } },

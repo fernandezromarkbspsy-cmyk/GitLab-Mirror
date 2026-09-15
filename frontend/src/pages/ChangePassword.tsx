@@ -19,9 +19,19 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
       await api("/auth/password-changed", { method: "POST" });
       onComplete();
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Unable to change password.",
-      );
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Unable to change password.";
+
+      if (/too many attempts|rate limit|too many requests/i.test(message)) {
+        setError(
+          "Too many password change attempts. Please wait a few minutes and try again.",
+        );
+        return;
+      }
+
+      setError(message);
     } finally {
       setBusy(false);
     }

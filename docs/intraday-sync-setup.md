@@ -32,7 +32,10 @@ function syncIntradayDispatch() {
   UrlFetchApp.fetch('https://YOUR_PROJECT_REF.supabase.co/functions/v1/sync-intraday', {
     method: 'post',
     contentType: 'application/json',
-    headers: { 'x-sync-secret': 'YOUR_INTRADAY_SYNC_SECRET' },
+    headers: {
+      'x-sync-source': 'google-apps-script',
+      'x-sync-secret': 'YOUR_INTRADAY_SYNC_SECRET',
+    },
     payload: JSON.stringify(rows),
     muteHttpExceptions: true,
   });

@@ -15,4 +15,4 @@ if (-not (Select-String -Path '.env' -Pattern '^APP_KEY=base64:' -Quiet)) {
     php artisan key:generate --force
     if ($LASTEXITCODE -ne 0) { throw 'Laravel key generation failed.' }
 }
-php artisan serve
+php artisan serve --no-reload

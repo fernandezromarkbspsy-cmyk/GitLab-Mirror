@@ -414,3 +414,23 @@ commit
 review
   ↓
 merge to main
+
+## Low Usage Mode
+
+Optimize for minimum Claude Code usage.
+
+- Use the minimum number of tool calls.
+- Use the minimum number of Bash commands.
+- Batch commands when safe.
+- Prefer targeted file searches.
+- Never repeatedly run the same command.
+- Avoid repository-wide scans unless necessary.
+- Avoid unnecessary `git status`, `git diff`, `ls`, `find`, and `grep`.
+- Do not inspect unrelated files.
+- Do not re-read unchanged files.
+- Do not run duplicate tests.
+- Run only validation relevant to the change.
+- Do not narrate tool/Bash activity.
+- Do not provide progress updates.
+- Do not ask for confirmation between related steps.
+- Stop immediately when the task is complete.

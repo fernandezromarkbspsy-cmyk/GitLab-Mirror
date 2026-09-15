@@ -83,6 +83,7 @@ final class UserController
     public function update(Request $request, string $id): JsonResponse
     {
         $this->authorize($request);
+        abort_if($request->attributes->get('actor')->id === $id, 409, 'You cannot change your own role.');
         $data = $request->validate(['name' => 'required|string|min:2|max:120', 'role' => ['required', Rule::in(['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'])]]);
         $updated = DB::table('profiles')->where('id', $id)->update($data + ['updated_at' => now()]);
         abort_unless($updated, 404, 'User not found.');

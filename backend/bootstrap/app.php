@@ -4,6 +4,7 @@ use App\Console\Commands\ProvisionBackroomUsers;
 use App\Console\Commands\SyncRequestsToGoogleSheet;
 use App\Console\Commands\VerifyProductionConfig;
 use App\Http\Middleware\AuthenticateSupabase;
+use App\Http\Middleware\AuthenticateConfigured;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,8 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['supabase.auth' => AuthenticateSupabase::class]);
-        $middleware->prependToPriorityList(ThrottleRequests::class, AuthenticateSupabase::class);
+        $middleware->alias([
+            'supabase.auth' => AuthenticateSupabase::class,
+            'auth.configured' => AuthenticateConfigured::class,
+        ]);
+        $middleware->prependToPriorityList(ThrottleRequests::class, AuthenticateConfigured::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);

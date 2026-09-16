@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use App\Services\ProfileRepository;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
@@ -14,6 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class AuthenticateSupabase
 {
+    public function __construct(private readonly ProfileRepository $profiles)
+    {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->bearerToken() ?: $request->cookie('sb-access-token');
@@ -71,8 +76,7 @@ final class AuthenticateSupabase
         }
 
         try {
-            $profile = DB::table('profiles')->where('id', $authUserId)
-                ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_reset_at', 'password_changed_at', 'created_at']);
+            $profile = $this->profiles->forAuthenticatedUser($authUserId);
         } catch (QueryException $exception) {
             Log::error('Unable to load the authenticated Supabase profile.', [
                 'auth_user_id' => $authUserId,

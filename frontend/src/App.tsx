@@ -11,6 +11,11 @@ import { useNavigate } from "react-router-dom";
 import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
 import { supabase } from "./lib/supabase";
+import {
+  clearBackendAccessToken,
+  getBackendAccessToken,
+  onBackendAuthChange,
+} from "./lib/backendAuth";
 import { ChangePassword } from "./pages/ChangePassword";
 import type { User } from "./types";
 
@@ -85,6 +90,15 @@ export default function App() {
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
 
+  const signOut = useCallback(async () => {
+    try {
+      await api('/auth/logout', { method: 'POST' });
+    } finally {
+      clearBackendAccessToken();
+      await supabase.auth.signOut();
+    }
+  }, []);
+
   const resolveSession = useCallback(
     async (session: { access_token: string } | null, force = false) => {
       if (!session) {
@@ -124,6 +138,11 @@ export default function App() {
 
   const retrySession = useCallback(async () => {
     setState("loading");
+    const backendAccessToken = getBackendAccessToken();
+    if (backendAccessToken) {
+      await resolveSession({ access_token: backendAccessToken }, true);
+      return;
+    }
     const { data, error } = await supabase.auth.getSession();
     if (error) {
       setFailure(describeFailure(error));
@@ -134,7 +153,13 @@ export default function App() {
   }, [resolveSession]);
 
   useEffect(() => {
+    const backendAccessToken = getBackendAccessToken();
+    const removeBackendListener = onBackendAuthChange(() => {
+      const token = getBackendAccessToken();
+      void resolveSession(token ? { access_token: token } : null, true);
+    });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (getBackendAccessToken()) return;
       if (
         event === "INITIAL_SESSION" ||
         event === "SIGNED_IN" ||
@@ -144,7 +169,11 @@ export default function App() {
         window.setTimeout(() => void resolveSession(session), 0);
       }
     });
-    return () => data.subscription.unsubscribe();
+    if (backendAccessToken) void resolveSession({ access_token: backendAccessToken }, true);
+    return () => {
+      removeBackendListener();
+      data.subscription.unsubscribe();
+    };
   }, [resolveSession]);
 
   if (state === "loading") return <LoginBackdrop />;
@@ -158,7 +187,7 @@ export default function App() {
         <button type="button" onClick={() => void retrySession()}>
           Try again
         </button>{" "}
-        <button type="button" onClick={() => void supabase.auth.signOut()}>
+        <button type="button" onClick={() => void signOut()}>
           Sign out
         </button>
       </main>
@@ -168,7 +197,7 @@ export default function App() {
     return <ChangePassword onComplete={() => setState("ready")} />;
   return profile ? (
     <Suspense fallback={<LoginBackdrop />}>
-      <Dashboard user={profile} />
+      <Dashboard user={profile} onSignOut={() => void signOut()} />
     </Suspense>
   ) : (
     <LoginBackdrop />

@@ -2,13 +2,25 @@
 
 namespace App\Features\Auth;
 
+use App\Services\AppwriteService;
+use App\Services\ProfileRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
+use Throwable;
+use Appwrite\AppwriteException;
 
 final class BackroomController
 {
+    public function __construct(
+        private readonly AppwriteService $appwrite,
+        private readonly ProfileRepository $profiles,
+    )
+    {
+    }
+
     public function login(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -17,11 +29,12 @@ final class BackroomController
             'mode' => ['sometimes', 'string', 'in:first-login,normal'],
         ]);
         $opsId = strtolower(trim($data['ops_id']));
-        $profile = DB::table('profiles')
-            ->whereRaw('lower(ops_id) = ?', [$opsId])
-            ->where('role', 'ops_pic')
-            ->where('is_active', true)
-            ->first(['id', 'must_change_password']);
+
+        if (config('services.auth.provider') === 'appwrite') {
+            return $this->loginWithAppwrite($request, $opsId, $data['password'], $data['mode'] ?? null);
+        }
+
+        $profile = $this->profiles->activeBackroomByOpsId($opsId);
 
         abort_unless($profile, 404, 'Ops ID was not found or is inactive.');
         if (($data['mode'] ?? null) === 'first-login') {
@@ -44,5 +57,118 @@ final class BackroomController
         abort_unless($tokenResponse->successful() && $tokenResponse->json('access_token'), 401, 'Invalid Ops ID or password.');
 
         return response()->json($tokenResponse->json());
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        if (config('services.auth.provider') !== 'appwrite') {
+            return response()->json(['ok' => true]);
+        }
+
+        $token = $request->bearerToken();
+        if (! $token) {
+            return response()->json(['ok' => true]);
+        }
+
+        try {
+            $session = $this->appwrite->currentSessionForJwt($token);
+        } catch (AppwriteException) {
+            // Invalid, expired, or already-revoked sessions are already logged out.
+            return response()->json(['ok' => true]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            abort(503, 'Authentication service is temporarily unavailable.');
+        }
+
+        $authUserId = (string) ($session['userId'] ?? '');
+        $sessionId = (string) ($session['$id'] ?? $session['id'] ?? '');
+        if ($authUserId === '' || $sessionId === '') {
+            return response()->json(['ok' => true]);
+        }
+
+        try {
+            $this->appwrite->revokeUserSession($authUserId, $sessionId);
+            $this->appwrite->revokeSessionRecord($sessionId);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            abort(503, 'Authentication service is temporarily unavailable.');
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    private function loginWithAppwrite(Request $request, string $opsId, string $password, ?string $mode): JsonResponse
+    {
+        try {
+            $session = $this->appwrite->createEmailPasswordSession($opsId.'@backroom.soc5.internal', $password);
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            abort(503, 'Authentication service is temporarily unavailable.');
+        }
+
+        abort_unless($session, 401, 'Invalid Ops ID or password.');
+        $authUserId = (string) ($session['userId'] ?? '');
+        abort_unless($authUserId !== '', 401, 'Invalid Ops ID or password.');
+        $sessionId = (string) ($session['$id'] ?? $session['id'] ?? '');
+        $expiresAt = $session['expire'] ?? $session['expiresAt'] ?? null;
+        abort_unless($sessionId !== '' && is_string($expiresAt) && $expiresAt !== '', 503, 'Authentication service is temporarily unavailable.');
+
+        try {
+            $profile = $this->profiles->forAuthenticatedUser($authUserId);
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            abort(503, 'Account database is temporarily unavailable.');
+        }
+
+        $activeOpsProfile = $profile
+            && ($profile->is_active ?? false)
+            && strtolower((string) ($profile->role ?? '')) === 'ops_pic'
+            && strtolower((string) ($profile->ops_id ?? '')) === $opsId;
+        abort_unless($activeOpsProfile, 403, 'Account is disabled or not provisioned.');
+
+        if ($mode === 'first-login') {
+            abort_unless((bool) ($profile->must_change_password ?? false), 409, 'This account has already completed first login.');
+        }
+
+        try {
+            $accessToken = $this->appwrite->createJwtForSession((string) ($session['secret'] ?? ''));
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            abort(503, 'Authentication service is temporarily unavailable.');
+        }
+
+        try {
+            $this->appwrite->createSessionRecord([
+                'user_id' => $authUserId,
+                'appwrite_session_id' => $sessionId,
+                'expires_at' => $expiresAt,
+                'created_at' => now()->toISOString(),
+                'revoked_at' => null,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'metadata' => json_encode(['source' => 'backroom_login'], JSON_THROW_ON_ERROR),
+                'auth_provider' => 'appwrite',
+            ], $sessionId);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            try {
+                $this->appwrite->revokeUserSession($authUserId, $sessionId);
+            } catch (Throwable $cleanupException) {
+                report($cleanupException);
+            }
+
+            abort(503, 'Authentication service is temporarily unavailable.');
+        }
+
+        return response()->json([
+            'access_token' => $accessToken,
+            'refresh_token' => null,
+        ]);
     }
 }

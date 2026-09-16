@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\ProvisionBackroomUsers;
+use App\Console\Commands\SentryTest;
 use App\Console\Commands\SyncRequestsToGoogleSheet;
 use App\Console\Commands\VerifyProductionConfig;
 use App\Http\Middleware\AuthenticateSupabase;
@@ -13,7 +14,12 @@ use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(api: __DIR__.'/../routes/api.php', health: '/up')
-    ->withCommands([ProvisionBackroomUsers::class, SyncRequestsToGoogleSheet::class, VerifyProductionConfig::class])
+    ->withCommands([
+        ProvisionBackroomUsers::class,
+        SyncRequestsToGoogleSheet::class,
+        VerifyProductionConfig::class,
+        SentryTest::class,
+    ])
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('requests:sync-google-sheet')
             ->everyFiveMinutes()

@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use RuntimeException;
 use Sentry\Severity;
 
 class SentryTest extends Command

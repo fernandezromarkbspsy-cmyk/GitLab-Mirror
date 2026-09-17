@@ -29,6 +29,8 @@ Route::get('/auth/status', function () {
 // SeaTalk login routes are public only for the short-lived QR transaction.
 Route::post('/auth/seatalk/transactions', [SeatalkController::class, 'createLoginTransaction'])->middleware('throttle:10,1');
 Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
+Route::post('/auth/backroom/password-reset/request', [UserController::class, 'requestPasswordReset'])->middleware('throttle:backroom');
+Route::post('/auth/backroom/password-reset/complete', [UserController::class, 'completePasswordReset'])->middleware('throttle:backroom');
 Route::post('/auth/logout', [BackroomController::class, 'logout'])->middleware('throttle:api');
 Route::get('/auth/seatalk/transactions/{transactionId}', [SeatalkController::class, 'transactionStatus'])
     ->whereUuid('transactionId')
@@ -54,6 +56,7 @@ Route::middleware(['auth.configured', 'throttle:api'])->group(function (): void 
     Route::post('/users', [UserController::class, 'store']);
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::patch('/users/{id}/disable', [UserController::class, 'disable']);
+    Route::patch('/users/{id}/enable', [UserController::class, 'activate']);
     Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);

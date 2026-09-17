@@ -10,6 +10,69 @@ use RuntimeException;
 
 class AppwriteService
 {
+    public function createAuthUser(string $email, string $password, string $name): ?array
+    {
+        $response = $this->adminAuthRequest('POST', 'users', [
+            'userId' => 'unique()',
+            'email' => $email,
+            'password' => $password,
+            'name' => $name,
+        ]);
+
+        if ($response->status() === 409) {
+            return null;
+        }
+
+        return $this->decode($response);
+    }
+
+    public function updateAuthUser(string $userId, array $data): void
+    {
+        if (array_key_exists('name', $data)) {
+            $this->adminAuthRequest('PUT', 'users/'.$userId.'/name', ['name' => $data['name']]);
+        }
+
+        if (array_key_exists('email', $data)) {
+            $this->adminAuthRequest('PUT', 'users/'.$userId.'/email', ['email' => $data['email'], 'emailVerification' => true]);
+        }
+    }
+
+    public function updateAuthUserPassword(string $userId, string $password): void
+    {
+        $this->adminAuthRequest('PUT', 'users/'.$userId.'/password', ['password' => $password]);
+    }
+
+    public function createRecovery(string $email, string $url): bool
+    {
+        $response = $this->authRequest('POST', 'account/recovery', ['email' => $email, 'url' => $url]);
+
+        return $response->successful();
+    }
+
+    public function completeRecovery(string $userId, string $secret, string $password): bool
+    {
+        $response = $this->authRequest('PUT', 'account/recovery', [
+            'userId' => $userId,
+            'secret' => $secret,
+            'password' => $password,
+        ]);
+
+        return $response->successful();
+    }
+
+    public function setAuthUserStatus(string $userId, bool $isActive): void
+    {
+        $this->adminAuthRequest('PUT', 'users/'.$userId.'/status', ['status' => $isActive]);
+    }
+
+    public function revokeAllUserSessions(string $userId): void
+    {
+        $response = $this->adminAuthRequest('DELETE', 'users/'.$userId.'/sessions');
+        if ($response->status() === 404) {
+            return;
+        }
+    }
+
     public function createEmailPasswordSession(string $email, string $password): ?array
     {
         $response = $this->authRequest('POST', 'account/sessions/email', [
@@ -111,6 +174,22 @@ class AppwriteService
         return $this->getRow('profiles', $userId);
     }
 
+    public function profilesByOpsId(string $opsId): array
+    {
+        $query = 'equal("ops_id",['.json_encode($opsId, JSON_THROW_ON_ERROR).'])';
+        $response = $this->request('GET', 'profiles/rows?queries%5B%5D='.rawurlencode($query));
+        $data = $this->decode($response);
+
+        return array_values(array_filter($data['rows'] ?? $data['documents'] ?? [], 'is_array'));
+    }
+
+    public function profiles(): array
+    {
+        $data = $this->decode($this->request('GET', 'profiles/rows'));
+
+        return array_values(array_filter($data['rows'] ?? $data['documents'] ?? [], 'is_array'));
+    }
+
     public function createSessionRecord(array $data, ?string $rowId = null): array
     {
         return $this->createRow('sessions', $data, $rowId);
@@ -124,6 +203,21 @@ class AppwriteService
     public function createPasswordReset(array $data, ?string $rowId = null): array
     {
         return $this->createRow('password_resets', $data, $rowId);
+    }
+
+    public function passwordResetForUser(string $userId): ?array
+    {
+        $queries = [
+            'equal("user_id",['.json_encode($userId, JSON_THROW_ON_ERROR).'])',
+            'equal("status",["requested"])',
+            'orderDesc("requested_at")',
+            'limit(1)',
+        ];
+        $queryString = implode('&', array_map(fn (string $query): string => 'queries%5B%5D='.rawurlencode($query), $queries));
+        $data = $this->decode($this->request('GET', 'password_resets/rows?'.$queryString));
+        $rows = $data['rows'] ?? $data['documents'] ?? [];
+
+        return is_array($rows[0] ?? null) ? $rows[0] : null;
     }
 
     public function getRow(string $tableId, string $rowId): ?array
@@ -204,7 +298,7 @@ class AppwriteService
         return $response;
     }
 
-    private function authRequest(string $method, string $path, ?array $payload = null, array $headers = []): Response
+    private function authRequest(string $method, string $path, ?array $payload = null, array $headers = [], bool $admin = false): Response
     {
         $endpoint = rtrim((string) config('services.appwrite.endpoint'), '/');
         $projectId = (string) config('services.appwrite.project_id');
@@ -222,14 +316,26 @@ class AppwriteService
 
         $response = match ($method) {
             'POST' => $request->post($endpoint.'/'.ltrim($path, '/'), $payload ?? []),
+            'PUT' => $request->put($endpoint.'/'.ltrim($path, '/'), $payload ?? []),
+            'DELETE' => $request->delete($endpoint.'/'.ltrim($path, '/'), $payload ?? []),
             default => throw new RuntimeException('Unsupported Appwrite Auth method.'),
         };
 
-        if ($response->failed() && ! in_array($response->status(), [401, 404], true)) {
+        if ($response->failed() && ! in_array($response->status(), $admin ? [401, 404, 409] : [401, 404], true)) {
             throw new RuntimeException('Appwrite Auth request failed with status '.$response->status().'.');
         }
 
         return $response;
+    }
+
+    private function adminAuthRequest(string $method, string $path, ?array $payload = null): Response
+    {
+        $apiKey = (string) config('services.appwrite.api_key');
+        if ($apiKey === '') {
+            throw new RuntimeException('Appwrite Auth is not configured.');
+        }
+
+        return $this->authRequest($method, $path, $payload, ['X-Appwrite-Key' => $apiKey], true);
     }
 
     private function decode(Response $response): array

@@ -35,6 +35,21 @@ final class ProfileRepositoryTest extends TestCase
         $this->assertNull((new ProfileRepository($appwrite))->forAuthenticatedUser('missing-user'));
     }
 
+    public function test_appwrite_password_state_is_updated_in_appwrite_only(): void
+    {
+        config()->set('services.auth.provider', 'appwrite');
+        $appwrite = Mockery::mock(AppwriteService::class);
+        $appwrite->shouldReceive('updateRow')->once()->with(
+            'profiles',
+            'appwrite-user-1',
+            Mockery::on(fn (array $data): bool => $data['must_change_password'] === false
+                && is_string($data['password_changed_at'])
+                && array_key_exists('updated_at', $data))
+        );
+
+        $this->assertSame(1, (new ProfileRepository($appwrite))->markPasswordChanged('appwrite-user-1'));
+    }
+
     public function test_supabase_uuid_resolves_to_sql_profile(): void
     {
         $id = (string) Str::uuid();

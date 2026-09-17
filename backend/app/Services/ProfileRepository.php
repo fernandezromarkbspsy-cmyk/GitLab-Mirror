@@ -30,11 +30,65 @@ final class ProfileRepository
 
     public function activeBackroomByOpsId(string $opsId): ?object
     {
+        if ($this->usesAppwrite()) {
+            $profile = $this->appwrite->profilesByOpsId($opsId)[0] ?? null;
+
+            return $profile && ($profile['role'] ?? null) === 'ops_pic' && ($profile['is_active'] ?? false)
+                ? $this->normalizeAppwriteProfile($profile, (string) ($profile['$id'] ?? $profile['id'] ?? ''))
+                : null;
+        }
+
         return $this->sqlProfileQuery()
             ->whereRaw('lower(ops_id) = ?', [strtolower($opsId)])
             ->where('role', 'ops_pic')
             ->where('is_active', true)
             ->first(['id', 'must_change_password']);
+    }
+
+    public function appwriteBackroomByOpsId(string $opsId): ?array
+    {
+        if (! $this->usesAppwrite()) {
+            return null;
+        }
+
+        return $this->appwrite->profilesByOpsId(strtolower($opsId))[0] ?? null;
+    }
+
+    public function markAppwritePasswordResetCompleted(string $profileId, string $timestamp): array
+    {
+        return $this->appwrite->updateRow('profiles', $profileId, [
+            'must_change_password' => false,
+            'password_changed_at' => $timestamp,
+            'password_reset_at' => $timestamp,
+        ]);
+    }
+
+    public function markAppwritePasswordResetRequired(string $profileId, string $timestamp): array
+    {
+        return $this->appwrite->updateRow('profiles', $profileId, [
+            'must_change_password' => true,
+            'password_changed_at' => null,
+            'password_reset_at' => $timestamp,
+        ]);
+    }
+
+    public function all(): array
+    {
+        if ($this->usesAppwrite()) {
+            return $this->appwrite->profiles();
+        }
+
+        return DB::table('profiles')->select('id', 'name', 'role', 'email', 'ops_id', 'is_active', 'created_at')->orderBy('name')->get()->all();
+    }
+
+    public function createAppwriteProfile(string $userId, array $data): array
+    {
+        return $this->appwrite->createRow('profiles', $data, $userId);
+    }
+
+    public function updateAppwriteProfile(string $userId, array $data): array
+    {
+        return $this->appwrite->updateRow('profiles', $userId, $data);
     }
 
     public function markPasswordChanged(string $profileId): int

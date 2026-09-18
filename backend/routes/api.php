@@ -1,7 +1,7 @@
 <?php
 
-use App\Features\Auth\SeatalkController;
 use App\Features\Auth\BackroomController;
+use App\Features\Auth\SeatalkController;
 use App\Features\Dispatch\DispatchController;
 use App\Features\Kpi\KpiController;
 use App\Features\Notifications\NotificationController;

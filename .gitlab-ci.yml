@@ -35,7 +35,7 @@ backend:
   before_script:
     - apt-get update
     - apt-get install -y --no-install-recommends git unzip libxml2-dev libonig-dev libsqlite3-dev
-    - docker-php-ext-install dom mbstring pdo_sqlite sqlite3
+    - docker-php-ext-install dom mbstring
     - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
     - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
     - rm composer-setup.php

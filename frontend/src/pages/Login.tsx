@@ -7,6 +7,7 @@ import { UserTypeToggle } from '../components/login/UserTypeToggle';
 import { FteLoginForm } from '../components/login/FteLoginForm';
 import { BackroomLoginForm } from '../components/login/BackroomLoginForm';
 import { api } from '../lib/api';
+import { setBackendAccessToken } from '../lib/backendAuth';
 
 export type UserType = 'fte' | 'backroom';
 
@@ -112,11 +113,15 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
     const normalizedOpsId = nextOpsId.trim().toLowerCase();
     if (!/^ops[0-9]+$/i.test(normalizedOpsId)) throw new Error('Enter a valid Ops ID.');
     if (!nextPassword) throw new Error('Enter your password.');
-    const session = await api<{ access_token: string; refresh_token: string }>('/auth/backroom/login', {
+    const session = await api<{ access_token: string; refresh_token: string | null }>('/auth/backroom/login', {
       method: 'POST',
       body: JSON.stringify({ ops_id: normalizedOpsId, password: nextPassword }),
     });
-    const { error: sessionError } = await supabase.auth.setSession(session);
+    if (session.refresh_token === null) {
+      setBackendAccessToken(session.access_token);
+      return;
+    }
+    const { error: sessionError } = await supabase.auth.setSession(session as { access_token: string; refresh_token: string });
     if (sessionError) throw sessionError;
   }
 

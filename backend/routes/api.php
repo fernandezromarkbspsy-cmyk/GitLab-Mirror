@@ -8,21 +8,16 @@ use App\Features\Notifications\NotificationController;
 use App\Features\Requests\RequestController;
 use App\Features\Users\AccessRequestController;
 use App\Features\Users\UserController;
-use App\Services\AppwriteAuditService;
-use App\Services\ProfileRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/auth/status', function () {
-    $configured = config('services.auth.provider') === 'appwrite'
-        ? filled(config('services.appwrite.endpoint'))
-            && filled(config('services.appwrite.project_id'))
-            && filled(config('services.appwrite.api_key'))
-            && filled(config('services.appwrite.database_id'))
-        : filled(config('services.supabase.url')) && filled(config('services.supabase.anon_key'));
-
-    abort_unless($configured, 503, 'Authentication service is not configured.');
+    abort_unless(
+        filled(config('services.supabase.url')) && filled(config('services.supabase.anon_key')),
+        503,
+        'Authentication service is not configured.'
+    );
 
     return response()->json(['configured' => true]);
 });
@@ -30,38 +25,33 @@ Route::get('/auth/status', function () {
 // SeaTalk login routes are public only for the short-lived QR transaction.
 Route::post('/auth/seatalk/transactions', [SeatalkController::class, 'createLoginTransaction'])->middleware('throttle:10,1');
 Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
-Route::post('/auth/backroom/password-reset/request', [UserController::class, 'requestPasswordReset'])->middleware('throttle:backroom');
-Route::post('/auth/backroom/password-reset/complete', [UserController::class, 'completePasswordReset'])->middleware('throttle:backroom');
-Route::post('/auth/logout', [BackroomController::class, 'logout'])->middleware('throttle:api');
 Route::get('/auth/seatalk/transactions/{transactionId}', [SeatalkController::class, 'transactionStatus'])
     ->whereUuid('transactionId')
     ->middleware('throttle:60,1');
 Route::get('/auth/seatalk/callback', [SeatalkController::class, 'callback'])->middleware('throttle:10,1');
 Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
-Route::middleware(['auth.configured', 'throttle:api'])->group(function (): void {
+Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
     Route::post('/auth/password-changed', function (Request $request) {
         $actor = $request->attributes->get('actor');
         abort_unless($actor->role === 'ops_pic', 403, 'Only Backroom accounts use this flow.');
         abort_unless($actor->must_change_password && $actor->password_reset_at, 409, 'Change your password before continuing.');
-        $updated = app(ProfileRepository::class)->markPasswordChanged(
-            (string) $actor->id,
-            $request->attributes->get('auth_provider')
-        );
+        $updated = DB::table('profiles')
+            ->where('id', $actor->id)
+            ->where('must_change_password', true)
+            ->update(['must_change_password' => false, 'password_changed_at' => now(), 'updated_at' => now()]);
         abort_unless($updated, 409, 'Password change could not be verified.');
-        app(AppwriteAuditService::class)->record('password_changed', (string) $actor->id, (string) $actor->id, (string) $actor->id, $request);
 
         return response()->json(['ok' => true]);
     });
 });
 
-Route::middleware(['auth.configured', 'throttle:api'])->group(function (): void {
+Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::patch('/users/{id}/disable', [UserController::class, 'disable']);
-    Route::patch('/users/{id}/enable', [UserController::class, 'activate']);
     Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);

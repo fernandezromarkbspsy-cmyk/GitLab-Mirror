@@ -84,5 +84,5 @@ update-readme:
         exit 0
       fi
     - git add README.md
-    - git commit -m "docs: automatically update README"
+    - 'git commit -m "docs: automatically update README"'
     - git push "https://oauth2:${GITLAB_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:main

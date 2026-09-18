@@ -17,7 +17,7 @@ const DockingConfirmation = lazy(() => import('./DockingConfirmation').then(modu
 const Kpi = lazy(() => import('./Kpi').then(module => ({ default: module.Kpi })));
 const UserManagement = lazy(() => import('./UserManagement').then(module => ({ default: module.UserManagement })));
 
-export function Dashboard({ user, preview = false, onSignOut }: { user: User; preview?: boolean; onSignOut?: () => void }) {
+export function Dashboard({ user, preview = false }: { user: User; preview?: boolean }) {
   const queryClient = useQueryClient();
   const location = useLocation();
   const routerNavigate = useNavigate();
@@ -47,7 +47,7 @@ export function Dashboard({ user, preview = false, onSignOut }: { user: User; pr
   }, [location.pathname, routerNavigate, view]);
 
   return <div className="app-shell">
-    <AppSidebar user={activeUser} activeView={view} open={menuOpen} onOpenChange={setMenuOpen} onNavigate={navigate} onSignOut={onSignOut ?? (() => void supabase.auth.signOut())} pendingCount={queue.count} />
+    <AppSidebar user={activeUser} activeView={view} open={menuOpen} onOpenChange={setMenuOpen} onNavigate={navigate} onSignOut={() => void supabase.auth.signOut()} pendingCount={queue.count} />
     <main className="app-content" aria-label="Primary content">
       <div className="app-content-inner">
         <AppHeader user={activeUser} preview={preview} view={view} onRoleChange={switchRole} onSearch={() => navigate(activeUser.role === 'fte_mm' ? 'truck-request' : 'lh-request')} />

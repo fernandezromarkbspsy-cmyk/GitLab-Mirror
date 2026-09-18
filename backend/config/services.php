@@ -2,24 +2,7 @@
 
 return [
 
-    'auth' => [
-        'provider' => env('AUTH_PROVIDER', 'supabase'),
-    ],
     'admin_emails' => array_values(array_filter(array_map('trim', explode(',', env('ADMIN_EMAILS', ''))))),
-    'appwrite' => [
-        'endpoint' => env('APPWRITE_ENDPOINT'),
-        'project_id' => env('APPWRITE_PROJECT_ID'),
-        'api_key' => env('APPWRITE_API_KEY'),
-        'database_id' => env('APPWRITE_DATABASE_ID', 'soc5_outbound'),
-        'ca_bundle' => env('APPWRITE_CA_BUNDLE'),
-        'timeout' => (int) env('APPWRITE_TIMEOUT', 10),
-        'tables' => [
-            'profiles' => env('APPWRITE_PROFILES_TABLE_ID', 'profiles'),
-            'sessions' => env('APPWRITE_SESSIONS_TABLE_ID', 'sessions'),
-            'audit_logs' => env('APPWRITE_AUDIT_LOGS_TABLE_ID', 'audit_logs'),
-            'password_resets' => env('APPWRITE_PASSWORD_RESETS_TABLE_ID', 'password_resets'),
-        ],
-    ],
     'supabase' => [
         'url' => env('SUPABASE_URL'),
         'anon_key' => env('SUPABASE_PUBLISHABLE_KEY') ?: env('SUPABASE_ANON_KEY'),

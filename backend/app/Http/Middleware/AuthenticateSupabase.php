@@ -2,20 +2,18 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\ProfileRepository;
 use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 final class AuthenticateSupabase
 {
-    public function __construct(private readonly ProfileRepository $profiles) {}
-
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->bearerToken() ?: $request->cookie('sb-access-token');
@@ -73,7 +71,8 @@ final class AuthenticateSupabase
         }
 
         try {
-            $profile = $this->profiles->forAuthenticatedUser($authUserId, 'supabase');
+            $profile = DB::table('profiles')->where('id', $authUserId)
+                ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_reset_at', 'password_changed_at', 'created_at']);
         } catch (QueryException $exception) {
             Log::error('Unable to load the authenticated Supabase profile.', [
                 'auth_user_id' => $authUserId,
@@ -91,7 +90,6 @@ final class AuthenticateSupabase
             $profile->role = $viewRole;
         }
         $request->attributes->set('actor', $profile);
-        $request->attributes->set('auth_provider', 'supabase');
         $request->attributes->set('supabase_user_updated_at', $supabaseUpdatedAt);
 
         if ($profile->must_change_password) {

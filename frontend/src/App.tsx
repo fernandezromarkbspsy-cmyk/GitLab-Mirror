@@ -10,12 +10,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
-import { supabase } from "./lib/supabase";
 import {
   clearBackendAccessToken,
   getBackendAccessToken,
   onBackendAuthChange,
 } from "./lib/backendAuth";
+import { supabase } from "./lib/supabase";
 import { ChangePassword } from "./pages/ChangePassword";
 import type { User } from "./types";
 
@@ -92,7 +92,7 @@ export default function App() {
 
   const signOut = useCallback(async () => {
     try {
-      await api('/auth/logout', { method: 'POST' });
+      await api("/auth/logout", { method: "POST" });
     } finally {
       clearBackendAccessToken();
       await supabase.auth.signOut();
@@ -169,7 +169,8 @@ export default function App() {
         window.setTimeout(() => void resolveSession(session), 0);
       }
     });
-    if (backendAccessToken) void resolveSession({ access_token: backendAccessToken }, true);
+    if (backendAccessToken)
+      void resolveSession({ access_token: backendAccessToken }, true);
     return () => {
       removeBackendListener();
       data.subscription.unsubscribe();

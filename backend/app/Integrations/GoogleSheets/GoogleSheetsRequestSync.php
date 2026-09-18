@@ -87,7 +87,7 @@ final class GoogleSheetsRequestSync
         $sheets = $this->client();
         $spreadsheetId = (string) config('services.google_sheets.spreadsheet_id');
         $range = $this->range('A:Z');
-        $sheets->spreadsheets_values->clear($spreadsheetId, $range, new ClearValuesRequest());
+        $sheets->spreadsheets_values->clear($spreadsheetId, $range, new ClearValuesRequest);
 
         $body = new ValueRange(['values' => $values]);
         $sheets->spreadsheets_values->update(
@@ -116,7 +116,7 @@ final class GoogleSheetsRequestSync
             throw new RuntimeException('Google Sheets credentials are not valid JSON.');
         }
 
-        $client = new Client();
+        $client = new Client;
         $client->setApplicationName(config('app.name'));
         $client->setAuthConfig($decoded);
         $client->setScopes([Sheets::SPREADSHEETS]);

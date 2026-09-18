@@ -17,7 +17,7 @@ final class BackroomPasswordResetTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (! in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+        if (!in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('The pdo_sqlite extension is required for isolated password reset tests.');
         }
         config()->set('database.default', 'sqlite');

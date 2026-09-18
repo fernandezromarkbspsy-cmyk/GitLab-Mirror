@@ -76,7 +76,7 @@ final class AuthenticateSupabase
         }
 
         try {
-            $profile = $this->profiles->forAuthenticatedUser($authUserId);
+            $profile = $this->profiles->forAuthenticatedUser($authUserId, 'supabase');
         } catch (QueryException $exception) {
             Log::error('Unable to load the authenticated Supabase profile.', [
                 'auth_user_id' => $authUserId,
@@ -94,6 +94,7 @@ final class AuthenticateSupabase
             $profile->role = $viewRole;
         }
         $request->attributes->set('actor', $profile);
+        $request->attributes->set('auth_provider', 'supabase');
         $request->attributes->set('supabase_user_updated_at', $supabaseUpdatedAt);
 
         if ($profile->must_change_password) {

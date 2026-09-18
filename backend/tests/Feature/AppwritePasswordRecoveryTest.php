@@ -37,6 +37,7 @@ final class AppwritePasswordRecoveryTest extends TestCase
     public function test_reset_request_is_non_enumerating_and_records_no_secret(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             '*/tablesdb/*/tables/profiles/rows?*' => Http::response(['rows' => [[
                 '$id' => 'appwrite-user-1', 'email' => 'ops123@backroom.soc5.internal', 'role' => 'ops_pic', 'is_active' => true,
             ]]]),
@@ -57,6 +58,7 @@ final class AppwritePasswordRecoveryTest extends TestCase
     public function test_completion_updates_auth_profile_and_reset_lifecycle_without_persisting_secret(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             '*/tablesdb/*/tables/profiles/appwrite-user-1' => Http::sequence()
                 ->push(['$id' => 'appwrite-user-1', 'role' => 'ops_pic', 'is_active' => true])
                 ->push(['$id' => 'appwrite-user-1']),
@@ -89,6 +91,7 @@ final class AppwritePasswordRecoveryTest extends TestCase
     public function test_invalid_or_reused_recovery_is_rejected_without_profile_update(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             '*/tablesdb/*/tables/profiles/appwrite-user-1' => Http::response(['$id' => 'appwrite-user-1', 'role' => 'ops_pic', 'is_active' => true]),
             '*/account/recovery' => Http::response(['message' => 'expired'], 401),
         ]);
@@ -106,6 +109,7 @@ final class AppwritePasswordRecoveryTest extends TestCase
     public function test_admin_reset_uses_appwrite_and_records_actor_reason(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             '*/tablesdb/*/tables/profiles/appwrite-user-1' => Http::response(['$id' => 'appwrite-user-1', 'role' => 'ops_pic', 'is_active' => true]),
             '*/users/appwrite-user-1/password' => Http::response([]),
             '*/tablesdb/*/tables/password_resets/rows' => Http::response(['$id' => 'reset-1'], 201),

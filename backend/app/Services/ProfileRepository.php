@@ -16,9 +16,9 @@ final class ProfileRepository
     {
     }
 
-    public function forAuthenticatedUser(string $authUserId): ?object
+    public function forAuthenticatedUser(string $authUserId, ?string $provider = null): ?object
     {
-        if ($this->usesAppwrite()) {
+        if ($this->usesAppwrite($provider)) {
             return $this->normalizeAppwriteProfile($this->appwrite->profileForUser($authUserId), $authUserId);
         }
 
@@ -91,7 +91,7 @@ final class ProfileRepository
         return $this->appwrite->updateRow('profiles', $userId, $data);
     }
 
-    public function markPasswordChanged(string $profileId): int
+    public function markPasswordChanged(string $profileId, ?string $provider = null): int
     {
         $data = [
             'must_change_password' => false,
@@ -99,7 +99,7 @@ final class ProfileRepository
             'updated_at' => now()->toISOString(),
         ];
 
-        if ($this->usesAppwrite()) {
+        if ($this->usesAppwrite($provider)) {
             $this->appwrite->updateRow('profiles', $profileId, $data);
 
             return 1;
@@ -131,8 +131,8 @@ final class ProfileRepository
         ]);
     }
 
-    private function usesAppwrite(): bool
+    private function usesAppwrite(?string $provider = null): bool
     {
-        return config('services.auth.provider') === 'appwrite';
+        return ($provider ?? config('services.auth.provider')) === 'appwrite';
     }
 }

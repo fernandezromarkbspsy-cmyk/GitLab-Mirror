@@ -9,6 +9,7 @@ final class AuthStatusTest extends TestCase
     public function test_auth_status_is_ready_when_supabase_is_configured(): void
     {
         config()->set([
+            'services.auth.provider' => 'supabase',
             'services.supabase.url' => 'https://project.supabase.co',
             'services.supabase.anon_key' => 'sb_publishable_test',
         ]);
@@ -21,6 +22,7 @@ final class AuthStatusTest extends TestCase
     public function test_auth_status_fails_when_supabase_is_not_configured(): void
     {
         config()->set([
+            'services.auth.provider' => 'supabase',
             'services.supabase.url' => null,
             'services.supabase.anon_key' => null,
         ]);

@@ -29,7 +29,7 @@ final class AuthenticateAppwriteTest extends TestCase
         $id = 'appwrite-user-1';
         $profile = (object) [
             'id' => $id, 'name' => 'Admin', 'role' => 'fte_ops', 'email' => 'admin@example.test',
-            'ops_id' => null, 'must_change_password' => false, 'password_reset_at' => null,
+            'ops_id' => null, 'is_active' => true, 'must_change_password' => false, 'password_reset_at' => null,
             'password_changed_at' => null, 'created_at' => now(),
         ];
         config()->set('services.auth.provider', 'appwrite');

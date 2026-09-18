@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use App\Services\AppwriteService;
 use App\Services\ProfileRepository;
+use App\Services\AppwriteAuditService;
 use Throwable;
 
 final class UserController
@@ -19,12 +20,16 @@ final class UserController
 
     private readonly ProfileRepository $profiles;
 
+    private readonly AppwriteAuditService $audit;
+
     public function __construct(
         ?AppwriteService $appwrite = null,
         ?ProfileRepository $profiles = null,
+        ?AppwriteAuditService $audit = null,
     ) {
         $this->appwrite = $appwrite ?? app(AppwriteService::class);
         $this->profiles = $profiles ?? app(ProfileRepository::class);
+        $this->audit = $audit ?? app(AppwriteAuditService::class);
     }
 
     public function index(Request $request): JsonResponse
@@ -57,7 +62,7 @@ final class UserController
             $user = $this->appwrite->createAuthUser($email, $initialPassword, $data['name']);
             abort_unless($user && ($user['$id'] ?? $user['id'] ?? null), 422, 'Unable to create authentication account.');
 
-            return $this->storeWithAppwrite($data, $opsId, $email, $request->attributes->get('actor'), $user, $initialPassword);
+            return $this->storeWithAppwrite($data, $opsId, $email, $request->attributes->get('actor'), $user, $initialPassword, $request);
         }
 
         $data = $request->validate(['ops_id' => [Rule::unique('profiles', 'ops_id')]]) + $data;
@@ -128,11 +133,12 @@ final class UserController
             try {
                 $this->appwrite->updateAuthUser($id, ['name' => $data['name']]);
                 $profile = $this->profiles->updateAppwriteProfile($id, $data);
-            } catch (Throwable $exception) {
-                report($exception);
+            } catch (Throwable) {
+                logger()->error('Unable to update the Appwrite Backroom account.');
                 abort(503, 'Unable to update the Backroom account.');
             }
             $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_UPDATED', $data);
+            $this->audit->record('user_updated', $id, (string) $request->attributes->get('actor')->id, $id, $request, ['role' => $data['role']]);
 
             return response()->json($this->appwriteProfileResponse($profile));
         }
@@ -166,12 +172,14 @@ final class UserController
                 $this->profiles->updateAppwriteProfile($id, ['is_active' => $isActive, 'updated_at' => now()->toISOString()]);
                 if (! $isActive) {
                     $this->appwrite->revokeAllUserSessions($id);
+                    $this->audit->record('session_revoked', $id, (string) $request->attributes->get('actor')->id, $id, $request, ['reason' => 'user_disabled']);
                 }
-            } catch (Throwable $exception) {
-                report($exception);
+            } catch (Throwable) {
+                logger()->error('Unable to update the Appwrite Backroom account status.');
                 abort(503, 'Unable to update the Backroom account status.');
             }
             $this->userEvent($id, $request->attributes->get('actor')->id, $isActive ? 'USER_ENABLED' : 'USER_DISABLED');
+            $this->audit->record($isActive ? 'user_enabled' : 'user_disabled', $id, (string) $request->attributes->get('actor')->id, $id, $request);
 
             return response()->json(['ok' => true]);
         }
@@ -254,8 +262,9 @@ final class UserController
             if ($profile && ($profile['role'] ?? null) === 'ops_pic' && ($profile['is_active'] ?? false)) {
                 $requestedAt = now()->toISOString();
                 if ($this->appwrite->createRecovery((string) ($profile['email'] ?? strtolower($data['ops_id']).'@backroom.soc5.internal'), (string) config('app.url').'/appwrite-recovery')) {
+                    $userId = (string) ($profile['$id'] ?? $profile['id']);
                     $this->appwrite->createPasswordReset([
-                        'user_id' => (string) ($profile['$id'] ?? $profile['id']),
+                        'user_id' => $userId,
                         'actor_id' => null,
                         'requested_at' => $requestedAt,
                         'status' => 'requested',
@@ -263,10 +272,11 @@ final class UserController
                         'metadata' => json_encode(['provider' => 'appwrite'], JSON_THROW_ON_ERROR),
                         'completed_at' => null,
                     ]);
+                    $this->audit->record('password_reset_requested', $userId, null, $userId, $request);
                 }
             }
-        } catch (Throwable $exception) {
-            report($exception);
+        } catch (Throwable) {
+            logger()->warning('Unable to process the Appwrite password recovery request.');
         }
 
         return response()->json(['ok' => true, 'message' => $message], 202);
@@ -308,8 +318,10 @@ final class UserController
                     'completed_at' => $completedAt,
                 ]);
             }
-        } catch (Throwable $exception) {
-            report($exception);
+            $this->audit->record('password_reset_completed', $data['user_id'], $data['user_id'], $data['user_id'], $request);
+        } catch (Throwable) {
+            logger()->warning('Unable to complete the Appwrite password recovery.');
+            $this->audit->record('invalid_recovery', $data['user_id'], null, $data['user_id'], $request);
             abort(422, 'Recovery link is invalid or expired.');
         }
 
@@ -335,8 +347,9 @@ final class UserController
                 'metadata' => json_encode(['provider' => 'appwrite'], JSON_THROW_ON_ERROR),
                 'completed_at' => null,
             ]);
-        } catch (Throwable $exception) {
-            report($exception);
+            $this->audit->record('admin_password_reset', $id, (string) $request->attributes->get('actor')->id, $id, $request);
+        } catch (Throwable) {
+            logger()->error('Unable to reset the Appwrite Backroom password.');
             abort(502, 'Unable to reset the Backroom password.');
         }
 
@@ -345,10 +358,14 @@ final class UserController
 
     private function authorize(Request $request): void
     {
-        abort_unless(in_array($request->attributes->get('actor')->role, ['fte_ops', 'fte_mm'], true), 403, 'Only FTE users can manage users.');
+        $actor = $request->attributes->get('actor');
+        if (! $actor || ! in_array($actor->role, ['fte_ops', 'fte_mm'], true)) {
+            $this->audit->record('unauthorized_access', $actor->id ?? null, $actor->id ?? null, null, $request, ['reason' => 'user_management_forbidden']);
+            abort(403, 'Only FTE users can manage users.');
+        }
     }
 
-    private function storeWithAppwrite(array $data, string $opsId, string $email, object $actor, array $user, string $initialPassword): JsonResponse
+    private function storeWithAppwrite(array $data, string $opsId, string $email, object $actor, array $user, string $initialPassword, Request $request): JsonResponse
     {
         try {
             $authUserId = (string) ($user['$id'] ?? $user['id']);
@@ -362,12 +379,13 @@ final class UserController
                 'password_changed_at' => null,
                 'password_reset_at' => now()->toISOString(),
             ]);
-        } catch (Throwable $exception) {
-            report($exception);
+        } catch (Throwable) {
+            logger()->error('Unable to provision the Appwrite Backroom account.');
             abort(503, 'Unable to provision the Backroom account.');
         }
 
         $this->userEvent($authUserId, (string) $actor->id, 'USER_CREATED', ['name' => $data['name'], 'ops_id' => $opsId]);
+        $this->audit->record('user_created', $authUserId, (string) $actor->id, $authUserId, $request, ['role' => 'ops_pic']);
 
         return response()->json([
             'id' => $authUserId,

@@ -35,6 +35,7 @@ final class AppwriteUserLifecycleTest extends TestCase
     public function test_create_writes_auth_user_and_complete_active_profile(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             '*/tablesdb/*/tables/profiles/rows?*' => Http::response(['rows' => []]),
             '*/users' => Http::response(['$id' => 'appwrite-user-1'], 201),
             '*/tablesdb/*/tables/profiles/rows' => Http::response(['$id' => 'appwrite-user-1'], 201),
@@ -62,6 +63,7 @@ final class AppwriteUserLifecycleTest extends TestCase
     public function test_duplicate_auth_user_is_rejected_without_profile_write(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             '*/tablesdb/*/tables/profiles/rows?*' => Http::response(['rows' => []]),
             '*/users' => Http::response(['message' => 'already exists'], 409),
         ]);
@@ -77,6 +79,7 @@ final class AppwriteUserLifecycleTest extends TestCase
     public function test_update_and_status_lifecycle_uses_appwrite_only(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             '*/tablesdb/*/tables/profiles/appwrite-user-1' => Http::response(['$id' => 'appwrite-user-1', 'is_active' => true]),
             '*/users/appwrite-user-1/name' => Http::response([]),
             '*/users/appwrite-user-1/status' => Http::response([]),

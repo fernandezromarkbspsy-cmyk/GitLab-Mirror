@@ -27,6 +27,7 @@ final class AppwriteBackroomLoginTest extends TestCase
     private function fakeSuccessfulAuthentication(array $profile = []): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             'https://sgp.cloud.appwrite.io/v1/account/sessions/email' => Http::response([
                 '$id' => 'session-1',
                 'userId' => 'appwrite-user-1',
@@ -44,6 +45,7 @@ final class AppwriteBackroomLoginTest extends TestCase
             'https://sgp.cloud.appwrite.io/v1/tablesdb/soc5_outbound/tables/sessions/rows' => Http::response([
                 '$id' => 'session-1',
             ]),
+            'https://sgp.cloud.appwrite.io/v1/users/appwrite-user-1/sessions/session-1' => Http::response([], 204),
         ]);
     }
 
@@ -80,6 +82,7 @@ final class AppwriteBackroomLoginTest extends TestCase
     public function test_invalid_credentials_are_rejected(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             'https://sgp.cloud.appwrite.io/v1/account/sessions/email' => Http::response(['message' => 'Invalid credentials'], 401),
         ]);
 
@@ -91,6 +94,7 @@ final class AppwriteBackroomLoginTest extends TestCase
     public function test_missing_appwrite_user_is_rejected(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             'https://sgp.cloud.appwrite.io/v1/account/sessions/email' => Http::response([
                 '$id' => 'session-1', 'secret' => 'session-secret',
             ]),
@@ -104,6 +108,7 @@ final class AppwriteBackroomLoginTest extends TestCase
     public function test_missing_profile_is_rejected(): void
     {
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             'https://sgp.cloud.appwrite.io/v1/account/sessions/email' => Http::response([
                 '$id' => 'session-1', 'userId' => 'appwrite-user-1', 'secret' => 'session-secret',
                 'expire' => now()->addHour()->toISOString(),
@@ -114,6 +119,9 @@ final class AppwriteBackroomLoginTest extends TestCase
         $this->postJson('/api/auth/backroom/login', [
             'ops_id' => 'ops123', 'password' => 'correct-password',
         ])->assertForbidden();
+
+        Http::assertSent(fn ($request): bool => $request->method() === 'DELETE'
+            && str_ends_with($request->url(), '/users/appwrite-user-1/sessions/session-1'));
     }
 
     public function test_inactive_profile_is_rejected(): void
@@ -143,6 +151,7 @@ final class AppwriteBackroomLoginTest extends TestCase
         $this->app->instance(AppwriteService::class, $service);
 
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             'https://sgp.cloud.appwrite.io/v1/users/appwrite-user-1/sessions/session-1' => Http::response([], 204),
             'https://sgp.cloud.appwrite.io/v1/tablesdb/soc5_outbound/tables/sessions/session-1' => Http::sequence()
                 ->push(['$id' => 'session-1', 'revoked_at' => null])
@@ -169,6 +178,7 @@ final class AppwriteBackroomLoginTest extends TestCase
         $this->app->instance(AppwriteService::class, $service);
 
         Http::fake([
+            '*/tablesdb/*/tables/audit_logs/rows' => Http::response(['$id' => 'audit-1'], 201),
             'https://sgp.cloud.appwrite.io/v1/account/sessions/current*' => Http::response([], 404),
         ]);
 

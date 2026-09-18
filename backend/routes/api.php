@@ -9,6 +9,7 @@ use App\Features\Requests\RequestController;
 use App\Features\Users\AccessRequestController;
 use App\Features\Users\UserController;
 use App\Services\ProfileRepository;
+use App\Services\AppwriteAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -44,8 +45,12 @@ Route::middleware(['auth.configured', 'throttle:api'])->group(function (): void 
         $actor = $request->attributes->get('actor');
         abort_unless($actor->role === 'ops_pic', 403, 'Only Backroom accounts use this flow.');
         abort_unless($actor->must_change_password && $actor->password_reset_at, 409, 'Change your password before continuing.');
-        $updated = app(ProfileRepository::class)->markPasswordChanged((string) $actor->id);
+        $updated = app(ProfileRepository::class)->markPasswordChanged(
+            (string) $actor->id,
+            $request->attributes->get('auth_provider')
+        );
         abort_unless($updated, 409, 'Password change could not be verified.');
+        app(AppwriteAuditService::class)->record('password_changed', (string) $actor->id, (string) $actor->id, (string) $actor->id, $request);
 
         return response()->json(['ok' => true]);
     });

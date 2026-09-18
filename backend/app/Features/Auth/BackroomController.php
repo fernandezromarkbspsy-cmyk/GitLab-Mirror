@@ -4,6 +4,7 @@ namespace App\Features\Auth;
 
 use App\Services\AppwriteService;
 use App\Services\ProfileRepository;
+use App\Services\AppwriteAuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ final class BackroomController
     public function __construct(
         private readonly AppwriteService $appwrite,
         private readonly ProfileRepository $profiles,
+        private readonly AppwriteAuditService $audit,
     )
     {
     }
@@ -75,9 +77,8 @@ final class BackroomController
         } catch (AppwriteException) {
             // Invalid, expired, or already-revoked sessions are already logged out.
             return response()->json(['ok' => true]);
-        } catch (Throwable $exception) {
-            report($exception);
-
+        } catch (Throwable) {
+            logger()->error('Unable to load the current Appwrite session.');
             abort(503, 'Authentication service is temporarily unavailable.');
         }
 
@@ -90,9 +91,10 @@ final class BackroomController
         try {
             $this->appwrite->revokeUserSession($authUserId, $sessionId);
             $this->appwrite->revokeSessionRecord($sessionId);
-        } catch (Throwable $exception) {
-            report($exception);
-
+            $this->audit->record('logout', $authUserId, $authUserId, $sessionId, $request);
+            $this->audit->record('session_revoked', $authUserId, $authUserId, $sessionId, $request);
+        } catch (Throwable) {
+            logger()->error('Unable to revoke the Appwrite session.');
             abort(503, 'Authentication service is temporarily unavailable.');
         }
 
@@ -103,24 +105,30 @@ final class BackroomController
     {
         try {
             $session = $this->appwrite->createEmailPasswordSession($opsId.'@backroom.soc5.internal', $password);
-        } catch (RuntimeException $exception) {
-            report($exception);
+        } catch (RuntimeException) {
+            $this->audit->record('login_failed', null, null, null, $request, ['reason' => 'auth_service_unavailable']);
+            logger()->error('Unable to create the Appwrite Backroom session.');
 
             abort(503, 'Authentication service is temporarily unavailable.');
         }
 
-        abort_unless($session, 401, 'Invalid Ops ID or password.');
+        if (! $session) {
+            $this->audit->record('login_failed', null, null, null, $request, ['reason' => 'invalid_credentials']);
+            abort(401, 'Invalid Ops ID or password.');
+        }
         $authUserId = (string) ($session['userId'] ?? '');
-        abort_unless($authUserId !== '', 401, 'Invalid Ops ID or password.');
+        if ($authUserId === '') {
+            $this->audit->record('login_failed', null, null, null, $request, ['reason' => 'invalid_auth_response']);
+            abort(401, 'Invalid Ops ID or password.');
+        }
         $sessionId = (string) ($session['$id'] ?? $session['id'] ?? '');
         $expiresAt = $session['expire'] ?? $session['expiresAt'] ?? null;
         abort_unless($sessionId !== '' && is_string($expiresAt) && $expiresAt !== '', 503, 'Authentication service is temporarily unavailable.');
 
         try {
             $profile = $this->profiles->forAuthenticatedUser($authUserId);
-        } catch (RuntimeException $exception) {
-            report($exception);
-
+        } catch (RuntimeException) {
+            logger()->error('Unable to load the Appwrite Backroom profile.');
             abort(503, 'Account database is temporarily unavailable.');
         }
 
@@ -128,17 +136,25 @@ final class BackroomController
             && ($profile->is_active ?? false)
             && strtolower((string) ($profile->role ?? '')) === 'ops_pic'
             && strtolower((string) ($profile->ops_id ?? '')) === $opsId;
-        abort_unless($activeOpsProfile, 403, 'Account is disabled or not provisioned.');
+        if (! $activeOpsProfile) {
+            $this->audit->record('login_failed', $authUserId, null, $authUserId, $request, ['reason' => 'inactive_or_unprovisioned']);
+            $this->audit->record('session_rejected', $authUserId, null, $sessionId, $request, ['reason' => 'inactive_or_unprovisioned']);
+            $this->revokeRejectedSession($authUserId, $sessionId, $request, 'inactive_or_unprovisioned');
+            abort(403, 'Account is disabled or not provisioned.');
+        }
 
         if ($mode === 'first-login') {
-            abort_unless((bool) ($profile->must_change_password ?? false), 409, 'This account has already completed first login.');
+            if (! (bool) ($profile->must_change_password ?? false)) {
+                $this->audit->record('login_failed', $authUserId, null, $authUserId, $request, ['reason' => 'first_login_completed']);
+                $this->revokeRejectedSession($authUserId, $sessionId, $request, 'first_login_completed');
+                abort(409, 'This account has already completed first login.');
+            }
         }
 
         try {
             $accessToken = $this->appwrite->createJwtForSession((string) ($session['secret'] ?? ''));
-        } catch (RuntimeException $exception) {
-            report($exception);
-
+        } catch (RuntimeException) {
+            logger()->error('Unable to create the Appwrite Backroom JWT.');
             abort(503, 'Authentication service is temporarily unavailable.');
         }
 
@@ -154,21 +170,33 @@ final class BackroomController
                 'metadata' => json_encode(['source' => 'backroom_login'], JSON_THROW_ON_ERROR),
                 'auth_provider' => 'appwrite',
             ], $sessionId);
-        } catch (Throwable $exception) {
-            report($exception);
+        } catch (Throwable) {
+            logger()->error('Unable to persist the Appwrite Backroom session.');
 
             try {
                 $this->appwrite->revokeUserSession($authUserId, $sessionId);
-            } catch (Throwable $cleanupException) {
-                report($cleanupException);
+            } catch (Throwable) {
+                logger()->warning('Unable to revoke the failed Appwrite Backroom session.');
             }
 
             abort(503, 'Authentication service is temporarily unavailable.');
         }
 
+        $this->audit->record('login_success', $authUserId, $authUserId, $sessionId, $request);
+
         return response()->json([
             'access_token' => $accessToken,
             'refresh_token' => null,
         ]);
+    }
+
+    private function revokeRejectedSession(string $userId, string $sessionId, Request $request, string $reason): void
+    {
+        try {
+            $this->appwrite->revokeUserSession($userId, $sessionId);
+            $this->audit->record('session_revoked', $userId, null, $sessionId, $request, ['reason' => $reason]);
+        } catch (Throwable) {
+            logger()->warning('Unable to revoke rejected Appwrite session', ['event_type' => 'session_revoked']);
+        }
     }
 }

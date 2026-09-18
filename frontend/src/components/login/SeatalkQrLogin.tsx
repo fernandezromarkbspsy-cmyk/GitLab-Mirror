@@ -122,10 +122,9 @@ export function SeatalkQrLogin({ onError, enabled = true }: SeatalkQrLoginProps)
   return (
     <div className="flex flex-col items-center">
       {transaction && (
-        <div
+        <button
           onClick={handleQrClick}
-          role="button"
-          tabIndex={0}
+          type="button"
           aria-label="Click to open SeaTalk login"
           className="relative z-10 cursor-pointer rounded-xl bg-white p-2.5 shadow-2xl shadow-[#141f3d]/40 ring-1 ring-white/50 outline-none transition-all duration-700 ease-out transform-gpu hover:z-20 hover:-translate-y-1 hover:scale-125 hover:shadow-[0_24px_48px_-18px_rgba(14,24,54,0.6)] focus-visible:z-20 focus-visible:-translate-y-1 focus-visible:scale-125 focus-visible:ring-4 focus-visible:ring-accent/30"
           onKeyDown={(event) => {
@@ -139,7 +138,7 @@ export function SeatalkQrLogin({ onError, enabled = true }: SeatalkQrLoginProps)
             </div>
           </div>
           <span className="qr-scan" aria-hidden />
-        </div>
+        </button>
       )}
 
       <div className="mt-3.5 flex items-center gap-1.5">

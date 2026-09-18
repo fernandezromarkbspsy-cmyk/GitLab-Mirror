@@ -15,14 +15,30 @@ final class VerifyProductionConfig extends Command
         $required = [
             'APP_KEY' => config('app.key'),
             'APP_URL' => config('app.url'),
-            'SUPABASE_URL' => config('services.supabase.url'),
-            'SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY' => config('services.supabase.anon_key'),
-            'SUPABASE_SERVICE_ROLE_KEY' => config('services.supabase.service_key'),
             'ADMIN_EMAILS' => config('services.admin_emails'),
             'DB_HOST' => config('database.connections.pgsql.host'),
             'DB_USERNAME' => config('database.connections.pgsql.username'),
             'DB_PASSWORD' => config('database.connections.pgsql.password'),
         ];
+
+        if (config('services.auth.provider') === 'appwrite') {
+            $required += [
+                'APPWRITE_ENDPOINT' => config('services.appwrite.endpoint'),
+                'APPWRITE_PROJECT_ID' => config('services.appwrite.project_id'),
+                'APPWRITE_API_KEY' => config('services.appwrite.api_key'),
+                'APPWRITE_DATABASE_ID' => config('services.appwrite.database_id'),
+                'APPWRITE_PROFILES_TABLE_ID' => config('services.appwrite.tables.profiles'),
+                'APPWRITE_SESSIONS_TABLE_ID' => config('services.appwrite.tables.sessions'),
+                'APPWRITE_AUDIT_LOGS_TABLE_ID' => config('services.appwrite.tables.audit_logs'),
+                'APPWRITE_PASSWORD_RESETS_TABLE_ID' => config('services.appwrite.tables.password_resets'),
+            ];
+        } else {
+            $required += [
+                'SUPABASE_URL' => config('services.supabase.url'),
+                'SUPABASE_PUBLISHABLE_KEY or SUPABASE_ANON_KEY' => config('services.supabase.anon_key'),
+                'SUPABASE_SERVICE_ROLE_KEY' => config('services.supabase.service_key'),
+            ];
+        }
 
         $failed = false;
         foreach ($required as $name => $value) {
@@ -47,6 +63,11 @@ final class VerifyProductionConfig extends Command
             }
             if (! str_starts_with((string) config('app.url'), 'https://')) {
                 $this->error('APP_URL must use HTTPS in production.');
+                $failed = true;
+            }
+            if (config('services.auth.provider') === 'appwrite'
+                && ! str_starts_with((string) config('services.appwrite.endpoint'), 'https://')) {
+                $this->error('APPWRITE_ENDPOINT must use HTTPS in production.');
                 $failed = true;
             }
         }

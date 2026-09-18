@@ -25,6 +25,12 @@ known_hosts
 .ssh/
 .aws/
 deploy/certs/
+.env
+.env.*
+!.env.example
+
+backend/.env
+frontend/.env
 
 # JavaScript / Vite
 node_modules/

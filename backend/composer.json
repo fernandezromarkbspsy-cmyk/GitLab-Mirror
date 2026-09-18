@@ -5,6 +5,7 @@
   "require": {
     "php": "^8.2",
     "google/apiclient": "^2.18",
+    "appwrite/appwrite": "^12.0",
     "laravel/framework": "^12.0",
     "laravel/tinker": "^2.10",
     "sentry/sentry-laravel": "^4.26"

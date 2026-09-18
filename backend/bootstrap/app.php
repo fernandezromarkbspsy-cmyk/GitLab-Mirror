@@ -4,6 +4,7 @@ use App\Console\Commands\ProvisionBackroomUsers;
 use App\Console\Commands\SyncRequestsToGoogleSheet;
 use App\Console\Commands\VerifyProductionConfig;
 use App\Http\Middleware\AuthenticateSupabase;
+use App\Http\Middleware\IdempotencyMiddleware;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,7 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['supabase.auth' => AuthenticateSupabase::class]);
+        $middleware->alias([
+            'supabase.auth' => AuthenticateSupabase::class,
+            'idempotency' => IdempotencyMiddleware::class,
+        ]);
         $middleware->prependToPriorityList(ThrottleRequests::class, AuthenticateSupabase::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

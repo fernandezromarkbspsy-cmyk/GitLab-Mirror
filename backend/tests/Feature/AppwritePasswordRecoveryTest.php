@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Features\Users\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 final class AppwritePasswordRecoveryTest extends TestCase
@@ -96,7 +97,7 @@ final class AppwritePasswordRecoveryTest extends TestCase
             '*/account/recovery' => Http::response(['message' => 'expired'], 401),
         ]);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         try {
             app(UserController::class)->completePasswordReset($this->request('POST', '/api/auth/backroom/password-reset/complete', [
                 'user_id' => 'appwrite-user-1', 'secret' => 'expired-secret', 'password' => 'new-secure-password', 'password_confirmation' => 'new-secure-password',

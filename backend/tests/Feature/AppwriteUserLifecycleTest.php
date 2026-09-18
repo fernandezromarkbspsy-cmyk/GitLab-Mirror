@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Features\Users\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 final class AppwriteUserLifecycleTest extends TestCase
@@ -68,7 +69,7 @@ final class AppwriteUserLifecycleTest extends TestCase
             '*/users' => Http::response(['message' => 'already exists'], 409),
         ]);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
         try {
             app(UserController::class)->store($this->request('POST', '/api/users', ['name' => 'Ops User', 'ops_id' => 'ops123']));
         } finally {

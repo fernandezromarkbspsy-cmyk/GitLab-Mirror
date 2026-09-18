@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\AuthenticateAppwrite;
 use App\Http\Middleware\AuthenticateConfigured;
 use App\Http\Middleware\AuthenticateSupabase;
-use App\Http\Middleware\AuthenticateAppwrite;
 use App\Services\AppwriteAuditService;
 use App\Services\AppwriteService;
 use App\Services\ProfileRepository;

@@ -2,6 +2,9 @@
 
 namespace App\Features\Users;
 
+use App\Services\AppwriteAuditService;
+use App\Services\AppwriteService;
+use App\Services\ProfileRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -9,9 +12,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use App\Services\AppwriteService;
-use App\Services\ProfileRepository;
-use App\Services\AppwriteAuditService;
 use Throwable;
 
 final class UserController

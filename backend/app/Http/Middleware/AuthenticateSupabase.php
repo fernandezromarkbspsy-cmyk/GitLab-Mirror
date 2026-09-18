@@ -2,22 +2,19 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
 use App\Services\ProfileRepository;
+use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 final class AuthenticateSupabase
 {
-    public function __construct(private readonly ProfileRepository $profiles)
-    {
-    }
+    public function __construct(private readonly ProfileRepository $profiles) {}
 
     public function handle(Request $request, Closure $next): Response
     {

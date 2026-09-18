@@ -16,9 +16,7 @@ final class AppwriteAuditService
         'unauthorized_access', 'invalid_recovery', 'expired_recovery', 'reused_recovery',
     ];
 
-    public function __construct(private readonly AppwriteService $appwrite)
-    {
-    }
+    public function __construct(private readonly AppwriteService $appwrite) {}
 
     public function record(
         string $eventType,

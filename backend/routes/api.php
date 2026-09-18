@@ -1,15 +1,15 @@
 <?php
 
-use App\Features\Auth\SeatalkController;
 use App\Features\Auth\BackroomController;
+use App\Features\Auth\SeatalkController;
 use App\Features\Dispatch\DispatchController;
 use App\Features\Kpi\KpiController;
 use App\Features\Notifications\NotificationController;
 use App\Features\Requests\RequestController;
 use App\Features\Users\AccessRequestController;
 use App\Features\Users\UserController;
-use App\Services\ProfileRepository;
 use App\Services\AppwriteAuditService;
+use App\Services\ProfileRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;

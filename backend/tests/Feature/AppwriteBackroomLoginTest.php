@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\AppwriteService;
+use Appwrite\AppwriteException;
 use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;
@@ -174,7 +175,7 @@ final class AppwriteBackroomLoginTest extends TestCase
     public function test_repeated_logout_of_missing_or_revoked_session_is_safe(): void
     {
         $service = Mockery::mock(AppwriteService::class)->makePartial();
-        $service->shouldReceive('currentSessionForJwt')->with('already-revoked-jwt')->once()->andThrow(new \Appwrite\AppwriteException('Session not found', 404));
+        $service->shouldReceive('currentSessionForJwt')->with('already-revoked-jwt')->once()->andThrow(new AppwriteException('Session not found', 404));
         $this->app->instance(AppwriteService::class, $service);
 
         Http::fake([

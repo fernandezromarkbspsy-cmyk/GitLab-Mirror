@@ -2,13 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\AppwriteAuditService;
 use App\Services\AppwriteService;
+use App\Services\ProfileRepository;
 use Appwrite\AppwriteException;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
-use App\Services\ProfileRepository;
-use App\Services\AppwriteAuditService;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -19,9 +19,7 @@ final class AuthenticateAppwrite
         private readonly AppwriteService $appwrite,
         private readonly ProfileRepository $profiles,
         private readonly AppwriteAuditService $audit,
-    )
-    {
-    }
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {

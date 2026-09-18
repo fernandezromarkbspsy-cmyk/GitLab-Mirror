@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\AuthenticateAppwrite;
 use App\Services\AppwriteService;
 use Appwrite\AppwriteException;
+use Appwrite\Services\Account;
 use Mockery;
 use Tests\TestCase;
 
@@ -35,7 +35,7 @@ final class AuthenticateAppwriteTest extends TestCase
         config()->set('services.auth.provider', 'appwrite');
         config()->set('services.admin_emails', ['admin@example.test']);
 
-        $account = Mockery::mock(\Appwrite\Services\Account::class);
+        $account = Mockery::mock(Account::class);
         $account->shouldReceive('get')->once()->andReturn(['$id' => $id]);
         $service = Mockery::mock(AppwriteService::class);
         $service->shouldReceive('accountForJwt')->with('test-jwt')->andReturn($account);
@@ -61,7 +61,7 @@ final class AuthenticateAppwriteTest extends TestCase
 
     public function test_expired_or_invalid_appwrite_jwt_is_rejected(): void
     {
-        $account = Mockery::mock(\Appwrite\Services\Account::class);
+        $account = Mockery::mock(Account::class);
         $account->shouldReceive('get')->once()->andThrow(new AppwriteException('JWT expired'));
         $service = Mockery::mock(AppwriteService::class);
         $service->shouldReceive('accountForJwt')->with('expired-jwt')->andReturn($account);
@@ -77,7 +77,7 @@ final class AuthenticateAppwriteTest extends TestCase
 
     public function test_missing_appwrite_profile_is_rejected(): void
     {
-        $account = Mockery::mock(\Appwrite\Services\Account::class);
+        $account = Mockery::mock(Account::class);
         $account->shouldReceive('get')->once()->andReturn(['$id' => 'missing-profile']);
         $service = Mockery::mock(AppwriteService::class);
         $service->shouldReceive('accountForJwt')->with('test-jwt')->andReturn($account);
@@ -101,7 +101,7 @@ final class AuthenticateAppwriteTest extends TestCase
 
     public function test_inactive_appwrite_profile_is_rejected(): void
     {
-        $account = Mockery::mock(\Appwrite\Services\Account::class);
+        $account = Mockery::mock(Account::class);
         $account->shouldReceive('get')->once()->andReturn(['$id' => 'inactive-user']);
         $service = Mockery::mock(AppwriteService::class);
         $service->shouldReceive('accountForJwt')->with('test-jwt')->andReturn($account);
@@ -129,7 +129,7 @@ final class AuthenticateAppwriteTest extends TestCase
     public function test_revoked_local_appwrite_session_is_rejected(): void
     {
         $id = 'revoked-user';
-        $account = Mockery::mock(\Appwrite\Services\Account::class);
+        $account = Mockery::mock(Account::class);
         $account->shouldReceive('get')->once()->andReturn(['$id' => $id]);
         $service = Mockery::mock(AppwriteService::class);
         $service->shouldReceive('accountForJwt')->with('test-jwt')->andReturn($account);
@@ -151,7 +151,7 @@ final class AuthenticateAppwriteTest extends TestCase
     public function test_expired_local_appwrite_session_is_rejected(): void
     {
         $id = 'expired-user';
-        $account = Mockery::mock(\Appwrite\Services\Account::class);
+        $account = Mockery::mock(Account::class);
         $account->shouldReceive('get')->once()->andReturn(['$id' => $id]);
         $service = Mockery::mock(AppwriteService::class);
         $service->shouldReceive('accountForJwt')->with('test-jwt')->andReturn($account);

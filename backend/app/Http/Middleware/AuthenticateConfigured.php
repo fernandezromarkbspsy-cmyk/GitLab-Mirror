@@ -11,8 +11,7 @@ final class AuthenticateConfigured
     public function __construct(
         private readonly AuthenticateSupabase $supabase,
         private readonly AuthenticateAppwrite $appwrite,
-    ) {
-    }
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {

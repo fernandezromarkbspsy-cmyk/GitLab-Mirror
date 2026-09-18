@@ -12,9 +12,7 @@ final class ProfileRepository
         'password_reset_at', 'password_changed_at', 'created_at',
     ];
 
-    public function __construct(private readonly AppwriteService $appwrite)
-    {
-    }
+    public function __construct(private readonly AppwriteService $appwrite) {}
 
     public function forAuthenticatedUser(string $authUserId, ?string $provider = null): ?object
     {

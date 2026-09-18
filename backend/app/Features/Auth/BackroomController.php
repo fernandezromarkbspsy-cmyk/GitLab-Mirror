@@ -2,16 +2,15 @@
 
 namespace App\Features\Auth;
 
+use App\Services\AppwriteAuditService;
 use App\Services\AppwriteService;
 use App\Services\ProfileRepository;
-use App\Services\AppwriteAuditService;
+use Appwrite\AppwriteException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
-use Appwrite\AppwriteException;
 
 final class BackroomController
 {
@@ -19,9 +18,7 @@ final class BackroomController
         private readonly AppwriteService $appwrite,
         private readonly ProfileRepository $profiles,
         private readonly AppwriteAuditService $audit,
-    )
-    {
-    }
+    ) {}
 
     public function login(Request $request): JsonResponse
     {

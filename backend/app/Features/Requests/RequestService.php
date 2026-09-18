@@ -49,7 +49,7 @@ final class RequestService
                 'cancel' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'REQUEST_CANCELLED'],
                 'reject-mm' => [['APPROVED'], 'REJECTED_BY_MM', 'REQUEST_REJECTED_BY_MM'],
                 'assign-truck' => [['APPROVED'], 'ASSIGNED', 'TRUCK_ASSIGNED'],
-                'mark-docked' => [['FOR_DOCKING'], 'FOR_DOCKING', 'TRUCK_DOCKED'],
+                'mark-docked' => [['FOR_DOCKING'], 'DOCKED', 'TRUCK_DOCKED'],
                 'confirm' => [['DOCKED'], 'CONFIRMED', 'REQUEST_CONFIRMED'],
                 default => throw ValidationException::withMessages(['action' => 'Unknown action.']),
             };

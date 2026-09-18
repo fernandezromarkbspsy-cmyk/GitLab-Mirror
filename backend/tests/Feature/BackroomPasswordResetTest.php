@@ -42,6 +42,7 @@ final class BackroomPasswordResetTest extends TestCase
             'http_proxy' => '',
             'ca_bundle' => '',
         ]);
+        config()->set('services.auth.provider', 'supabase');
     }
 
     private function insertProfile(array $overrides = []): string

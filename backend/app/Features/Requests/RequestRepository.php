@@ -141,9 +141,9 @@ final class RequestRepository
 
     public function insert(array $data): object
     {
-        $id = DB::table('requests')->insertGetId($data, 'id');
+        DB::table('requests')->insert($data);
 
-        return DB::table('requests')->where('id', $id)->first();
+        return DB::table('requests')->where('id', $data['id'])->first();
     }
 
     public function update(string $id, array $data): object

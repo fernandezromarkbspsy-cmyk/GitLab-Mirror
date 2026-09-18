@@ -79,11 +79,11 @@ Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/requests/metrics', [RequestController::class, 'metrics']);
     Route::get('/requests/analytics', [RequestController::class, 'analytics']);
     Route::get('/requests', [RequestController::class, 'index']);
-    Route::post('/requests', [RequestController::class, 'store']);
+    Route::post('/requests', [RequestController::class, 'store'])->middleware('idempotency');
     Route::post('/requests/bulk-approve', [RequestController::class, 'bulkApprove']);
     Route::get('/requests/{id}', [RequestController::class, 'show']);
     Route::get('/requests/{id}/events', [RequestController::class, 'events']);
-    Route::put('/requests/{id}', [RequestController::class, 'update']);
-    Route::post('/requests/{id}/{action}', [RequestController::class, 'action'])
+    Route::put('/requests/{id}', [RequestController::class, 'update'])->middleware('idempotency');
+    Route::post('/requests/{id}/{action}', [RequestController::class, 'action'])->middleware('idempotency')
         ->whereIn('action', ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked', 'confirm']);
 });

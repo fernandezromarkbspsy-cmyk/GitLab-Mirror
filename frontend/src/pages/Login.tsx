@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { KeyRound } from 'lucide-react';
 import { isAuthError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';

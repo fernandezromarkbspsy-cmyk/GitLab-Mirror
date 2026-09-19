@@ -35,6 +35,7 @@ import type {
 import { useUiStore } from "../stores/ui";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
+import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
@@ -326,7 +327,7 @@ export function OutboundRequests({
               </div>
               <div className="lh-table-body">
                 {requests.isPending && (
-                  <div className="lh-empty-state">Loading live requests...</div>
+                  <SkeletonRequestTable rows={6} />
                 )}
                 {requests.error && (
                   <div className="lh-empty-state">{requests.error.message}</div>
@@ -405,7 +406,7 @@ export function OutboundRequests({
             </div>
           ) : (
             <div className="lh-card-view">
-              {rows.map((row) => (
+              {requests.isPending ? <SkeletonCardList rows={4} /> : rows.map((row) => (
                 <article
                   className="lh-record-card"
                   key={row.id}

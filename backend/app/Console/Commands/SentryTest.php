@@ -17,6 +17,7 @@ class SentryTest extends Command
 
         if ($dsn === '') {
             $this->error('Sentry DSN is not configured. Set SENTRY_LARAVEL_DSN first.');
+
             return self::FAILURE;
         }
 
@@ -24,6 +25,7 @@ class SentryTest extends Command
         \Sentry\flush(2.0);
 
         $this->info('Sentry test event submitted. Check the configured Sentry project.');
+
         return self::SUCCESS;
     }
 }

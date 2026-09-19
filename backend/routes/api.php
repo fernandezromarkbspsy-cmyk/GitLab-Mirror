@@ -1,6 +1,5 @@
 <?php
 
-use App\Features\Auth\SeatalkController;
 use App\Features\Auth\BackroomController;
 use App\Features\Dispatch\DispatchController;
 use App\Features\Kpi\KpiController;
@@ -22,29 +21,12 @@ Route::get('/auth/status', function () {
     return response()->json(['configured' => true]);
 });
 
-// SeaTalk login routes are public only for the short-lived QR transaction.
-Route::post('/auth/seatalk/transactions', [SeatalkController::class, 'createLoginTransaction'])->middleware('throttle:10,1');
 Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
-Route::get('/auth/seatalk/transactions/{transactionId}', [SeatalkController::class, 'transactionStatus'])
-    ->whereUuid('transactionId')
-    ->middleware('throttle:60,1');
-Route::get('/auth/seatalk/callback', [SeatalkController::class, 'callback'])->middleware('throttle:10,1');
 Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
 Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
-    Route::post('/auth/password-changed', function (Request $request) {
-        $actor = $request->attributes->get('actor');
-        abort_unless($actor->role === 'ops_pic', 403, 'Only Backroom accounts use this flow.');
-        abort_unless($actor->must_change_password && $actor->password_reset_at, 409, 'Change your password before continuing.');
-        $updated = DB::table('profiles')
-            ->where('id', $actor->id)
-            ->where('must_change_password', true)
-            ->update(['must_change_password' => false, 'password_changed_at' => now(), 'updated_at' => now()]);
-        abort_unless($updated, 409, 'Password change could not be verified.');
-
-        return response()->json(['ok' => true]);
-    });
+    Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
 });
 
 Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
@@ -79,11 +61,11 @@ Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/requests/metrics', [RequestController::class, 'metrics']);
     Route::get('/requests/analytics', [RequestController::class, 'analytics']);
     Route::get('/requests', [RequestController::class, 'index']);
-    Route::post('/requests', [RequestController::class, 'store']);
+    Route::post('/requests', [RequestController::class, 'store'])->middleware('idempotency');
     Route::post('/requests/bulk-approve', [RequestController::class, 'bulkApprove']);
     Route::get('/requests/{id}', [RequestController::class, 'show']);
     Route::get('/requests/{id}/events', [RequestController::class, 'events']);
-    Route::put('/requests/{id}', [RequestController::class, 'update']);
-    Route::post('/requests/{id}/{action}', [RequestController::class, 'action'])
+    Route::put('/requests/{id}', [RequestController::class, 'update'])->middleware('idempotency');
+    Route::post('/requests/{id}/{action}', [RequestController::class, 'action'])->middleware('idempotency')
         ->whereIn('action', ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked', 'confirm']);
 });

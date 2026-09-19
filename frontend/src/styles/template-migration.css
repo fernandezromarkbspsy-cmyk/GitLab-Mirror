@@ -2063,6 +2063,42 @@ body:has(.app-sidebar) {
   padding: 16px;
 }
 
+.skeleton-line {
+  display: block;
+  min-height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #e8efed 0%, #f6f9f8 48%, #e8efed 100%);
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+.skeleton-line--head { min-height: 12px; }
+.skeleton-line--subtle { opacity: .72; }
+.skeleton-line--short { max-width: 72px; }
+.skeleton-line--pill { border-radius: 99px; }
+.skeleton-avatar { flex: 0 0 auto; }
+
+.skeleton-list { display: grid; gap: 0; }
+.skeleton-list-row { display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 10px 0; border-bottom: 1px solid #eef2f1; }
+.skeleton-list-copy { display: grid; flex: 1; gap: 7px; }
+.skeleton-list-row > .skeleton-line--short { flex: 0 0 56px; }
+.skeleton-card-list { display: grid; gap: 12px; }
+.skeleton-card { display: grid; gap: 10px; min-height: 138px; padding: 16px; border: 1px solid #e5ecea; border-radius: 8px; background: #fbfcfc; }
+.skeleton-card-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: auto; }
+.skeleton-status { min-height: 1px; }
+.lh-skeleton-table { display: grid; }
+.lh-skeleton-table .lh-table-row { pointer-events: none; }
+.lh-skeleton-table .skeleton-line { align-self: center; }
+
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line { animation: none; }
+}
+
 /* ---------- LH request workspace ---------- */
 
 .request-list-section {
@@ -4438,9 +4474,8 @@ body:has(.app-sidebar) {
 .users-table-state p { max-width: 34ch; margin: 0; font-size: 11px; line-height: 1.55; }
 .users-loading { display: grid; gap: 0; padding: 0 14px; }
 .users-loading-row { display: grid; grid-template-columns: 1.6fr 1.2fr 1fr .8fr; gap: 16px; min-height: 58px; align-items: center; border-bottom: 1px solid #eef2f1; }
-.users-loading-row span { height: 10px; border-radius: 99px; background: linear-gradient(90deg, #edf2f1, #f7faf9, #edf2f1); background-size: 200% 100%; animation: users-loading-shimmer 1.4s ease-in-out infinite; }
+.users-loading-row span { height: 10px; border-radius: 99px; }
 .users-loading-row span:first-child { width: 72%; }
-@keyframes users-loading-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 
 @media (max-width: 760px) {
   .user-management-view { padding: 20px 13px 32px; }

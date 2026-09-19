@@ -19,16 +19,12 @@ return [
         // Supabase round-trip on every request. Set to 0 to disable caching.
         'token_cache_ttl' => (int) env('SUPABASE_TOKEN_CACHE_TTL', 30),
     ],
-    'seatalk' => [
-        'app_id' => env('SEATALK_APP_ID'),
-        'app_secret' => env('SEATALK_APP_SECRET'),
-        'redirect_uri' => env('SEATALK_REDIRECT_URI'),
-    ],
     'google_sheets' => [
         'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID', '1Po3LyyOAJ8Q-EbX_807RSxrA_grwmsdlsPPP4FFFBig'),
         'sheet_name' => env('GOOGLE_SHEETS_SHEET_NAME', 'Sheet1'),
         'credentials_json' => env('GOOGLE_SHEETS_CREDENTIALS_JSON'),
         'credentials_path' => env('GOOGLE_SHEETS_CREDENTIALS_PATH'),
         'sync_enabled' => (bool) env('GOOGLE_SHEETS_SYNC_ENABLED', false),
+        'max_rows' => (int) env('GOOGLE_SHEETS_MAX_ROWS', 50000),
     ],
 ];

@@ -8,6 +8,27 @@ body,
   min-height: 100%;
 }
 
+.startup-loading {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow: hidden;
+  background: #f8fcff;
+}
+
+.startup-loading-art {
+  display: block;
+  width: min(100vw, 640px);
+  height: auto;
+  max-height: 100dvh;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startup-loading-art { animation: none; }
+}
+
 html {
   font-size: 16px;
 }

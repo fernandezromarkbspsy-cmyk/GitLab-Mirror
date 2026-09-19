@@ -1,5 +1,4 @@
 import { FormEvent, useState } from "react";
-import { supabase } from "../lib/supabase";
 import { api } from "../lib/api";
 export function ChangePassword({ onComplete }: { onComplete: () => void }) {
   const [password, setPassword] = useState("");
@@ -14,9 +13,10 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
     if (password !== confirm) return setError("Passwords do not match.");
     setBusy(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-      await api("/auth/password-changed", { method: "POST" });
+      await api("/auth/password-changed", {
+        method: "POST",
+        body: JSON.stringify({ password }),
+      });
       onComplete();
     } catch (cause) {
       const message =

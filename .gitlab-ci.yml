@@ -35,7 +35,7 @@ backend:
   before_script:
     - apt-get update
     - apt-get install -y --no-install-recommends git unzip libxml2-dev libonig-dev libsqlite3-dev
-    - docker-php-ext-install dom mbstring pdo_sqlite sqlite3
+    - docker-php-ext-install dom mbstring pdo_sqlite
     - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
     - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
     - rm composer-setup.php
@@ -46,3 +46,42 @@ backend:
     - composer validate --no-check-publish
     - vendor/bin/pint --test
     - php artisan test --fail-on-skipped
+
+# .gitlab-ci.yml
+
+update-readme:
+  stage: test
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE !~ /^docs: automatically update README/'
+      changes:
+        - backend/**/*
+        - frontend/**/*
+        - appwrite/**/*
+        - supabase/**/*
+        - composer.json
+        - composer.lock
+        - package.json
+        - package-lock.json
+        - .env.example
+        - README.md
+        - .gitlab-ci.yml
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq git
+    - git config user.name "README Automation"
+    - git config user.email "readme-automation@gitlab.com"
+    - git fetch origin main
+    - git checkout main
+    - git reset --hard "$CI_COMMIT_SHA"
+  script:
+    - python3 --version
+    - python3 scripts/update_readme.py
+    - |
+      if git diff --quiet README.md; then
+        echo "README.md is already up to date."
+        exit 0
+      fi
+    - git add README.md
+    - 'git commit -m "docs: automatically update README"'
+    - git push "https://oauth2:${GITLAB_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:main

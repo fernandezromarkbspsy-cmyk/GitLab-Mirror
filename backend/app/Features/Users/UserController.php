@@ -2,6 +2,7 @@
 
 namespace App\Features\Users;
 
+use App\Integrations\SupabaseHttpOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -143,7 +144,7 @@ final class UserController
 
         try {
             $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
-                ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
+                ->withOptions(SupabaseHttpOptions::guzzle())
                 ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
                 ->timeout(10)
                 ->put($url.'/auth/v1/admin/users/'.$profile->id, ['password' => $newPassword]);

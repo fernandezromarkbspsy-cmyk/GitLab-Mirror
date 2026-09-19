@@ -1,0 +1,25 @@
+reviews:
+  profile: assertive
+
+  path_instructions:
+    - path: "backend/**/*.php"
+      instructions: >
+        Review Laravel PHP for security, authentication,
+        authorization, validation, error handling, performance,
+        database usage, and regression risks.
+
+    - path: "frontend/**/*.{ts,tsx,js,jsx}"
+      instructions: >
+        Review React and TypeScript/JavaScript for correctness,
+        accessibility, performance, state management, API handling,
+        and regression risks.
+
+    - path: "backend/tests/**/*.php"
+      instructions: >
+        Check that tests adequately cover changed behavior,
+        regression cases, validation failures, and edge cases.
+
+    - path: ".gitlab-ci.yml"
+      instructions: >
+        Review CI changes for correctness, security, portability,
+        caching, secrets handling, and unintended pipeline behavior.

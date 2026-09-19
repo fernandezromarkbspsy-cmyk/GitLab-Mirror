@@ -1,14 +1,12 @@
 import { MapPin } from "lucide-react";
 import { Reveal } from "./Reveal";
-import { SeatalkQrLogin } from "./SeatalkQrLogin";
 import trucksImage from "../../assets/trucks.jpg";
 
 interface QrPanelProps {
-  onSeatalkError?: (error: string) => void;
   enabled?: boolean;
 }
 
-export function QrPanel({ onSeatalkError, enabled = true }: QrPanelProps) {
+export function QrPanel({ enabled = true }: QrPanelProps) {
   return (
     <section className="relative hidden lg:flex flex-col overflow-hidden px-5 pb-24 pt-6 sm:px-7">
       <div
@@ -45,16 +43,14 @@ export function QrPanel({ onSeatalkError, enabled = true }: QrPanelProps) {
           Login to continue
         </h1>
         <p className="mt-2 text-[12.5px] text-muted leading-relaxed">
-          Scan QR code with Seatalk or use email/password below
+          Use your work email or Ops ID to sign in below.
         </p>
       </Reveal>
 
-      {/* QR - Seatalk Login */}
-      <Reveal delay={180} className="mt-5 flex flex-col items-center">
-        <SeatalkQrLogin
-          onError={onSeatalkError || (() => {})}
-          enabled={enabled}
-        />
+      <Reveal delay={180} className="mt-6">
+        <div className="rounded-2xl border border-line bg-white/[0.03] p-4 text-[12px] leading-relaxed text-muted">
+          Standard sign-in is available for FTE and backroom access. No QR-based login is required.
+        </div>
       </Reveal>
 
       {/* freight scene */}

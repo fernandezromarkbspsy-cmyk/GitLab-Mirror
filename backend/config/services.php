@@ -25,5 +25,6 @@ return [
         'credentials_json' => env('GOOGLE_SHEETS_CREDENTIALS_JSON'),
         'credentials_path' => env('GOOGLE_SHEETS_CREDENTIALS_PATH'),
         'sync_enabled' => (bool) env('GOOGLE_SHEETS_SYNC_ENABLED', false),
+        'max_rows' => (int) env('GOOGLE_SHEETS_MAX_ROWS', 50000),
     ],
 ];

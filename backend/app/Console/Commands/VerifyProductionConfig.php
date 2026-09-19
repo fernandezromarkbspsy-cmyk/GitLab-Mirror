@@ -32,6 +32,19 @@ final class VerifyProductionConfig extends Command
             }
         }
 
+        if (config('services.google_sheets.sync_enabled')) {
+            $credentialsConfigured = filled(config('services.google_sheets.credentials_json'))
+                || filled(config('services.google_sheets.credentials_path'));
+            if (! filled(config('services.google_sheets.spreadsheet_id')) || ! $credentialsConfigured) {
+                $this->error('Google Sheets sync is enabled but its spreadsheet ID or credentials are missing.');
+                $failed = true;
+            }
+            if ((int) config('services.google_sheets.max_rows') < 1) {
+                $this->error('GOOGLE_SHEETS_MAX_ROWS must be at least 1.');
+                $failed = true;
+            }
+        }
+
         if ($this->option('production')) {
             if (config('app.env') !== 'production') {
                 $this->error('APP_ENV must be production for a production deployment.');

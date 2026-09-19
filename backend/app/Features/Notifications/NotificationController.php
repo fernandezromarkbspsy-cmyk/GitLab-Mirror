@@ -2,6 +2,7 @@
 
 namespace App\Features\Notifications;
 
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,9 +12,20 @@ final class NotificationController
     public function index(Request $request): JsonResponse
     {
         $actor = $request->attributes->get('actor');
-        $visible = fn ($query) => $query->where('user_id', $actor->id)->orWhere('target_role', $actor->role);
-        $rows = DB::table('notifications')->where($visible)->orderByDesc('created_at')->limit(50)->get();
-        $unread = DB::table('notifications')->whereNull('read_at')->where($visible)->count();
+        $query = $this->visibleQuery($actor);
+        $readAt = 'case when n.user_id = ? then n.read_at else nr.read_at end';
+        $rows = (clone $query)
+            ->select([
+                'n.id', 'n.user_id', 'n.target_role', 'n.request_id', 'n.event_type',
+                'n.title', 'n.body', 'n.created_at', DB::raw("{$readAt} as read_at"),
+            ])
+            ->addBinding($actor->id, 'select')
+            ->orderByDesc('n.created_at')
+            ->limit(50)
+            ->get();
+        $unread = (clone $query)
+            ->whereRaw("({$readAt}) is null", [$actor->id])
+            ->count();
 
         return response()->json(['data' => $rows, 'unread' => $unread]);
     }
@@ -21,10 +33,14 @@ final class NotificationController
     public function read(Request $request, int $id): JsonResponse
     {
         $actor = $request->attributes->get('actor');
-        $updated = DB::table('notifications')->where('id', $id)
-            ->where(fn ($query) => $query->where('user_id', $actor->id)->orWhere('target_role', $actor->role))
-            ->update(['read_at' => now()]);
-        abort_unless($updated, 404, 'Notification not found.');
+        $notification = $this->visibleQuery($actor)->where('n.id', $id)->first(['n.id', 'n.user_id']);
+        abort_unless($notification, 404, 'Notification not found.');
+
+        if ($notification->user_id === $actor->id) {
+            DB::table('notifications')->where('id', $id)->update(['read_at' => now()]);
+        } else {
+            $this->recordRoleReads($actor->id, [$id]);
+        }
 
         return response()->json(['ok' => true]);
     }
@@ -32,10 +48,52 @@ final class NotificationController
     public function readAll(Request $request): JsonResponse
     {
         $actor = $request->attributes->get('actor');
-        DB::table('notifications')->whereNull('read_at')
-            ->where(fn ($query) => $query->where('user_id', $actor->id)->orWhere('target_role', $actor->role))
-            ->update(['read_at' => now()]);
+
+        DB::transaction(function () use ($actor): void {
+            DB::table('notifications')
+                ->where('user_id', $actor->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+
+            DB::table('notifications')
+                ->where('target_role', $actor->role)
+                ->orderBy('id')
+                ->pluck('id')
+                ->chunk(500)
+                ->each(fn ($ids) => $this->recordRoleReads($actor->id, $ids->all()));
+        });
 
         return response()->json(['ok' => true]);
+    }
+
+    private function visibleQuery(object $actor)
+    {
+        return DB::table('notifications as n')
+            ->leftJoin('notification_reads as nr', function (JoinClause $join) use ($actor): void {
+                $join->on('nr.notification_id', '=', 'n.id')
+                    ->where('nr.user_id', '=', $actor->id);
+            })
+            ->where(function ($query) use ($actor): void {
+                $query->where('n.user_id', $actor->id)
+                    ->orWhere('n.target_role', $actor->role);
+            });
+    }
+
+    private function recordRoleReads(string $userId, array $notificationIds): void
+    {
+        if ($notificationIds === []) {
+            return;
+        }
+
+        $readAt = now();
+        DB::table('notification_reads')->upsert(
+            array_map(fn ($id): array => [
+                'notification_id' => (int) $id,
+                'user_id' => $userId,
+                'read_at' => $readAt,
+            ], $notificationIds),
+            ['notification_id', 'user_id'],
+            ['read_at'],
+        );
     }
 }

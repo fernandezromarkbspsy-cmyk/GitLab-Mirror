@@ -1,9 +1,10 @@
 services:
   api:
     build: ./backend
+    image: soc5-outbound-api:local
     env_file: ./backend/.env
-    command: php artisan serve --host=0.0.0.0 --port=8000
     expose: ["8000"]
+    init: true
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8000/up"]
@@ -11,6 +12,15 @@ services:
       timeout: 5s
       retries: 12
       start_period: 45s
+  scheduler:
+    image: soc5-outbound-api:local
+    env_file: ./backend/.env
+    command: php artisan schedule:work
+    init: true
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
   web:
     build:
       context: ./frontend

@@ -5,6 +5,7 @@ namespace App\Features\Requests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 final class RequestController
 {
@@ -86,16 +87,14 @@ final class RequestController
 
     public function action(Request $request, string $id, string $action): JsonResponse
     {
-        $data = $request->validate([
-            'rejection_remarks' => 'sometimes|string|max:2000',
-            'plate_number' => 'sometimes|string|max:50',
-            'provide_time' => 'sometimes|nullable|date',
-            'driver_id' => 'sometimes|string|max:120',
-            'linehaul_trip_no' => 'sometimes|string|max:120',
-            'truck_size' => 'sometimes|in:4W,6W,10W,6WF',
-            'truck_type' => 'sometimes|in:WETLEASE,DRYLEASE',
-            'docked_time' => 'sometimes|nullable|date',
-        ]);
+        $rules = $this->actionRules($action, $request->attributes->get('actor')->role);
+        $unexpected = array_values(array_diff(array_keys($request->all()), array_keys($rules)));
+        if ($unexpected !== []) {
+            throw ValidationException::withMessages([
+                'payload' => 'Unexpected fields for this action: '.implode(', ', $unexpected).'.',
+            ]);
+        }
+        $data = $request->validate($rules);
 
         return response()->json($this->service->transition($id, $request->attributes->get('actor'), $action, $data));
     }
@@ -111,5 +110,28 @@ final class RequestController
             'truck_size' => 'required|in:4W,6W,10W,6WF',
             'truck_type' => 'required|in:WETLEASE,DRYLEASE',
         ];
+    }
+
+    private function actionRules(string $action, string $role): array
+    {
+        return match ($action) {
+            'approve', 'cancel', 'confirm' => [],
+            'reject-ops' => [
+                'rejection_remarks' => 'sometimes|string|max:2000',
+            ],
+            'reject-mm' => [
+                'rejection_remarks' => 'required|string|max:2000',
+            ],
+            'assign-truck' => [
+                'plate_number' => 'required|string|max:50',
+                'provide_time' => 'sometimes|nullable|date',
+                'truck_size' => 'required|in:4W,6W,10W,6WF',
+                'truck_type' => 'required|in:WETLEASE,DRYLEASE',
+            ],
+            'mark-docked' => $role === 'doc_officer'
+                ? ['driver_id' => 'required|string|max:120']
+                : ['linehaul_trip_no' => 'required|string|max:120'],
+            default => throw ValidationException::withMessages(['action' => 'Unknown action.']),
+        };
     }
 }

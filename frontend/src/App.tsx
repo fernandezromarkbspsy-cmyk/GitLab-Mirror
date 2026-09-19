@@ -8,12 +8,12 @@ import {
   useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import carLoadingUrl from "../assets/Car loading.svg";
 import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
 import { supabase } from "./lib/supabase";
 import { ChangePassword } from "./pages/ChangePassword";
 import type { User } from "./types";
-import carLoadingUrl from "../assets/Car loading.svg";
 
 type AppState =
   | "loading"
@@ -89,7 +89,8 @@ export default function App() {
   const requestSequence = useRef(0);
 
   useEffect(() => {
-    const duration = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const duration = window.matchMedia("(prefers-reduced-motion: reduce)")
+      .matches
       ? 800
       : 5000;
     const timer = window.setTimeout(

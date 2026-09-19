@@ -43,13 +43,10 @@ supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_cluster_import_compatibility.sql
 supabase/migrations/003_auth_flows.sql
 supabase/migrations/004_google_fte_auth.sql
-...
-supabase/migrations/018_notification_read_receipts.sql
 ```
 
-Run every migration in repository order. This creates profiles, clusters, requests,
-events, notifications, per-user notification read receipts, indexes, RLS policies,
-and the Realtime notification publication.
+This creates profiles, clusters, requests, events, notifications, indexes, RLS
+policies, and the Realtime notification publication.
 
 ### Configure email OTP authentication
 

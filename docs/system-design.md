@@ -8,12 +8,10 @@ controller -> service -> repository flow without introducing network boundaries.
 
 ## Runtime flow
 
-Browser -> Cloudflare -> NGINX -> React assets or `/api` -> backend NGINX -> PHP-FPM -> Laravel -> Supabase.
+Browser -> Cloudflare -> NGINX -> React assets or `/api` -> Laravel -> Supabase.
 Laravel verifies the Supabase JWT, applies role and transition policies, and uses
 database transactions to update a request and append its event atomically.
 Supabase Realtime publishes committed notification rows to authorized clients.
-Laravel stores acknowledgements for role-targeted notifications in per-user
-`notification_reads` receipts so one operator cannot clear a colleague's unread state.
 
 ## Feature boundaries
 
@@ -29,8 +27,9 @@ repositories query data. Laravel policies are the final authorization guard.
 | PENDING, REJECTED_BY_MM | approve / FTE Ops | APPROVED |
 | PENDING, REJECTED_BY_MM | cancel / owner or FTE Ops | CANCELLED |
 | APPROVED | reject / FTE MM | REJECTED_BY_MM |
-| APPROVED | assign and route to dock / FTE MM | FOR_DOCKING |
-| FOR_DOCKING | add driver / Doc Officer, add trip / owning Ops PIC | FOR_DOCKING or DOCKED once both exist |
+| APPROVED | assign / FTE MM | ASSIGNED |
+| ASSIGNED | route to dock / FTE MM | FOR_DOCKING |
+| ASSIGNED, FOR_DOCKING | dock / Doc Officer | DOCKED |
 | DOCKED | confirm / Doc Officer | CONFIRMED |
 
 ## Data and performance
@@ -47,9 +46,8 @@ Query may optimistically update UI only with rollback on error.
 
 ## Reliability and observability
 
-Status update, event, and notifications share one transaction. A dedicated scheduler
-container runs the Google Sheets mirror, and production deployment applies pending
-Laravel migrations before replacing containers. Health endpoints support NGINX/container
+Status update, event, and notifications share one transaction. Jobs are idempotent
+and may later use Laravel's database queue. Health endpoints support NGINX/container
 checks. Structured logs include request/correlation IDs. Sentry, PostHog, Better
 Stack, Resend, and Upstash remain disabled unless their environment variables are
 provided; their free tiers are external limits, not an availability guarantee.
@@ -68,3 +66,4 @@ First tune queries and indexes. Then add queue workers and Redis for measured ho
 reads. Because the API is stateless, multiple replicas can sit behind NGINX or the
 hosting platform. Add Supabase read replicas/partitioning only when database metrics
 justify them. Split a service only after it needs independent ownership or scaling.
+

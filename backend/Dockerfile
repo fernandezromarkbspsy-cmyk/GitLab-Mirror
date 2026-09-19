@@ -1,5 +1,5 @@
 FROM php:8.3-fpm-alpine AS runtime
-RUN apk add --no-cache curl libcurl libpq libxml2 nginx oniguruma supervisor \
+RUN apk add --no-cache curl libcurl libpq libxml2 oniguruma \
  && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS curl-dev libpq-dev libxml2-dev linux-headers oniguruma-dev \
  && docker-php-ext-install curl dom mbstring opcache pdo_pgsql \
  && pecl install excimer \
@@ -18,15 +18,11 @@ FROM runtime
 WORKDIR /var/www/html
 COPY --from=vendor /app/vendor ./vendor
 COPY . .
-COPY docker/nginx.conf /etc/nginx/backend.conf
-COPY docker/supervisord.conf /etc/supervisord.conf
 RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
- /tmp/nginx/{client_temp,proxy_temp,fastcgi_temp,uwsgi_temp,scgi_temp} \
- && chown -R www-data:www-data storage bootstrap/cache /tmp/nginx
+ && chown -R www-data:www-data storage bootstrap/cache
 RUN php artisan package:discover --ansi
 RUN chmod -R a+rX app bootstrap config public routes \
  && chmod a+r artisan composer.json composer.lock \
  && true
 USER www-data
-EXPOSE 8000
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["php-fpm"]

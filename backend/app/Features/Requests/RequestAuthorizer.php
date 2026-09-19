@@ -23,8 +23,7 @@ final class RequestAuthorizer
         }
 
         if ($action === 'mark-docked') {
-            return $actor->role === 'doc_officer'
-                || ($actor->role === 'ops_pic' && $request->created_by === $actor->id);
+            return in_array($actor->role, ['doc_officer', 'ops_pic'], true);
         }
 
         if ($action === 'confirm') {

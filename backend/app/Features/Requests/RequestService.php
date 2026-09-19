@@ -61,20 +61,14 @@ final class RequestService
             if ($action === 'assign-truck' && blank($input['plate_number'] ?? null)) {
                 throw ValidationException::withMessages(['plate_number' => 'Plate number is required.']);
             }
-            if ($action === 'confirm' && (blank($request->driver_id) || blank($request->linehaul_trip_no))) {
+            if ($action === 'confirm' && (blank($input['driver_id'] ?? $request->driver_id) || blank($input['linehaul_trip_no'] ?? $request->linehaul_trip_no))) {
                 throw ValidationException::withMessages(['driver_id' => 'Driver ID and linehaul trip number are required.']);
             }
 
-            $allowedFields = match ($action) {
-                'reject-ops', 'reject-mm' => ['rejection_remarks'],
-                'assign-truck' => ['plate_number', 'provide_time', 'truck_size', 'truck_type'],
-                'mark-docked' => $actor->role === 'doc_officer' ? ['driver_id'] : ['linehaul_trip_no'],
-                default => [],
-            };
-            $fields = array_intersect_key($input, array_flip($allowedFields));
+            $fields = array_intersect_key($input, array_flip(['rejection_remarks', 'plate_number', 'provide_time', 'driver_id', 'linehaul_trip_no', 'truck_size', 'truck_type', 'docked_time']));
             if ($action === 'mark-docked') {
-                $driverId = $fields['driver_id'] ?? $request->driver_id;
-                $tripNo = $fields['linehaul_trip_no'] ?? $request->linehaul_trip_no;
+                $driverId = $input['driver_id'] ?? $request->driver_id;
+                $tripNo = $input['linehaul_trip_no'] ?? $request->linehaul_trip_no;
                 if (blank($driverId) || blank($tripNo)) {
                     $updated = $this->requests->update($id, $fields);
 
@@ -95,7 +89,7 @@ final class RequestService
                 $fields['confirmed_at'] = now();
             }
             $updated = $this->requests->update($id, $fields);
-            $this->event($id, $actor->id, $event, $request->status, $to, $fields);
+            $this->event($id, $actor->id, $event, $request->status, $to, $input);
             if ($action === 'assign-truck') {
                 $updated = $this->requests->update($id, ['status' => 'FOR_DOCKING']);
                 $this->event($id, $actor->id, 'TRUCK_FOR_DOCKING', 'ASSIGNED', 'FOR_DOCKING');
@@ -105,8 +99,7 @@ final class RequestService
             };
             if ($target) {
                 $notificationEvent = $action === 'assign-truck' ? 'TRUCK_FOR_DOCKING' : $event;
-                $finalStatus = $action === 'assign-truck' ? 'FOR_DOCKING' : $to;
-                $this->notify($id, $target, $notificationEvent, str_replace('_', ' ', $notificationEvent), "Request {$id} is now {$finalStatus}.");
+                $this->notify($id, $target, $notificationEvent, str_replace('_', ' ', $notificationEvent), "Request {$id} is now {$to}.");
                 if ($to === 'CONFIRMED') {
                     $this->notify($id, 'fte_mm', $event, str_replace('_', ' ', $event), "Request {$id} is now {$to}.");
                 }

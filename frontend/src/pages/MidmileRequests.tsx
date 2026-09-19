@@ -19,6 +19,7 @@ import {
 import { Modal } from "../components/Modal";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
+import { SkeletonRequestTable } from "../components/Skeleton";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
@@ -248,7 +249,7 @@ export function MidmileRequests({
             </div>
             <div className="lh-table-body">
               {requests.isPending && (
-                <div className="lh-empty-state">Loading live requests...</div>
+                <SkeletonRequestTable rows={6} />
               )}
               {requests.error && (
                 <div className="lh-empty-state">{requests.error.message}</div>
@@ -485,7 +486,7 @@ function MidmileActionDialog({
               <input name="provide_time" type="datetime-local" />
             </label>
           </>
-        ) : (
+          ) : (
           <label>
             Rejection remarks
             <textarea name="rejection_remarks" required rows={4} />

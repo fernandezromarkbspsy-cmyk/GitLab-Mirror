@@ -9,6 +9,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 final class RequestWorkflowTest extends TestCase
@@ -121,9 +123,9 @@ final class RequestWorkflowTest extends TestCase
 
     public function test_request_becomes_docked_only_after_driver_and_trip_are_present(): void
     {
-        $request = $this->insertRequest(['status' => 'FOR_DOCKING']);
         $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
         $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
+        $request = $this->insertRequest(['status' => 'FOR_DOCKING', 'created_by' => $opsPic->id]);
 
         $this->service->transition($request->id, $docOfficer, 'mark-docked', ['driver_id' => 'DRV-1']);
         $this->assertSame('FOR_DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
@@ -136,6 +138,65 @@ final class RequestWorkflowTest extends TestCase
             'from_status' => 'FOR_DOCKING',
             'to_status' => 'DOCKED',
         ]);
+    }
+
+    public function test_non_owner_ops_pic_cannot_mark_request_docked(): void
+    {
+        $request = $this->insertRequest(['status' => 'FOR_DOCKING', 'created_by' => (string) Str::uuid()]);
+        $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
+
+        try {
+            $this->service->transition($request->id, $opsPic, 'mark-docked', ['linehaul_trip_no' => 'LH-1']);
+            $this->fail('A non-owner Ops PIC should not be able to dock the request.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+
+        $this->assertNull(DB::table('requests')->where('id', $request->id)->value('linehaul_trip_no'));
+    }
+
+    public function test_transition_ignores_fields_owned_by_another_workflow_step(): void
+    {
+        $request = $this->insertRequest(['status' => 'DOCKED', 'truck_type' => 'WETLEASE', 'driver_id' => 'DRV-1', 'linehaul_trip_no' => 'LH-1']);
+        $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
+
+        $updated = $this->service->transition($request->id, $docOfficer, 'confirm', ['truck_type' => 'DRYLEASE']);
+
+        $this->assertSame('CONFIRMED', $updated->status);
+        $this->assertSame('WETLEASE', $updated->truck_type);
+    }
+
+    public function test_disallowed_docking_field_cannot_complete_the_transition(): void
+    {
+        $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
+        $request = $this->insertRequest(['status' => 'FOR_DOCKING', 'created_by' => $opsPic->id]);
+
+        $updated = $this->service->transition($request->id, $opsPic, 'mark-docked', [
+            'linehaul_trip_no' => 'LH-1',
+            'driver_id' => 'DRV-INJECTED',
+        ]);
+
+        $this->assertSame('FOR_DOCKING', $updated->status);
+        $this->assertSame('LH-1', $updated->linehaul_trip_no);
+        $this->assertNull($updated->driver_id);
+    }
+
+    public function test_injected_confirmation_fields_cannot_bypass_docking_requirements(): void
+    {
+        $request = $this->insertRequest(['status' => 'DOCKED']);
+        $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
+
+        try {
+            $this->service->transition($request->id, $docOfficer, 'confirm', [
+                'driver_id' => 'DRV-INJECTED',
+                'linehaul_trip_no' => 'LH-INJECTED',
+            ]);
+            $this->fail('Disallowed confirmation fields should not satisfy docking requirements.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('driver_id', $exception->errors());
+        }
+
+        $this->assertSame('DOCKED', DB::table('requests')->where('id', $request->id)->value('status'));
     }
 
     private function insertRequest(array $overrides = []): object
@@ -181,6 +242,9 @@ final class RequestWorkflowTest extends TestCase
             $table->text('rejection_remarks')->nullable();
             $table->string('driver_id')->nullable();
             $table->uuid('created_by');
+            $table->dateTime('approved_at')->nullable();
+            $table->dateTime('rejected_at')->nullable();
+            $table->dateTime('confirmed_at')->nullable();
             $table->timestamps();
         });
         Schema::create('request_events', function (Blueprint $table): void {

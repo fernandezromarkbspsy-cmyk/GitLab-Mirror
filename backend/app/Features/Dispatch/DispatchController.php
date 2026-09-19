@@ -10,6 +10,12 @@ final class DispatchController
 {
     public function intraday(Request $request): JsonResponse
     {
+        abort_unless(
+            in_array($request->attributes->get('actor')->role, ['fte_ops', 'fte_mm'], true),
+            403,
+            'Only FTE users can view intraday dispatch data.',
+        );
+
         $date = $request->validate(['date' => ['required', 'date_format:Y-m-d']])['date'];
         $rows = DB::table('intraday_dispatch')
             ->where('dispatch_date', $date)

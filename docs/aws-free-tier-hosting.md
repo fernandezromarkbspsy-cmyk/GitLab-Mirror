@@ -339,9 +339,12 @@ From `/opt/soc5-outbound`:
 ```bash
 docker compose config
 docker compose build
+docker compose run --rm api php artisan system:verify-config --production
+docker compose run --rm api php artisan migrate --force
 docker compose up -d
 docker compose ps
 docker compose logs --tail=100 api
+docker compose logs --tail=100 scheduler
 docker compose logs --tail=100 web
 ```
 
@@ -359,12 +362,11 @@ Expected:
 
 - The first request returns HTTP 200.
 - `/up` returns a successful Laravel health response.
-- Both containers show healthy/running status.
+- The API is healthy and the API, scheduler, and web containers are running.
 
-The current Compose API command uses Laravel's built-in server. It is acceptable
-only as a constrained, low-traffic MVP starting point. Before broader production
-use, replace it with a production PHP runtime such as PHP-FPM behind NGINX or
-FrankenPHP and perform load testing.
+The API image runs Laravel through PHP-FPM behind an internal NGINX server. The
+separate scheduler container runs `php artisan schedule:work`; keep it running or
+scheduled Google Sheets synchronization will stop.
 
 ## 13. Create a Cloudflare Origin CA certificate
 
@@ -684,8 +686,9 @@ healthy.
 4. Merge the pull request into `main`.
 5. GitHub Actions assumes the restricted AWS role with a short-lived OIDC token.
 6. Systems Manager runs the deployment script as `ubuntu` on EC2.
-7. The script resets Git to the selected commit, validates Compose, builds images, starts the
-   containers, and verifies `/up`.
+7. The script resets Git to the selected commit, validates Compose, builds images,
+   verifies production configuration, applies Laravel migrations, starts the API,
+   scheduler, and web containers, and verifies `/up`.
 
 Keep the manual procedure below as the recovery path when GitHub Actions or
 Systems Manager is unavailable.
@@ -698,9 +701,12 @@ git status
 git fetch --prune origin main
 git reset --hard origin/main
 docker compose build
+docker compose run --rm api php artisan system:verify-config --production
+docker compose run --rm api php artisan migrate --force
 docker compose up -d
 docker compose ps
 docker compose logs --tail=100 api
+docker compose logs --tail=100 scheduler
 docker compose logs --tail=100 web
 ```
 

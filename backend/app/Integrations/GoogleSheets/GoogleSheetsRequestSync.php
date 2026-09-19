@@ -2,9 +2,10 @@
 
 namespace App\Integrations\GoogleSheets;
 
+use Closure;
 use Google\Client;
 use Google\Service\Sheets;
-use Google\Service\Sheets\ClearValuesRequest;
+use Google\Service\Sheets\BatchClearValuesRequest;
 use Google\Service\Sheets\ValueRange;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -32,6 +33,8 @@ final class GoogleSheetsRequestSync
         'OPS/PIC',
     ];
 
+    public function __construct(private readonly ?Closure $sheetsFactory = null) {}
+
     public function sync(): int
     {
         $rows = DB::table('requests as r')
@@ -44,6 +47,10 @@ final class GoogleSheetsRequestSync
             ])
             ->orderBy('r.request_timestamp')
             ->get();
+        $maxRows = (int) config('services.google_sheets.max_rows', 50000);
+        if ($maxRows < 1 || $rows->count() > $maxRows) {
+            throw new RuntimeException("Google Sheets sync exceeds the configured {$maxRows}-row limit.");
+        }
 
         $events = DB::table('request_events as e')
             ->leftJoin('profiles as actor', 'actor.id', '=', 'e.actor_id')
@@ -86,9 +93,6 @@ final class GoogleSheetsRequestSync
 
         $sheets = $this->client();
         $spreadsheetId = (string) config('services.google_sheets.spreadsheet_id');
-        $range = $this->range('A:Z');
-        $sheets->spreadsheets_values->clear($spreadsheetId, $range, new ClearValuesRequest);
-
         $body = new ValueRange(['values' => $values]);
         $sheets->spreadsheets_values->update(
             $spreadsheetId,
@@ -97,11 +101,27 @@ final class GoogleSheetsRequestSync
             ['valueInputOption' => 'RAW'],
         );
 
+        // Only clear stale cells after the replacement data is safely written.
+        // A failed cleanup may leave old trailing rows, but it can no longer
+        // erase the current sheet before a transient update failure.
+        $firstStaleRow = count($values) + 1;
+        $sheets->spreadsheets_values->batchClear(
+            $spreadsheetId,
+            new BatchClearValuesRequest(['ranges' => [
+                $this->range('S1:Z'),
+                $this->range("A{$firstStaleRow}:R"),
+            ]]),
+        );
+
         return count($rows);
     }
 
     private function client(): Sheets
     {
+        if ($this->sheetsFactory !== null) {
+            return ($this->sheetsFactory)();
+        }
+
         $credentials = config('services.google_sheets.credentials_json');
         $credentialsPath = config('services.google_sheets.credentials_path');
         if ($credentialsPath && is_file($credentialsPath)) {

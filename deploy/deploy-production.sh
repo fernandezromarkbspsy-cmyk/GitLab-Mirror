@@ -133,6 +133,12 @@ docker compose config --quiet
 echo "Building application images..."
 docker compose build
 
+echo "Checking production application configuration before rollout..."
+docker compose run --rm api php artisan system:verify-config --production
+
+echo "Applying database migrations..."
+docker compose run --rm api php artisan migrate --force
+
 echo "Starting application..."
 if ! docker compose up -d --remove-orphans; then
   echo "Application containers failed to start." >&2
@@ -166,6 +172,14 @@ fi
 
 echo "Checking production application configuration..."
 docker compose exec -T api php artisan system:verify-config --production
+
+echo "Checking scheduler process..."
+if ! docker compose ps --status running --services | grep -qx scheduler; then
+  echo "Scheduler is not running." >&2
+  docker compose logs --tail=100 scheduler
+  exit 1
+fi
+docker compose exec -T scheduler php artisan schedule:list >/dev/null
 
 echo "Waiting for the public health endpoint..."
 for attempt in {1..24}; do

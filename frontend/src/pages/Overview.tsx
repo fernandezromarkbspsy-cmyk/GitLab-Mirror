@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
+import { Skeleton } from "../components/Skeleton";
 import { ChartHeader } from "../components/dashboard/ChartHeader";
 import { MetricCard } from "../components/dashboard/MetricCard";
 import { Panel } from "../components/dashboard/Panel";
@@ -241,10 +242,10 @@ export function Overview({
             <MetricCard
               key={card.status}
               label={card.label}
-              value={metrics.isPending ? "-" : card.value.toLocaleString()}
+              value={metrics.isPending ? <Skeleton width={64} height={26} /> : card.value.toLocaleString()}
               icon={card.icon}
               chip={card.chip}
-              footnote={metrics.isPending ? "-" : card.footnote}
+              footnote={metrics.isPending ? <Skeleton width={112} /> : card.footnote}
               primary={card.primary}
               onClick={() => setDetailStatus(card.status)}
             />
@@ -284,14 +285,13 @@ export function Overview({
               <div>
                 <span>Total dispatched</span>
                 <strong>
-                  {intraday.isPending ? "-" : activeSignal.toLocaleString()}
+                  {intraday.isPending ? <Skeleton width={56} height={24} /> : activeSignal.toLocaleString()}
                 </strong>
               </div>
               <div>
                 <span>Peak hour</span>
                 <strong>
-                  {peakDispatch.orderQty.toLocaleString()}{" "}
-                  <small>{formatHour(peakDispatch.hour)}</small>
+                  {intraday.isPending ? <Skeleton width={78} height={24} /> : <>{peakDispatch.orderQty.toLocaleString()} <small>{formatHour(peakDispatch.hour)}</small></>}
                 </strong>
               </div>
               <span

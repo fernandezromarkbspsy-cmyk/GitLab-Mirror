@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import carLoadingUrl from "../assets/Car loading.svg";
 import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
 import { supabase } from "./lib/supabase";
@@ -80,10 +81,24 @@ function describeFailure(cause: unknown): Failure {
 export default function App() {
   const navigate = useNavigate();
   const [state, setState] = useState<AppState>("loading");
+  const [startupAnimationComplete, setStartupAnimationComplete] =
+    useState(false);
   const [failure, setFailure] = useState<Failure>(defaultFailure);
   const [profile, setProfile] = useState<User | null>(null);
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
+
+  useEffect(() => {
+    const duration = window.matchMedia("(prefers-reduced-motion: reduce)")
+      .matches
+      ? 800
+      : 5000;
+    const timer = window.setTimeout(
+      () => setStartupAnimationComplete(true),
+      duration,
+    );
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const resolveSession = useCallback(
     async (session: { access_token: string } | null, force = false) => {
@@ -147,6 +162,7 @@ export default function App() {
     return () => data.subscription.unsubscribe();
   }, [resolveSession]);
 
+  if (!startupAnimationComplete) return <StartupLoading />;
   if (state === "loading") return <LoginBackdrop />;
   if (state === "signed-out") return <UnauthenticatedEntry />;
   if (state === "unauthorized") {
@@ -172,6 +188,15 @@ export default function App() {
     </Suspense>
   ) : (
     <LoginBackdrop />
+  );
+}
+
+function StartupLoading() {
+  return (
+    <main className="startup-loading" aria-label="Loading SOC5 Outbound">
+      <img src={carLoadingUrl} alt="" className="startup-loading-art" />
+      <span className="sr-only">Loading SOC5 Outbound</span>
+    </main>
   );
 }
 

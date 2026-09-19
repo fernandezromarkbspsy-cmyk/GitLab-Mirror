@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Modal } from "../components/Modal";
+import { Skeleton } from "../components/Skeleton";
 import { api } from "../lib/api";
 import type { ManagedUser, Role } from "../types";
 import { Skiper87 } from "../components/ui/skiper-ui/skiper87";
@@ -373,10 +374,10 @@ function UserTableLoading() {
     <div className="users-loading" role="status" aria-label="Loading users">
       {Array.from({ length: 4 }).map((_, index) => (
         <div className="users-loading-row" key={index}>
-          <span />
-          <span />
-          <span />
-          <span />
+          <Skeleton width="72%" />
+          <Skeleton />
+          <Skeleton />
+          <Skeleton width="64%" />
         </div>
       ))}
     </div>

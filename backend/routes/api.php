@@ -26,7 +26,18 @@ Route::post('/access-requests', [AccessRequestController::class, 'store'])->midd
 
 Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
-    Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
+    Route::post('/auth/password-changed', function (Request $request) {
+        $actor = $request->attributes->get('actor');
+        abort_unless($actor->role === 'ops_pic', 403, 'Only Backroom accounts use this flow.');
+        abort_unless($actor->must_change_password && $actor->password_reset_at, 409, 'Change your password before continuing.');
+        $updated = DB::table('profiles')
+            ->where('id', $actor->id)
+            ->where('must_change_password', true)
+            ->update(['must_change_password' => false, 'password_changed_at' => now(), 'updated_at' => now()]);
+        abort_unless($updated, 409, 'Password change could not be verified.');
+
+        return response()->json(['ok' => true]);
+    });
 });
 
 Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {

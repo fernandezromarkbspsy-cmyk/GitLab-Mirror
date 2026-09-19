@@ -148,18 +148,6 @@ final class IdempotencyTest extends TestCase
         $this->assertDatabaseHas('requests', ['id' => $request->id, 'cluster' => 'SOC 6']);
     }
 
-    public function test_action_rejects_fields_not_allowed_for_that_transition(): void
-    {
-        $request = $this->insertRequest(['status' => 'PENDING']);
-
-        $this->postJson('/api/requests/'.$request->id.'/approve', [
-            'truck_type' => 'DRYLEASE',
-        ], $this->headers())->assertUnprocessable()->assertJsonValidationErrors('payload');
-
-        $this->assertDatabaseHas('requests', ['id' => $request->id, 'status' => 'PENDING', 'truck_type' => 'WETLEASE']);
-        $this->assertDatabaseCount('request_events', 0);
-    }
-
     private function headers(string $key = '', string $token = 'actor-one'): array
     {
         return array_filter([

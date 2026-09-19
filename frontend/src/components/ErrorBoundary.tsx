@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { Sentry, sentryEnabled } from '../lib/sentry';
 
 interface Props { children: ReactNode }
 interface State { error: Error | null }
@@ -14,6 +15,13 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     if (import.meta.env.DEV) {
       console.error('Unhandled React error', error, info);
+    }
+
+    if (sentryEnabled) {
+      Sentry.withScope((scope) => {
+        scope.setContext('react', { componentStack: info.componentStack });
+        Sentry.captureException(error);
+      });
     }
   }
 

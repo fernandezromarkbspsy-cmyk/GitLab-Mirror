@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { supabaseConfigError } from './lib/supabase';
+import './lib/sentry';
 import './styles/tokens.css';
 import './styles/tailwind.css';
 import './styles/main.css';

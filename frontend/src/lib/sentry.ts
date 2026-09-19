@@ -29,3 +29,4 @@ if (dsn) {
 }
 
 export { Sentry };
+Sentry.captureException(new Error('SOC5 Sentry frontend test'));

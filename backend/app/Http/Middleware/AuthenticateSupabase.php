@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Integrations\SupabaseHttpOptions;
 use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
@@ -41,7 +42,7 @@ final class AuthenticateSupabase
             try {
                 $response = Http::withHeaders(['apikey' => $supabaseKey])
                     ->withToken($token)
-                    ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
+                    ->withOptions(SupabaseHttpOptions::guzzle())
                     ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
                     ->connectTimeout(config('services.supabase.connect_timeout', 5))
                     ->timeout(config('services.supabase.timeout', 10))

@@ -2,6 +2,7 @@
 
 namespace App\Features\Auth;
 
+use App\Integrations\SupabaseHttpOptions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,7 @@ final class BackroomController
         abort_if($supabaseUrl === '' || $anonKey === '', 503, 'Backroom login is not configured.');
 
         $tokenResponse = Http::withHeaders(['apikey' => $anonKey])
-            ->withOptions(['proxy' => config('services.supabase.http_proxy') ?: false])
+            ->withOptions(SupabaseHttpOptions::guzzle())
             ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
             ->connectTimeout(5)
             ->timeout(10)

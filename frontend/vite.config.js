@@ -11,7 +11,7 @@ export default defineConfig({
     server: {
         host: true,
         port: 5173,
-        allowedHosts: ['.e2b.app', 'soc5outboundops.app', '.trycloudflare.com', 'seatalk-dev.soc5outboundops.app'],
+        allowedHosts: ['.e2b.app', 'soc5outboundops.app', '.trycloudflare.com'],
         proxy: {
             '/api': {
                 target: 'http://127.0.0.1:8000',

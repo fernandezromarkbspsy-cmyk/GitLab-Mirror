@@ -8,14 +8,12 @@ interface LoginCardProps {
   children: ReactNode;
   modal?: boolean;
   visible?: boolean;
-  onSeatalkError?: (error: string) => void;
 }
 
 export function LoginCard({ 
   children, 
   modal = false, 
   visible = true,
-  onSeatalkError,
 }: LoginCardProps) {
   if (modal) {
     return (
@@ -27,10 +25,7 @@ export function LoginCard({
           aria-label="Sign in to SOC 5 Outbound"
         >
           <div className="relative grid lg:grid-cols-[1fr_1fr]">
-            <QrPanel 
-              onSeatalkError={onSeatalkError}
-              enabled={visible}
-            />
+            <QrPanel enabled={visible} />
             <div aria-hidden className="absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 bg-line lg:block" />
             <div className="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 lg:block">
               <span className="grid h-9 w-9 place-items-center rounded-full border border-white/25 bg-white/10 font-display text-[10.5px] font-bold tracking-widest text-muted backdrop-blur-md">OR</span>
@@ -53,9 +48,7 @@ export function LoginCard({
       <main className="relative w-full max-w-[860px] overflow-hidden rounded-2xl border border-white/20 bg-white/[0.08] shadow-[0_30px_70px_-28px_rgba(14,24,54,0.65)] backdrop-blur-2xl">
         <div className="relative grid lg:grid-cols-[1fr_1fr]">
           {/* Left panel - QR Panel */}
-          <QrPanel 
-            onSeatalkError={onSeatalkError}
-          />
+          <QrPanel />
 
           {/* Vertical divider */}
           <div

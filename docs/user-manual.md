@@ -18,7 +18,6 @@ The screens you can see depend on your role.
 
 You need an active SOC 5 Outbound account. Use the login page to sign in with the method provided by your organization:
 
-- **SeaTalk QR:** Scan the QR code with SeaTalk.
 - **Email and password:** Enter your work email and password.
 - **Email verification code:** If your organization uses email verification, request a code and enter it on the login page.
 

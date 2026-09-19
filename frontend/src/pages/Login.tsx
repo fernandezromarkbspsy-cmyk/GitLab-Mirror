@@ -157,15 +157,10 @@ export function Login({ modal = false, visible = true }: { modal?: boolean; visi
     }
   }
 
-  const handleSeatalkError = useCallback((error: string) => {
-    setError(error || 'Seatalk authentication failed. Please try another login method.');
-  }, []);
-
   return (
     <LoginCard
       modal={modal}
       visible={visible}
-      onSeatalkError={handleSeatalkError}
     >
       <div className="mb-4">
         <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-faint">

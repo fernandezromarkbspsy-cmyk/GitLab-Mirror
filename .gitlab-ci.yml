@@ -52,7 +52,7 @@ backend:
 # .gitlab-ci.yml
 
 update-readme:
-  stage: deploy
+  stage: test
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE !~ /^docs: automatically update README/'

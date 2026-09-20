@@ -159,7 +159,6 @@ final class UserController
                 $this->userEvent($profile->id, $request->attributes->get('actor')->id, 'PASSWORD_RESET', ['ops_id' => $profile->ops_id]);
             });
         } catch (Throwable $exception) {
-            $restoreResetState();
             Log::critical('Backroom password reset audit failed after Supabase update.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
             throw $exception;
         }

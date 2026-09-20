@@ -1,6 +1,6 @@
 # SOC5-Outbound Backend Analysis
 
-Analyzed revision: `1be32eab9f7393585dad9c97857bbe198037c186` (`main`)  
+Analyzed revision: current working tree with pending PR changes included  
 Scope: Laravel API, Supabase schema/RLS/functions, deployment path, backend tests, and frontend callers that define API behavior.
 
 ## Executive summary

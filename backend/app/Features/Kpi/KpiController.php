@@ -12,7 +12,7 @@ final class KpiController
     public function summary(Request $request): JsonResponse
     {
         $this->authorize($request);
-        $filters = $request->validate(['date_from' => 'nullable|date', 'date_to' => 'nullable|date|after_or_equal:date_from']);
+        $filters = $request->validate(['date_from' => 'nullable|date_format:Y-m-d', 'date_to' => 'nullable|date_format:Y-m-d|after_or_equal:date_from']);
         $timezone = (string) config('app.business_timezone', 'Asia/Manila');
         $from = isset($filters['date_from'])
             ? CarbonImmutable::createFromFormat('Y-m-d', $filters['date_from'], $timezone)->startOfDay()->utc()
@@ -33,7 +33,7 @@ final class KpiController
     public function daily(Request $request): JsonResponse
     {
         $this->authorize($request);
-        $filters = $request->validate(['date_from' => 'nullable|date', 'date_to' => 'nullable|date|after_or_equal:date_from']);
+        $filters = $request->validate(['date_from' => 'nullable|date_format:Y-m-d', 'date_to' => 'nullable|date_format:Y-m-d|after_or_equal:date_from']);
         $timezone = (string) config('app.business_timezone', 'Asia/Manila');
         $from = isset($filters['date_from'])
             ? CarbonImmutable::createFromFormat('Y-m-d', $filters['date_from'], $timezone)->startOfDay()->utc()

@@ -34,6 +34,7 @@ final class UserManagementAuthorizationTest extends TestCase
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('role');
+            $table->string('email')->nullable();
             $table->string('ops_id')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('must_change_password')->default(false);
@@ -54,10 +55,12 @@ final class UserManagementAuthorizationTest extends TestCase
 
     public function test_ops_pic_cannot_manage_users(): void
     {
-        $this->expectException(HttpException::class);
-        $this->expectExceptionCode(403);
-
-        (new UserController)->disable($this->request('ops_pic'), $this->targetId);
+        try {
+            (new UserController)->disable($this->request('ops_pic'), $this->targetId);
+            $this->fail('Expected user management authorization to be denied.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
     }
 
     public function test_profile_change_rolls_back_and_deletes_auth_user_when_audit_fails(): void

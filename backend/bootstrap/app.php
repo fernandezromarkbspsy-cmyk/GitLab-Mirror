@@ -1,4 +1,4 @@
-composer require sentry/sentry-laravel<?php
+<?php
 
 use App\Console\Commands\ProvisionBackroomUsers;
 use App\Console\Commands\PruneIdempotencyKeys;

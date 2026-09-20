@@ -90,13 +90,20 @@ final class BackroomLoginTest extends TestCase
     public function test_first_login_does_not_reveal_that_the_account_has_already_completed_it(): void
     {
         $this->insertProfile(['must_change_password' => false]);
-        Http::fake();
+        Http::fake([
+            'https://test-project.supabase.co/auth/v1/token*' => Http::response([
+                'access_token' => 'completed-access-token',
+                'refresh_token' => 'completed-refresh-token',
+            ]),
+        ]);
 
         $this->postJson('/api/auth/backroom/login', [
             'ops_id' => 'ops123',
             'password' => 'anything',
             'mode' => 'first-login',
         ])->assertStatus(401);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/auth/v1/token'));
     }
 
     public function test_completed_backroom_user_can_sign_in_without_first_login_mode(): void

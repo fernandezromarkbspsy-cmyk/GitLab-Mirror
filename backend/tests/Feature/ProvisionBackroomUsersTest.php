@@ -84,15 +84,13 @@ final class ProvisionBackroomUsersTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_reset_explicitly_restarts_first_login(): void
+    public function test_all_keeps_completed_accounts_without_repairing_passwords(): void
     {
-        Http::fake([
-            'https://test-project.supabase.co/auth/v1/admin/users/*' => Http::response(['id' => $this->authUserId]),
-        ]);
+        Http::fake();
 
-        $this->artisan('users:provision-backroom', ['--all' => true, '--reset' => true])->assertExitCode(0);
+        $this->artisan('users:provision-backroom', ['--all' => true])->assertExitCode(0);
 
-        $this->assertTrue((bool) DB::table('profiles')->where('id', $this->authUserId)->value('must_change_password'));
-        Http::assertSent(fn ($request) => $request->method() === 'PUT');
+        $this->assertFalse((bool) DB::table('profiles')->where('id', $this->authUserId)->value('must_change_password'));
+        Http::assertNothingSent();
     }
 }

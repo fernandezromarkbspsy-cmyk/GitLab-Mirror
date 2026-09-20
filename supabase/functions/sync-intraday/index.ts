@@ -13,9 +13,40 @@ function json(data: unknown, status = 200): Response {
 }
 
 async function readBody(req: Request): Promise<unknown> {
-  const contentLength = Number(req.headers.get("content-length") ?? 0);
-  if (contentLength > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
-  const text = await req.text();
+  const reader = req.body?.getReader();
+  if (!reader) return JSON.parse("null");
+
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = value ?? new Uint8Array();
+      total += chunk.byteLength;
+      if (total > MAX_BODY_BYTES) {
+        await reader.cancel();
+        throw new Error("PAYLOAD_TOO_LARGE");
+      }
+
+      chunks.push(chunk);
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message === "PAYLOAD_TOO_LARGE") throw error;
+    await reader.cancel();
+    throw error;
+  }
+
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const text = new TextDecoder().decode(combined);
   if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
   return JSON.parse(text);
 }
@@ -105,11 +136,9 @@ export async function handleRequest(req: Request): Promise<Response> {
     }
 
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
-    if (!serviceRoleKey) return json({ error: "Server misconfigured" }, 500);
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      serviceRoleKey,
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')?.trim();
+    if (!serviceRoleKey || !supabaseUrl) return json({ error: "Server misconfigured" }, 500);
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
     const { error } = await supabase.from('intraday_dispatch').upsert(normalized, { onConflict: 'dispatch_date,hour' });
     if (error) {
       console.error("Intraday sync database write failed", error);

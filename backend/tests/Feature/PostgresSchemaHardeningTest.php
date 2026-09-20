@@ -62,7 +62,55 @@ final class PostgresSchemaHardeningTest extends TestCase
             'event_type' => 'PASSWORD_RESET',
         ]);
         $this->assertDatabaseHas('user_events', ['event_type' => 'PASSWORD_RESET']);
+
         $this->expectException(QueryException::class);
-        DB::table('profiles')->insert(['id' => '00000000-0000-0000-0000-000000000002', 'ops_id' => 'ops123']);
+        DB::table('user_events')->insert([
+            'user_id' => '00000000-0000-0000-0000-000000000001',
+            'event_type' => 'INVALID_EVENT',
+        ]);
+    }
+
+    public function test_identity_migration_rejects_duplicate_normalized_user_imports(): void
+    {
+        $migration = dirname(base_path()).'/supabase/migrations/019_identity_and_audit_hardening.sql';
+        DB::unprepared((string) file_get_contents($migration));
+
+        DB::table('user_imports')->insert([
+            ['id' => '10000000-0000-0000-0000-000000000001', 'ops_id' => 'OPS123'],
+            ['id' => '10000000-0000-0000-0000-000000000002', 'ops_id' => ' ops123  '],
+        ]);
+
+        $this->expectException(QueryException::class);
+        DB::table('user_imports')->insert(['id' => '10000000-0000-0000-0000-000000000003', 'ops_id' => 'ops123']);
+    }
+
+    public function test_identity_migration_fails_when_preexisting_duplicates_are_present(): void
+    {
+        Schema::dropIfExists('user_events');
+        Schema::dropIfExists('user_imports');
+        Schema::dropIfExists('profiles');
+
+        Schema::create('profiles', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('ops_id')->nullable();
+        });
+        Schema::create('user_imports', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('ops_id')->nullable();
+        });
+        Schema::create('user_events', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('user_id');
+            $table->uuid('actor_id')->nullable();
+            $table->string('event_type');
+        });
+
+        DB::table('user_imports')->insert([
+            ['id' => '20000000-0000-0000-0000-000000000001', 'ops_id' => 'OPS123'],
+            ['id' => '20000000-0000-0000-0000-000000000002', 'ops_id' => ' ops123  '],
+        ]);
+
+        $this->expectException(QueryException::class);
+        DB::unprepared((string) file_get_contents(dirname(base_path()).'/supabase/migrations/019_identity_and_audit_hardening.sql'));
     }
 }

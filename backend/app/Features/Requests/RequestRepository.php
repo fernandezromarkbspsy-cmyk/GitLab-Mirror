@@ -166,6 +166,12 @@ final class RequestRepository
             return;
         }
 
-        $query->whereDate('request_timestamp', $operator, $date);
+        $timezone = (string) config('app.business_timezone', 'Asia/Manila');
+        $businessDate = CarbonImmutable::createFromFormat('!Y-m-d', $date, $timezone);
+        $bound = $operator === '>='
+            ? $businessDate->startOfDay()->utc()
+            : $businessDate->endOfDay()->utc();
+
+        $query->where('request_timestamp', $operator, $bound);
     }
 }

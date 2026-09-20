@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
+import { serve } from "std/http/server.ts";
+import { createClient } from "supabase";
 
 const ALLOWED_SYNC_SOURCES = new Set(["google-apps-script"]);
 const MAX_BODY_BYTES = 1_000_000;
@@ -106,6 +106,10 @@ export async function handleRequest(req: Request): Promise<Response> {
         continue;
       }
       const row = input as IncomingRow;
+      if (row.status_desc !== undefined && typeof row.status_desc !== 'string') {
+        rejected;
+        continue;
+      }
       if (row.status_desc && row.status_desc.trim() !== 'SOC_LHTransporting') continue;
 
       const dispatchDate = row.c_date_6am ?? row.dispatch_date ?? row.date;

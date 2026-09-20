@@ -21,13 +21,20 @@ final class RetryUserEvents extends Command
 
         foreach ($retries as $retry) {
             try {
-                DB::table('user_events')->insert([
-                    'user_id' => $retry->user_id,
-                    'actor_id' => $retry->actor_id,
-                    'event_type' => $retry->event_type,
-                    'metadata' => $retry->metadata,
-                ]);
-                DB::table('user_event_retries')->where('id', $retry->id)->delete();
+                DB::transaction(function () use ($retry): void {
+                    $claimed = DB::table('user_event_retries')->where('id', $retry->id)->lockForUpdate()->first();
+                    if (! $claimed) {
+                        return;
+                    }
+
+                    DB::table('user_events')->insert([
+                        'user_id' => $claimed->user_id,
+                        'actor_id' => $claimed->actor_id,
+                        'event_type' => $claimed->event_type,
+                        'metadata' => $claimed->metadata,
+                    ]);
+                    DB::table('user_event_retries')->where('id', $claimed->id)->delete();
+                });
             } catch (\Throwable $exception) {
                 DB::table('user_event_retries')->where('id', $retry->id)->update([
                     'attempts' => $retry->attempts + 1,

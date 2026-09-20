@@ -146,36 +146,43 @@ final class UserController
             }
         };
 
+        $auditRetry = [
+            'user_id' => $profile->id,
+            'actor_id' => $request->attributes->get('actor')->id,
+            'event_type' => 'PASSWORD_RESET',
+            'metadata' => json_encode(['ops_id' => $profile->ops_id]),
+            'available_at' => $resetAt->addMinutes(5),
+            'created_at' => $resetAt,
+            'updated_at' => $resetAt,
+        ];
+
+        try {
+            $auditRetryId = DB::table('user_event_retries')->insertGetId($auditRetry);
+        } catch (Throwable $exception) {
+            $restoreResetState();
+            Log::critical('Unable to stage Backroom password reset audit before Supabase update.', [
+                'user_id' => $profile->id,
+                'error' => $exception->getMessage(),
+            ]);
+            abort(503, 'Unable to prepare the Backroom password reset audit.');
+        }
+
         try {
             $this->supabaseAdmin()->updatePassword($profile->id, $newPassword);
         } catch (Throwable $exception) {
+            DB::table('user_event_retries')->where('id', $auditRetryId)->delete();
             $restoreResetState();
             Log::warning('Unable to reach Supabase during Backroom password reset.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
             abort(502, 'Unable to reset the Backroom password.');
         }
 
         try {
-            DB::transaction(function () use ($profile, $request): void {
+            DB::transaction(function () use ($profile, $request, $auditRetryId): void {
                 $this->userEvent($profile->id, $request->attributes->get('actor')->id, 'PASSWORD_RESET', ['ops_id' => $profile->ops_id]);
+                DB::table('user_event_retries')->where('id', $auditRetryId)->delete();
             });
         } catch (Throwable $exception) {
             Log::critical('Backroom password reset audit failed after Supabase update.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
-            try {
-                DB::table('user_event_retries')->insert([
-                    'user_id' => $profile->id,
-                    'actor_id' => $request->attributes->get('actor')->id,
-                    'event_type' => 'PASSWORD_RESET',
-                    'metadata' => json_encode(['ops_id' => $profile->ops_id]),
-                    'available_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } catch (Throwable $retryException) {
-                Log::critical('Unable to queue failed Backroom password reset audit.', [
-                    'user_id' => $profile->id,
-                    'error' => $retryException->getMessage(),
-                ]);
-            }
 
             return response()->json(['ok' => true, 'initial_password' => $newPassword, 'audit_recorded' => false]);
         }

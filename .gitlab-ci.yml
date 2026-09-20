@@ -93,8 +93,7 @@ deployment-config:
   image: bash:5.2
   script:
     - bash -n deploy/deploy-production.sh
-    - grep -q 'php artisan migrate --force' deploy/deploy-production.sh
-    - grep -q 'system:verify-config --production' deploy/deploy-production.sh
+    - awk '/php artisan migrate --force/ { migrate = NR } /system:verify-config --production/ { verify = NR } END { exit !(migrate && verify && migrate < verify) }' deploy/deploy-production.sh
     - grep -q 'scheduler' docker-compose.yml
 
 # .gitlab-ci.yml

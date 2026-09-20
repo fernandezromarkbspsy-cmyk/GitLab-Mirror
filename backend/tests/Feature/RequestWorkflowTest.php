@@ -98,6 +98,20 @@ final class RequestWorkflowTest extends TestCase
         $this->assertArrayNotHasKey('10W', $result['truck_sizes']->all());
     }
 
+    public function test_non_postgres_date_filters_use_the_business_timezone(): void
+    {
+        config()->set('app.business_timezone', 'Asia/Manila');
+        $this->insertRequest(['request_timestamp' => '2026-05-31 16:30:00']);
+        $actor = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
+
+        $result = $this->repository->paginate($actor, [
+            'date_from' => '2026-06-01',
+            'date_to' => '2026-06-01',
+        ]);
+
+        $this->assertSame(1, $result->total());
+    }
+
     public function test_docking_assignment_notifies_doc_officer(): void
     {
         $request = $this->insertRequest(['status' => 'APPROVED']);

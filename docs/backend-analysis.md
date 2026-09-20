@@ -3,13 +3,13 @@
 Analyzed revision: current working tree with pending PR changes included  
 Scope: Laravel API, Supabase schema/RLS/functions, deployment path, backend tests, and frontend callers that define API behavior.
 
-Status (2026-09-20): Remediated findings include idempotency cleanup and client keys, dispatch authorization, business-timezone reporting, Edge Function body/configuration controls, Backroom provisioning state preservation, Supabase Admin request centralization, and deployment migration/scheduler checks. The historical findings below remain as review context only where the current source no longer matches them.
+Status (2026-09-20): Remediated findings include dispatch authorization, business-timezone reporting, Edge Function body/configuration controls, Backroom provisioning state preservation, Supabase Admin request centralization, and deployment migration/scheduler checks. The historical findings below remain as review context only where the current source no longer matches them.
 
 ## Executive summary
 
 The backend is a compact Laravel 12 modular monolith backed by Supabase PostgreSQL and Auth. Its basic shape is appropriate for the product: controllers validate HTTP input, the Requests feature separates authorization/service/repository concerns, workflow mutations use database transactions and row locks, and browser-side database writes are blocked by RLS.
 
-The current implementation still has verified product and authorization risks: mandatory first-login completion needs stronger remote-password verification, request actions need stricter field ownership, role notifications have shared read state, and the request state machine documents transient `ASSIGNED` behavior differently from the committed result. Deployment, scheduler, idempotency headers/cleanup, business-timezone handling, normalized Ops ID uniqueness, centralized Supabase Admin handling, and bounded Edge Function controls are resolved in the current branch.
+The current implementation still has verified product and authorization risks: mandatory first-login completion needs stronger remote-password verification, request actions need stricter field ownership, role notifications have shared read state, and the request state machine documents transient `ASSIGNED` behavior differently from the committed result. Deployment, scheduler, idempotency headers, business-timezone handling, normalized Ops ID uniqueness, centralized Supabase Admin handling, and bounded Edge Function controls are resolved in the current branch.
 
 | Area | Assessment |
 |---|---|
@@ -58,7 +58,7 @@ RequestController
        └─ notifications append
 ```
 
-Auth, Users, Notifications, KPI, and Dispatch put persistence and policy logic directly in controllers or route closures. This is acceptable at the current size, but it makes policy consistency harder; the dispatch authorization mismatch is an example.
+Auth, Users, Notifications, KPI, and Dispatch put persistence and policy logic directly in controllers or route closures. This is acceptable at the current size, but it makes policy consistency harder; the previously identified dispatch authorization mismatch has been corrected in the controller.
 
 ## Actual request workflow
 
@@ -94,14 +94,6 @@ Evidence: `backend/app/Features/Requests/RequestAuthorizer.php:25`, `backend/app
 Request listings scope ordinary Ops PIC users to their own rows, but transition lookup uses an unscoped row lock. `canTransition()` permits every `ops_pic` to call `mark-docked` on every request. A user who obtains another request UUID can write its trip number and potentially complete docking.
 
 Remediation: for Ops PIC docking, require `request.created_by === actor.id`; keep Doc Officer's role-wide access if that is the intended operational rule. Exercise the service with a non-owner regression test.
-
-### H3 — Authenticated non-FTE roles can read intraday dispatch through Laravel
-
-Evidence: `backend/app/Features/Dispatch/DispatchController.php:11`, `supabase/migrations/015_fix_intraday_dispatch_rls.sql:3`.
-
-Supabase RLS restricts direct `intraday_dispatch` reads to `fte_ops` and `fte_mm`. The Laravel route only requires authentication, and its database connection is privileged, so Ops PIC and Doc Officer users can bypass the intended RLS restriction through `/api/dispatch/intraday`.
-
-Remediation: enforce the same FTE role allowlist in the controller or a central policy and test all four roles against both access paths.
 
 ### H4 — Request actions accept and persist fields unrelated to the action
 
@@ -143,25 +135,23 @@ Remediation: write to a staging sheet/range and swap, or update before clearing 
 
 1. **Invalid-token traffic reaches Supabase before rate limiting.** Protected groups run `supabase.auth` before `throttle:api`; rejected tokens never reach the limiter. Add an IP limiter before remote validation, then retain the actor limiter after authentication.
 
-2. **Idempotency is not wired into the frontend and expired keys are not purged.** The middleware's locking/replay design is solid, but no frontend mutation sends `Idempotency-Key`. Rows with unique keys are retained indefinitely because cleanup only occurs when the same key is reused. Add client-generated keys and scheduled/batched expiry deletion.
+2. **Remediated: Backroom provisioning now preserves completed users and only sets first-login state for new or password-repaired identities.**
 
-3. **Remediated: Backroom provisioning now preserves completed users and only sets first-login state for new or password-repaired identities.**
+3. **User audit writes are not atomic with user changes.** Create/update/disable commit first and call `userEvent()` afterward; the helper also silently does nothing when the table is absent. A failed audit insert can leave a successful change with a 500 response and no audit. Put the data change and audit insert in one local transaction and fail production readiness when the audit table is missing.
 
-4. **User audit writes are not atomic with user changes.** Create/update/disable commit first and call `userEvent()` afterward; the helper also silently does nothing when the table is absent. A failed audit insert can leave a successful change with a 500 response and no audit. Put the data change and audit insert in one local transaction and fail production readiness when the audit table is missing.
+4. **Remediated: analytics uses the configured business timezone consistently for current-shift and non-PostgreSQL timestamp conversion.**
 
-5. **Remediated: analytics uses the configured business timezone consistently for current-shift and non-PostgreSQL timestamp conversion.**
+5. **The “current night shift” calculation points at a future shift between 06:00 and 18:00.** It chooses today's 18:00 start for all times after 06:00. Clarify whether daytime should show the last completed shift or the upcoming shift and encode that decision in tests.
 
-6. **The “current night shift” calculation points at a future shift between 06:00 and 18:00.** It chooses today's 18:00 start for all times after 06:00. Clarify whether daytime should show the last completed shift or the upcoming shift and encode that decision in tests.
+6. **Backroom login exposes account state.** Unknown/inactive Ops IDs return 404, completed-first-login accounts return 409, and bad passwords return 401. The per-IP/per-ID limiter reduces brute force, but uniform public responses would reduce enumeration.
 
-7. **Backroom login exposes account state.** Unknown/inactive Ops IDs return 404, completed-first-login accounts return 409, and bad passwords return 401. The per-IP/per-ID limiter reduces brute force, but uniform public responses would reduce enumeration.
+7. **Cookie authentication is accepted without a CSRF control.** `AuthenticateSupabase` accepts `sb-access-token` cookies on state-changing API routes, while the application primarily uses bearer tokens. Remove the cookie fallback or add an explicit same-site/CSRF design before using it.
 
-8. **Cookie authentication is accepted without a CSRF control.** `AuthenticateSupabase` accepts `sb-access-token` cookies on state-changing API routes, while the application primarily uses bearer tokens. Remove the cookie fallback or add an explicit same-site/CSRF design before using it.
+8. **Remediated: migration 019 preflights normalized duplicates, normalizes Ops IDs, and adds partial unique indexes.**
 
-9. **Remediated: migration 019 preflights normalized duplicates, normalizes Ops IDs, and adds partial unique indexes.**
+9. **Remediated: provisioning and user management use the centralized, typed Supabase Admin client with configured timeout/TLS options.**
 
-10. **Remediated: provisioning and user management use the centralized, typed Supabase Admin client with configured timeout/TLS options.**
-
-11. **Edge Function dependencies are floating.** `deno.land/std/http/server.ts` and `@supabase/supabase-js@2` resolved during validation to std `0.224.0` and Supabase `2.116.0`, but future deployments can resolve different code. Pin exact versions and commit a lockfile.
+10. **Edge Function dependencies are floating.** `deno.land/std/http/server.ts` and `@supabase/supabase-js@2` resolved during validation to std `0.224.0` and Supabase `2.116.0`, but future deployments can resolve different code. Pin exact versions and commit a lockfile.
 
 12. **Remediated: Edge Functions incrementally bound request bodies, cap batches, validate rows, report rejected counts, and return stable external errors.**
 
@@ -199,7 +189,7 @@ The test suite uses SQLite schemas created inside tests rather than the real Sup
 2. Redesign notification receipts and make the docking state machine explicit.
 3. Add migration and scheduler phases to deployment; replace `artisan serve`.
 4. Make Sheets sync recoverable and repair provisioning/audit transaction behavior.
-5. Wire client idempotency, purge expired keys, and add pre-auth IP throttling.
+5. Add pre-auth IP throttling.
 6. Add PostgreSQL/Edge Function integration tests and pin Edge dependencies.
 7. Reconcile documentation with the implementation and archive stale audit claims.
 

@@ -15,16 +15,11 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   let response: Response;
   try {
     const viewRole = useUiStore.getState().viewRole;
-    const method = (init.method ?? 'GET').toUpperCase();
     const headers = new Headers(init.headers);
-    const idempotencyKey = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
-      ? headers.get('Idempotency-Key') ?? crypto.randomUUID()
-      : undefined;
     headers.set('Content-Type', 'application/json');
     headers.set('Accept', 'application/json');
     if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
     if (viewRole) headers.set('X-View-Role', viewRole);
-    if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey);
     response = await fetch(`${base}${path}`, { ...init, headers });
   } catch {
     throw new ApiError('Network error. Check your connection and try again.', 0);

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Integrations\SupabaseAdminClient;
+use App\Integrations\SupabaseAdminException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -116,11 +118,11 @@ final class ProvisionBackroomUsersTest extends TestCase
         config()->set('services.supabase.url', null);
         config()->set('services.supabase.service_key', null);
 
-        $client = new \App\Integrations\SupabaseAdminClient;
+        $client = new SupabaseAdminClient;
 
         $this->assertFalse($client->isConfigured());
 
-        $this->expectException(\App\Integrations\SupabaseAdminException::class);
+        $this->expectException(SupabaseAdminException::class);
         $this->expectExceptionMessage('Supabase admin credentials are not configured.');
 
         Http::fake();

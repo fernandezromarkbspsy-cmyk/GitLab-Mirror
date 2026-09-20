@@ -3,17 +3,20 @@
 namespace App\Console\Commands;
 
 use App\Integrations\SupabaseAdminClient;
-use App\Integrations\SupabaseAdminException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 final class ProvisionBackroomUsers extends Command
 {
-    protected $signature = 'users:provision-backroom {--ops-id= : Provision one OPS ID} {--all : Provision every active staged Backroom user}';
+    protected $signature = 'users:provision-backroom {--ops-id= : Provision one OPS ID} {--all : Provision every active staged Backroom user} {--reset : Reset existing users and require first login again}';
 
     protected $description = 'Create Supabase Auth identities for staged Backroom users';
+
+    public function __construct(private SupabaseAdminClient $supabaseAdmin)
+    {
+        parent::__construct();
+    }
 
     public function handle(): int
     {
@@ -21,14 +24,6 @@ final class ProvisionBackroomUsers extends Command
             $this->error('Specify --ops-id=ops12345 or --all.');
 
             return self::INVALID;
-        }
-
-        $url = rtrim((string) config('services.supabase.url'), '/');
-        $key = (string) config('services.supabase.service_key');
-        if ($url === '' || $key === '') {
-            $this->error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured.');
-
-            return self::FAILURE;
         }
 
         $query = DB::table('user_imports')
@@ -56,42 +51,28 @@ final class ProvisionBackroomUsers extends Command
             $opsId = strtolower($user->ops_id);
 
             $initialPassword = Str::password(20);
+            $existingProfile = $authUserId
+                ? DB::table('profiles')->where('id', $authUserId)->first(['must_change_password', 'password_reset_at', 'password_changed_at'])
+                : null;
+            $resetExisting = (bool) $this->option('reset');
 
             if (! $authUserId) {
-                $response = Http::withHeaders([
-                    'apikey' => $key,
-                    'Authorization' => 'Bearer '.$key,
-                ])->timeout(15)->post($url.'/auth/v1/admin/users', [
-                    'email' => $opsId.'@backroom.soc5.internal',
-                    'password' => $initialPassword,
-                    'email_confirm' => true,
-                    'user_metadata' => ['ops_id' => $opsId, 'account_type' => 'backroom'],
-                ]);
-
-                if (! $response->successful() || ! $response->json('id')) {
-                    $this->error($opsId.': '.($response->json('msg') ?? $response->json('message') ?? 'Supabase user creation failed'));
+                try {
+                    $authUserId = $this->supabaseAdmin->createUser($opsId.'@backroom.soc5.internal', $initialPassword, ['ops_id' => $opsId, 'account_type' => 'backroom']);
+                } catch (\Throwable $exception) {
+                    $this->error($opsId.': Supabase user creation failed');
                     $failed++;
 
                     continue;
                 }
-
-                $authUserId = $response->json('id');
                 $created++;
                 $this->line($opsId.': initial password '.$initialPassword);
             } else {
-                $mustChangePassword = DB::table('profiles')
-                    ->where('id', $authUserId)
-                    ->value('must_change_password');
-
-                if ($mustChangePassword !== false) {
-                    $response = Http::withHeaders([
-                        'apikey' => $key,
-                        'Authorization' => 'Bearer '.$key,
-                    ])->timeout(15)->put($url.'/auth/v1/admin/users/'.$authUserId, [
-                        'password' => $initialPassword,
-                    ]);
-
-                    if (! $response->successful()) {
+                $mustChangePassword = (bool) ($existingProfile?->must_change_password ?? true);
+                if ($resetExisting || $mustChangePassword) {
+                    try {
+                        $this->supabaseAdmin->updatePassword($authUserId, $initialPassword);
+                    } catch (\Throwable) {
                         $this->error($opsId.': Supabase user password repair failed');
                         $failed++;
 
@@ -104,19 +85,23 @@ final class ProvisionBackroomUsers extends Command
                 $repaired++;
             }
 
-            DB::transaction(function () use ($user, $authUserId, $opsId): void {
-                DB::table('profiles')->upsert([[
+            DB::transaction(function () use ($user, $authUserId, $opsId, $existingProfile, $resetExisting): void {
+                $values = [
                     'id' => $authUserId,
                     'name' => $user->name,
                     'role' => 'ops_pic',
                     'email' => null,
                     'ops_id' => $opsId,
                     'is_active' => true,
-                    'must_change_password' => true,
-                    'password_reset_at' => now(),
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]], ['id'], ['name', 'role', 'ops_id', 'is_active', 'must_change_password', 'password_reset_at', 'updated_at']);
+                ];
+                if ($existingProfile === null || $resetExisting || (bool) $existingProfile->must_change_password) {
+                    $values['must_change_password'] = true;
+                    $values['password_reset_at'] = now();
+                    $values['password_changed_at'] = null;
+                }
+                DB::table('profiles')->upsert([$values], ['id'], array_keys(array_diff_key($values, ['id' => true, 'created_at' => true])));
 
                 DB::table('user_imports')->where('id', $user->id)->update([
                     'auth_user_id' => $authUserId,

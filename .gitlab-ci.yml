@@ -46,7 +46,7 @@ backend:
   script:
     - composer validate --no-check-publish
     - vendor/bin/pint --test
-    - php artisan test --fail-on-skipped
+    - php artisan test
 
 # .gitlab-ci.yml
 

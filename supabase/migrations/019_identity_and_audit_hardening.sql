@@ -30,10 +30,10 @@ update public.user_imports
 set ops_id = lower(trim(ops_id))
 where ops_id is not null;
 
-create unique index concurrently if not exists profiles_ops_id_lower_unique
+create unique index if not exists profiles_ops_id_lower_unique
   on public.profiles (lower(trim(ops_id))) where ops_id is not null;
 
-create unique index concurrently if not exists user_imports_ops_id_lower_unique
+create unique index if not exists user_imports_ops_id_lower_unique
   on public.user_imports (lower(trim(ops_id))) where ops_id is not null;
 
 alter table public.user_events drop constraint if exists user_events_event_type_check;

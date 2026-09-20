@@ -1,5 +1,5 @@
-import { serve } from "std/http/server.ts";
-import { createClient } from "supabase";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 const ALLOWED_SYNC_SOURCES = new Set(["google-apps-script"]);
 const MAX_BODY_BYTES = 1_000_000;

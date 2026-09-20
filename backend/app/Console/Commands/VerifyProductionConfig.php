@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Schema;
 
 final class VerifyProductionConfig extends Command
 {
@@ -61,6 +62,12 @@ final class VerifyProductionConfig extends Command
             if (! str_starts_with((string) config('app.url'), 'https://')) {
                 $this->error('APP_URL must use HTTPS in production.');
                 $failed = true;
+            }
+            foreach (['user_events', 'idempotency_keys'] as $table) {
+                if (! Schema::hasTable($table)) {
+                    $this->error("Required production table is missing: {$table}");
+                    $failed = true;
+                }
             }
         }
 

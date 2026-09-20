@@ -15,7 +15,12 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   let response: Response;
   try {
     const viewRole = useUiStore.getState().viewRole;
-    response = await fetch(`${base}${path}`, { ...init, headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}), ...(viewRole ? { 'X-View-Role': viewRole } : {}), ...init.headers } });
+    const headers = new Headers(init.headers);
+    headers.set('Content-Type', 'application/json');
+    headers.set('Accept', 'application/json');
+    if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
+    if (viewRole) headers.set('X-View-Role', viewRole);
+    response = await fetch(`${base}${path}`, { ...init, headers });
   } catch {
     throw new ApiError('Network error. Check your connection and try again.', 0);
   }

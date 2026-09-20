@@ -1,5 +1,6 @@
 # SOC5-Outbound — Technical Specification Document
 
+> **Implementation note (2026-09-20):** This document contains historical design material and is not authoritative where it conflicts with the source. The current backend is Laravel 12 using `AuthenticateSupabase` with Supabase Auth bearer validation, query-builder repositories/services, and Supabase-managed SQL migrations. Protected writes go through Laravel; browser reads use Supabase RLS where explicitly supported. Deployment runs PHP-FPM and NGINX under Supervisor, with a separate Laravel `schedule:work` container; `deploy/deploy-production.sh` applies Laravel migrations before rollout. See `backend/routes/api.php`, `backend/bootstrap/app.php`, `supabase/migrations/`, `docker-compose.yml`, and `deploy/deploy-production.sh` for the executable contract. References below to Sanctum, Eloquent models, Laravel Form Requests, or Laravel-managed schema are legacy material pending rewrite.
 > **Document Version**: 1.0
 > **Date**: 2026-08-31
 > **Status**: Living Document
@@ -344,7 +345,7 @@ class OrderController extends Controller
 
 ### 7.1 Overview
 
-The database is hosted on **Supabase Cloud** (PostgreSQL 15). Schema is managed via Laravel migrations and the Supabase dashboard DDL. Row Level Security is enforced on all tables.
+The database is hosted on **Supabase Cloud** (PostgreSQL 15). Application schema is managed by Laravel migrations, while identity, audit, and Edge Function tables are maintained in `supabase/migrations/`. RLS protects the browser-facing Supabase tables and policies described below; the Laravel-owned `idempotency_keys` table is not protected by RLS and is accessed only through the backend.
 
 ### 7.2 Core Domain Tables
 
@@ -412,7 +413,7 @@ CREATE TABLE audit_logs (
 
 ### 7.3 Row Level Security (RLS)
 
-All tables have RLS enabled. Sample policies:
+RLS is enabled for the browser-facing Supabase tables, with table-specific policies. The Laravel-owned `idempotency_keys` table is an intentional exception and is not exposed to browser clients. Sample policies:
 
 ```sql
 -- Staff see only assigned orders; supervisors and admins see all
@@ -925,7 +926,7 @@ SCSS architecture migration is **incremental, never big-bang**:
 
 ### 13.2 Security Invariants (Never Violate)
 
-1. RLS is **always enabled** on all tables — bypass is never acceptable
+1. RLS is enabled on browser-facing Supabase tables with table-specific policies; `idempotency_keys` is a backend-only exception
 2. No sensitive tokens stored in `localStorage` — memory or httpOnly cookies only
 3. All user inputs are validated **server-side** (Laravel Form Requests)
 4. Supabase **service-role key** is backend-only — never exposed to the frontend
@@ -1210,7 +1211,7 @@ Post-deploy commands:
 ### 18.4 Supabase
 
 - Managed cloud instance on Supabase Cloud (no self-hosted infrastructure)
-- Migrations tracked via Supabase dashboard DDL and Laravel migrations
+- `deploy/deploy-production.sh` runs `php artisan migrate --force` before the application rollout. Supabase SQL migrations run separately through the Supabase migration process and own the identity, audit, and Edge Function database objects; they are not executed by the Laravel command.
 - Realtime enabled per-table via Supabase dashboard configuration
 - Backups: daily automated via Supabase Cloud
 - Connection pooling: via Supabase Pooler (PgBouncer)

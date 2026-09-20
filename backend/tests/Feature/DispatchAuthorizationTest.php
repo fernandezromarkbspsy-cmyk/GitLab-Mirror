@@ -45,10 +45,34 @@ final class DispatchAuthorizationTest extends TestCase
         }
     }
 
+    public function test_doc_officer_cannot_read_intraday_dispatch(): void
+    {
+        $request = Request::create('/api/dispatch/intraday?date=2026-09-19', 'GET', ['date' => '2026-09-19']);
+        $request->attributes->set('actor', (object) ['id' => 'doc-user', 'role' => 'doc_officer']);
+
+        try {
+            (new DispatchController)->intraday($request);
+            $this->fail('Doc Officer should not be able to read intraday dispatch data.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+    }
+
     public function test_fte_role_can_read_intraday_dispatch(): void
     {
         $request = Request::create('/api/dispatch/intraday?date=2026-09-19', 'GET', ['date' => '2026-09-19']);
         $request->attributes->set('actor', (object) ['id' => 'fte-user', 'role' => 'fte_mm']);
+
+        $response = (new DispatchController)->intraday($request);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertCount(24, $response->getData(true)['data']);
+    }
+
+    public function test_fte_ops_role_can_read_intraday_dispatch(): void
+    {
+        $request = Request::create('/api/dispatch/intraday?date=2026-09-19', 'GET', ['date' => '2026-09-19']);
+        $request->attributes->set('actor', (object) ['id' => 'fte-ops-user', 'role' => 'fte_ops']);
 
         $response = (new DispatchController)->intraday($request);
 

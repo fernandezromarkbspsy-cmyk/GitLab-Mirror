@@ -22,6 +22,7 @@ import { SkeletonTable } from "../components/SkeletonTable";
 import { SkeletonRequestTable } from "../components/Skeleton";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
+import { buildIdempotencyHeaders } from "../lib/idempotency";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import {
   defaultRequestFilters,
@@ -80,6 +81,11 @@ export function MidmileRequests({
       api<TruckRequest>(`/requests/${request.id}/${action}`, {
         method: "POST",
         body: JSON.stringify(payload),
+        headers: buildIdempotencyHeaders(`midmile-${action}`, {
+          requestId: request.id,
+          action,
+          payload,
+        }),
       }),
     onSuccess: async (_, variables) => {
       setSelected(null);
@@ -99,6 +105,7 @@ export function MidmileRequests({
         <button
           className="table-action assign"
           type="button"
+          disabled={transition.isPending}
           onClick={() => setSelected({ request, action: "assign-truck" })}
         >
           <CheckCircle2 size={15} />
@@ -107,6 +114,7 @@ export function MidmileRequests({
         <button
           className="table-action reject"
           type="button"
+          disabled={transition.isPending}
           onClick={() => setSelected({ request, action: "reject-mm" })}
         >
           <XCircle size={15} />

@@ -26,11 +26,6 @@ final class BackroomController
             ->where('is_active', true)
             ->first(['id', 'must_change_password']);
 
-        abort_unless($profile, 404, 'Ops ID was not found or is inactive.');
-        if (($data['mode'] ?? null) === 'first-login') {
-            abort_unless($profile->must_change_password, 409, 'This account has already completed first login.');
-        }
-
         $supabaseUrl = rtrim((string) config('services.supabase.url'), '/');
         $anonKey = (string) config('services.supabase.anon_key');
         abort_if($supabaseUrl === '' || $anonKey === '', 503, 'Backroom login is not configured.');
@@ -45,6 +40,7 @@ final class BackroomController
                 'password' => $data['password'],
             ]);
         abort_unless($tokenResponse->successful() && $tokenResponse->json('access_token'), 401, 'Invalid Ops ID or password.');
+        abort_unless($profile && (($data['mode'] ?? null) !== 'first-login' || $profile->must_change_password), 401, 'Invalid Ops ID or password.');
 
         return response()->json($tokenResponse->json());
     }

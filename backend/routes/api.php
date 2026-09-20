@@ -24,12 +24,12 @@ Route::get('/auth/status', function () {
 Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
 Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
-Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
+Route::middleware(['throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
     Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
 });
 
-Route::middleware(['supabase.auth', 'throttle:api'])->group(function (): void {
+Route::middleware(['throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::put('/users/{id}', [UserController::class, 'update']);

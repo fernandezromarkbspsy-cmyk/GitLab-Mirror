@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ShipWheel, X } from "lucide-react";
 import { Modal } from "../components/Modal";
 import { api } from "../lib/api";
+import { buildIdempotencyHeaders } from "../lib/idempotency";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
@@ -35,6 +36,11 @@ export function DockingConfirmation({ user }: { user: User }) {
       api<TruckRequest>(`/requests/${request.id}/${action}`, {
         method: "POST",
         body: JSON.stringify(payload ?? {}),
+        headers: buildIdempotencyHeaders(`docking-${action}`, {
+          requestId: request.id,
+          action,
+          payload: payload ?? {},
+        }),
       }),
     onSuccess: async (updated, variables) => {
       setSelected(null);
@@ -52,6 +58,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       <button
         type="button"
         className="table-action approve"
+        disabled={action.isPending}
         onClick={() => action.mutate({ request, action: "confirm" })}
       >
         <CheckCircle2 size={15} />
@@ -61,6 +68,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       <button
         type="button"
         className="table-action assign"
+        disabled={action.isPending}
         onClick={() => setSelected(request)}
       >
         <ShipWheel size={15} />

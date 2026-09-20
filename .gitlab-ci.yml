@@ -40,6 +40,7 @@ backend:
     - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
     - rm composer-setup.php
     - cd backend
+    - cp .env.example .env
     - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
     - composer install --no-interaction --prefer-dist --no-progress
   script:
@@ -74,6 +75,7 @@ backend-postgres:
     - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
     - rm composer-setup.php
     - cd backend
+    - cp .env.example .env
     - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
     - composer install --no-interaction --prefer-dist --no-progress
   script:
@@ -91,8 +93,7 @@ deployment-config:
   image: bash:5.2
   script:
     - bash -n deploy/deploy-production.sh
-    - grep -q 'php artisan migrate --force' deploy/deploy-production.sh
-    - grep -q 'system:verify-config --production' deploy/deploy-production.sh
+    - awk 'function command(line) { sub(/[[:space:]]*#.*/, "", line); return line } /^[[:space:]]*#/ { next } { line = command($0); if (line ~ /^[[:space:]]*docker compose run --rm api php artisan migrate --force[[:space:]]*$/) migrate = NR; if (line ~ /^[[:space:]]*docker compose run --rm api php artisan system:verify-config --production[[:space:]]*$/) verify = NR } END { exit !(migrate && verify && migrate < verify) }' deploy/deploy-production.sh
     - grep -q 'scheduler' docker-compose.yml
 
 # .gitlab-ci.yml

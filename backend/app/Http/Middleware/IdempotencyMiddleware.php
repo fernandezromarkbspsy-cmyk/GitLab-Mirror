@@ -32,7 +32,6 @@ final class IdempotencyMiddleware
         return DB::transaction(function () use ($request, $next, $actorId, $key, $method, $path, $requestHash): Response {
             $now = now();
             DB::table('idempotency_keys')
-                ->where('actor_id', $actorId)
                 ->where('key', $key)
                 ->whereNotNull('expires_at')
                 ->where('expires_at', '<=', $now)

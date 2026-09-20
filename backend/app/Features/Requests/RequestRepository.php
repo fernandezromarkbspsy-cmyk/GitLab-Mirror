@@ -4,6 +4,7 @@ namespace App\Features\Requests;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -26,10 +27,10 @@ final class RequestRepository
             $query->whereRaw("lower(coalesce(plate_number, '')) like ?", ['%'.strtolower($search).'%']);
         }
         if ($dateFrom = $filters['date_from'] ?? null) {
-            $query->whereDate('request_timestamp', '>=', $dateFrom);
+            $this->whereBusinessDate($query, '>=', $dateFrom);
         }
         if ($dateTo = $filters['date_to'] ?? null) {
-            $query->whereDate('request_timestamp', '<=', $dateTo);
+            $this->whereBusinessDate($query, '<=', $dateTo);
         }
 
         $sort = $filters['sort'] ?? 'created_at';
@@ -55,20 +56,24 @@ final class RequestRepository
         $sizes = DB::table('requests')->select('truck_size', DB::raw('count(*) as total'))->groupBy('truck_size');
         $this->scope($sizes, $actor, $filters);
 
-        $now = CarbonImmutable::now('Asia/Manila');
-        $shiftStart = $now->hour < 6
-            ? $now->subDay()->setTime(18, 0)
-            : $now->setTime(18, 0);
+        $businessTimezone = (string) config('app.business_timezone', 'Asia/Manila');
+        $now = CarbonImmutable::now($businessTimezone);
+        $shiftStart = $now->hour < 6 || $now->hour >= 18
+            ? $now->setTime(18, 0)
+            : $now->subDay()->setTime(18, 0);
+        if ($now->hour < 6) {
+            $shiftStart = $now->subDay()->setTime(18, 0);
+        }
         $shiftEnd = $shiftStart->addHours(13);
         $shiftQuery = DB::table('requests')->whereBetween('request_timestamp', [$shiftStart->utc(), $shiftEnd->utc()]);
         if ($actor->role === 'ops_pic' && ! ($actor->is_admin ?? false)) {
             $shiftQuery->where('created_by', $actor->id);
         }
         if ($dateFrom = $filters['date_from'] ?? null) {
-            $shiftQuery->whereDate('request_timestamp', '>=', $dateFrom);
+            $this->whereBusinessDate($shiftQuery, '>=', $dateFrom);
         }
         if ($dateTo = $filters['date_to'] ?? null) {
-            $shiftQuery->whereDate('request_timestamp', '<=', $dateTo);
+            $this->whereBusinessDate($shiftQuery, '<=', $dateTo);
         }
         $counts = array_fill(0, 13, 0);
         if (DB::connection()->getDriverName() === 'pgsql') {
@@ -82,7 +87,7 @@ final class RequestRepository
             }
         } else {
             foreach ($shiftQuery->pluck('request_timestamp') as $timestamp) {
-                $index = $shiftStart->diffInHours(CarbonImmutable::parse($timestamp)->setTimezone('Asia/Manila'), false);
+                $index = (int) $shiftStart->diffInHours(CarbonImmutable::parse($timestamp)->setTimezone($businessTimezone), false);
                 if ($index >= 0 && $index <= 12) {
                     $counts[$index]++;
                 }
@@ -99,7 +104,7 @@ final class RequestRepository
         ];
     }
 
-    private function scope($query, object $actor, array $filters): void
+    private function scope(Builder $query, object $actor, array $filters): void
     {
         if ($actor->role === 'ops_pic' && ! ($actor->is_admin ?? false)) {
             $query->where('created_by', $actor->id);
@@ -111,10 +116,10 @@ final class RequestRepository
             $query->whereRaw("lower(coalesce(plate_number, '')) like ?", ['%'.strtolower($search).'%']);
         }
         if ($dateFrom = $filters['date_from'] ?? null) {
-            $query->whereDate('request_timestamp', '>=', $dateFrom);
+            $this->whereBusinessDate($query, '>=', $dateFrom);
         }
         if ($dateTo = $filters['date_to'] ?? null) {
-            $query->whereDate('request_timestamp', '<=', $dateTo);
+            $this->whereBusinessDate($query, '<=', $dateTo);
         }
     }
 
@@ -151,5 +156,23 @@ final class RequestRepository
         DB::table('requests')->where('id', $id)->update($data);
 
         return DB::table('requests')->where('id', $id)->first();
+    }
+
+    private function whereBusinessDate(Builder $query, string $operator, string $date): void
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $timezone = str_replace("'", "''", (string) config('app.business_timezone', 'Asia/Manila'));
+            $query->whereRaw("(request_timestamp AT TIME ZONE '{$timezone}')::date {$operator} ?", [$date]);
+
+            return;
+        }
+
+        $timezone = (string) config('app.business_timezone', 'Asia/Manila');
+        $businessDate = CarbonImmutable::createFromFormat('!Y-m-d', $date, $timezone);
+        $bound = $operator === '>='
+            ? $businessDate->startOfDay()->utc()
+            : $businessDate->endOfDay()->utc();
+
+        $query->where('request_timestamp', $operator, $bound);
     }
 }

@@ -133,11 +133,11 @@ docker compose config --quiet
 echo "Building application images..."
 docker compose build
 
-echo "Checking production application configuration before rollout..."
-docker compose run --rm api php artisan system:verify-config --production
-
 echo "Applying database migrations..."
 docker compose run --rm api php artisan migrate --force
+
+echo "Checking production application configuration before rollout..."
+docker compose run --rm api php artisan system:verify-config --production
 
 echo "Starting application..."
 if ! docker compose up -d --remove-orphans; then

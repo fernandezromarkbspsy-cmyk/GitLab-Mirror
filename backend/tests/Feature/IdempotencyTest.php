@@ -120,6 +120,37 @@ final class IdempotencyTest extends TestCase
         $this->assertDatabaseCount('idempotency_keys', 1);
     }
 
+    public function test_expired_keys_are_removed_by_the_prune_command(): void
+    {
+        DB::table('idempotency_keys')->insert([
+            'key' => 'expired-key',
+            'actor_id' => $this->actorOne,
+            'method' => 'POST',
+            'path' => 'api/requests',
+            'request_hash' => hash('sha256', 'expired'),
+            'response_status' => 201,
+            'response_body' => '{}',
+            'created_at' => now()->subDay(),
+            'expires_at' => now()->subMinute(),
+        ]);
+        DB::table('idempotency_keys')->insert([
+            'key' => 'active-key',
+            'actor_id' => $this->actorOne,
+            'method' => 'POST',
+            'path' => 'api/requests',
+            'request_hash' => hash('sha256', 'active'),
+            'response_status' => 201,
+            'response_body' => '{}',
+            'created_at' => now(),
+            'expires_at' => now()->addHour(),
+        ]);
+
+        $this->artisan('idempotency:prune')->assertExitCode(0);
+
+        $this->assertDatabaseMissing('idempotency_keys', ['key' => 'expired-key']);
+        $this->assertDatabaseHas('idempotency_keys', ['key' => 'active-key']);
+    }
+
     public function test_transition_is_replayed_without_duplicate_events_or_notifications(): void
     {
         $request = $this->insertRequest(['status' => 'PENDING']);

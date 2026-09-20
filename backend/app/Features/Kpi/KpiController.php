@@ -12,9 +12,14 @@ final class KpiController
     public function summary(Request $request): JsonResponse
     {
         $this->authorize($request);
-        $filters = $request->validate(['date_from' => 'nullable|date', 'date_to' => 'nullable|date|after_or_equal:date_from']);
-        $from = isset($filters['date_from']) ? CarbonImmutable::parse($filters['date_from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
-        $to = isset($filters['date_to']) ? CarbonImmutable::parse($filters['date_to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
+        $filters = $request->validate(['date_from' => 'nullable|date_format:Y-m-d', 'date_to' => 'nullable|date_format:Y-m-d|after_or_equal:date_from']);
+        $timezone = (string) config('app.business_timezone', 'Asia/Manila');
+        $from = isset($filters['date_from'])
+            ? CarbonImmutable::createFromFormat('Y-m-d', $filters['date_from'], $timezone)->startOfDay()->utc()
+            : CarbonImmutable::now($timezone)->startOfMonth()->utc();
+        $to = isset($filters['date_to'])
+            ? CarbonImmutable::createFromFormat('Y-m-d', $filters['date_to'], $timezone)->endOfDay()->utc()
+            : CarbonImmutable::now($timezone)->endOfDay()->utc();
         $query = DB::table('requests')->whereBetween('request_timestamp', [$from, $to]);
         $total = (clone $query)->count();
         $confirmed = (clone $query)->where('status', 'CONFIRMED')->count();
@@ -28,13 +33,21 @@ final class KpiController
     public function daily(Request $request): JsonResponse
     {
         $this->authorize($request);
-        $filters = $request->validate(['date_from' => 'nullable|date', 'date_to' => 'nullable|date|after_or_equal:date_from']);
-        $from = isset($filters['date_from']) ? CarbonImmutable::parse($filters['date_from'])->startOfDay() : CarbonImmutable::now()->subDays(29)->startOfDay();
-        $to = isset($filters['date_to']) ? CarbonImmutable::parse($filters['date_to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
+        $filters = $request->validate(['date_from' => 'nullable|date_format:Y-m-d', 'date_to' => 'nullable|date_format:Y-m-d|after_or_equal:date_from']);
+        $timezone = (string) config('app.business_timezone', 'Asia/Manila');
+        $from = isset($filters['date_from'])
+            ? CarbonImmutable::createFromFormat('Y-m-d', $filters['date_from'], $timezone)->startOfDay()->utc()
+            : CarbonImmutable::now($timezone)->subDays(29)->startOfDay()->utc();
+        $to = isset($filters['date_to'])
+            ? CarbonImmutable::createFromFormat('Y-m-d', $filters['date_to'], $timezone)->endOfDay()->utc()
+            : CarbonImmutable::now($timezone)->endOfDay()->utc();
+        $dateExpression = DB::connection()->getDriverName() === 'pgsql'
+            ? "(request_timestamp AT TIME ZONE '".str_replace("'", "''", $timezone)."')::date"
+            : 'date(request_timestamp)';
         $rows = DB::table('requests')->whereBetween('request_timestamp', [$from, $to])
-            ->selectRaw('date(request_timestamp) as date, count(*) as total')
+            ->selectRaw("{$dateExpression} as date, count(*) as total")
             ->selectRaw("sum(case when status = 'CONFIRMED' then 1 else 0 end) as confirmed")
-            ->groupByRaw('date(request_timestamp)')->orderBy('date')->get();
+            ->groupByRaw($dateExpression)->orderBy('date')->get();
 
         return response()->json(['data' => $rows]);
     }

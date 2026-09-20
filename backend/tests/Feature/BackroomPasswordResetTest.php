@@ -35,6 +35,26 @@ final class BackroomPasswordResetTest extends TestCase
             $table->timestamp('password_changed_at')->nullable();
             $table->timestamps();
         });
+        Schema::create('user_events', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('user_id');
+            $table->uuid('actor_id')->nullable();
+            $table->string('event_type');
+            $table->text('metadata');
+            $table->timestamp('created_at')->useCurrent();
+        });
+        Schema::create('user_event_retries', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('user_id');
+            $table->uuid('actor_id')->nullable();
+            $table->string('event_type');
+            $table->text('metadata');
+            $table->string('status')->default('confirmed');
+            $table->unsignedInteger('attempts')->default(0);
+            $table->timestamp('available_at');
+            $table->text('last_error')->nullable();
+            $table->timestamps();
+        });
         config()->set('services.supabase', [
             'url' => 'https://test-project.supabase.co',
             'anon_key' => 'test-anon-key',
@@ -111,5 +131,22 @@ final class BackroomPasswordResetTest extends TestCase
             $this->assertSame($changedAt->toDateTimeString(), $profile->password_changed_at);
             $this->assertSame($resetAt->toDateTimeString(), $profile->password_reset_at);
         }
+    }
+
+    public function test_audit_failure_preserves_reset_state_and_returns_password(): void
+    {
+        $id = $this->insertProfile();
+        Schema::drop('user_events');
+        Http::fake([
+            'https://test-project.supabase.co/auth/v1/admin/users/*' => Http::response(['id' => $id], 200),
+        ]);
+
+        $response = (new UserController)->resetPassword($this->request($id), $id);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertFalse($response->getData(true)['audit_recorded']);
+        $this->assertNotEmpty($response->getData(true)['initial_password']);
+        $this->assertTrue((bool) DB::table('profiles')->where('id', $id)->value('must_change_password'));
+        $this->assertDatabaseHas('user_event_retries', ['user_id' => $id, 'event_type' => 'PASSWORD_RESET']);
     }
 }

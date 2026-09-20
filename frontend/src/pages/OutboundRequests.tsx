@@ -23,6 +23,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
+import { buildIdempotencyHeaders } from "../lib/idempotency";
 import { defaultRequestFilters, openRequestsSheet } from "../lib/requests";
 import type {
   ClusterLookup,
@@ -111,6 +112,7 @@ export function OutboundRequests({
       api<TruckRequest>("/requests", {
         method: "POST",
         body: JSON.stringify(payload),
+        headers: buildIdempotencyHeaders("outbound-create", payload),
       }),
     onSuccess: async () => {
       setCreating(false);
@@ -122,6 +124,7 @@ export function OutboundRequests({
       api<TruckRequest>(`/requests/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
+        headers: buildIdempotencyHeaders("outbound-update", { id, payload }),
       }),
     onSuccess: async () => {
       setEditing(null);

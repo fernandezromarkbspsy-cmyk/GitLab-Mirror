@@ -202,7 +202,6 @@ final class UserController
             });
         } catch (Throwable $exception) {
             Log::critical('Backroom password reset audit failed after Supabase update.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
-            $restoreResetState();
 
             return response()->json(['ok' => true, 'initial_password' => $newPassword, 'audit_recorded' => false]);
         }

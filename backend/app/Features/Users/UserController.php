@@ -176,6 +176,7 @@ final class UserController
                     'error' => $retryException->getMessage(),
                 ]);
             }
+
             return response()->json(['ok' => true, 'initial_password' => $newPassword, 'audit_recorded' => false]);
         }
 

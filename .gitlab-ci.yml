@@ -93,7 +93,7 @@ deployment-config:
   image: bash:5.2
   script:
     - bash -n deploy/deploy-production.sh
-    - awk '/php artisan migrate --force/ { migrate = NR } /system:verify-config --production/ { verify = NR } END { exit !(migrate && verify && migrate < verify) }' deploy/deploy-production.sh
+    - awk 'function command(line) { sub(/[[:space:]]*#.*/, "", line); return line } /^[[:space:]]*#/ { next } { line = command($0); if (line ~ /^[[:space:]]*docker compose run --rm api php artisan migrate --force[[:space:]]*$/) migrate = NR; if (line ~ /^[[:space:]]*docker compose run --rm api php artisan system:verify-config --production[[:space:]]*$/) verify = NR } END { exit !(migrate && verify && migrate < verify) }' deploy/deploy-production.sh
     - grep -q 'scheduler' docker-compose.yml
 
 # .gitlab-ci.yml

@@ -49,6 +49,7 @@ final class BackroomPasswordResetTest extends TestCase
             $table->uuid('actor_id')->nullable();
             $table->string('event_type');
             $table->text('metadata');
+            $table->string('status')->default('confirmed');
             $table->unsignedInteger('attempts')->default(0);
             $table->timestamp('available_at');
             $table->text('last_error')->nullable();

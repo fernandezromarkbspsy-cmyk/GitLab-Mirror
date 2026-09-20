@@ -4,6 +4,7 @@ namespace App\Features\Requests;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -103,7 +104,7 @@ final class RequestRepository
         ];
     }
 
-    private function scope($query, object $actor, array $filters): void
+    private function scope(Builder $query, object $actor, array $filters): void
     {
         if ($actor->role === 'ops_pic' && ! ($actor->is_admin ?? false)) {
             $query->where('created_by', $actor->id);
@@ -157,7 +158,7 @@ final class RequestRepository
         return DB::table('requests')->where('id', $id)->first();
     }
 
-    private function whereBusinessDate($query, string $operator, string $date): void
+    private function whereBusinessDate(Builder $query, string $operator, string $date): void
     {
         if (DB::connection()->getDriverName() === 'pgsql') {
             $timezone = str_replace("'", "''", (string) config('app.business_timezone', 'Asia/Manila'));

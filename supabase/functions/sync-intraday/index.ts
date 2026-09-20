@@ -107,7 +107,7 @@ export async function handleRequest(req: Request): Promise<Response> {
       }
       const row = input as IncomingRow;
       if (row.status_desc !== undefined && typeof row.status_desc !== 'string') {
-        rejected;
+        rejected++;
         continue;
       }
       if (row.status_desc && row.status_desc.trim() !== 'SOC_LHTransporting') continue;

@@ -1,7 +1,24 @@
-import { serve } from "https://deno.land/std/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 const ALLOWED_SYNC_SOURCES = new Set(["google-apps-script"]);
+const MAX_BODY_BYTES = 1_000_000;
+const MAX_ROWS = 1_000;
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function readBody(req: Request): Promise<unknown> {
+  const contentLength = Number(req.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
+  const text = await req.text();
+  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
+  return JSON.parse(text);
+}
 
 type IncomingRow = {
   status_desc?: string;
@@ -26,38 +43,31 @@ function asRows(body: unknown): IncomingRow[] {
   return [];
 }
 
-serve(async (req) => {
+export async function handleRequest(req: Request): Promise<Response> {
   try {
     if (req.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return json({ error: "Method not allowed" }, 405);
     }
 
     const syncSource = (req.headers.get('x-sync-source') ?? '').trim().toLowerCase();
     if (!syncSource || !ALLOWED_SYNC_SOURCES.has(syncSource)) {
-      return new Response(JSON.stringify({ error: 'Forbidden: unknown sync source' }), {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return json({ error: "Forbidden: unknown sync source" }, 403);
     }
 
     const expectedSecret = Deno.env.get('INTRADAY_SYNC_SECRET')?.trim();
     if (!expectedSecret) {
-      return new Response(JSON.stringify({ error: 'Server misconfigured: missing INTRADAY_SYNC_SECRET' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return json({ error: "Server misconfigured" }, 500);
     }
 
     const providedSecret = (req.headers.get('x-sync-secret') ?? '').trim();
     if (providedSecret !== expectedSecret) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      return json({ error: "Unauthorized" }, 401);
     }
 
-    const rows = asRows(await req.json());
+    const rows = asRows(await readBody(req));
+    if (rows.length > MAX_ROWS) return json({ error: "Too many rows supplied." }, 413);
     const aggregates = new Map<string, { dispatch_date: string; hour: number; order_qty: number }>();
+    let rejected = 0;
 
     for (const row of rows) {
       if (row.status_desc && row.status_desc.trim() !== 'SOC_LHTransporting') continue;
@@ -70,7 +80,10 @@ serve(async (req) => {
         typeof dispatchDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dispatchDate)
         || !Number.isInteger(hour) || hour < 0 || hour > 23
         || !Number.isFinite(orderQty) || orderQty < 0
-      ) continue;
+      ) {
+        rejected++;
+        continue;
+      }
 
       const key = `${dispatchDate}:${hour}`;
       const current = aggregates.get(key);
@@ -88,18 +101,29 @@ serve(async (req) => {
     ));
 
     if (!normalized.length) {
-      return new Response(JSON.stringify({ error: 'No valid intraday rows supplied.' }), { status: 422, headers: { 'Content-Type': 'application/json' } });
+      return json({ error: "No valid intraday rows supplied.", received: rows.length, rejected }, 422);
     }
 
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+    if (!serviceRoleKey) return json({ error: "Server misconfigured" }, 500);
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      serviceRoleKey,
     );
     const { error } = await supabase.from('intraday_dispatch').upsert(normalized, { onConflict: 'dispatch_date,hour' });
-    if (error) throw error;
+    if (error) {
+      console.error("Intraday sync database write failed", error);
+      return json({ error: "Unable to persist intraday dispatch data." }, 502);
+    }
 
-    return new Response(JSON.stringify({ success: true, received: rows.length, processed: normalized.length }), { headers: { 'Content-Type': 'application/json' } });
+    return json({ success: true, received: rows.length, processed: normalized.length, rejected });
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    if (error instanceof Error && error.message === "PAYLOAD_TOO_LARGE") return json({ error: "Payload too large." }, 413);
+    console.error("Intraday sync request failed", error);
+    return json({ error: "Unable to process intraday sync request." }, 400);
   }
-});
+}
+
+if (import.meta.main) {
+  serve(handleRequest);
+}

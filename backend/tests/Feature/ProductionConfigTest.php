@@ -2,10 +2,17 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 final class ProductionConfigTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Schema::shouldReceive('hasTable')->andReturnTrue();
+    }
+
     public function test_production_config_rejects_debug_mode(): void
     {
         config()->set([

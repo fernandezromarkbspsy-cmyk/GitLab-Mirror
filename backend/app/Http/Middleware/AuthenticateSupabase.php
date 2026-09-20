@@ -17,7 +17,7 @@ final class AuthenticateSupabase
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->bearerToken() ?: $request->cookie('sb-access-token');
+        $token = $request->bearerToken();
         abort_unless($token, 401, 'Authentication required.');
 
         $supabaseUrl = rtrim((string) config('services.supabase.url'), '/');

@@ -1,131 +1,100 @@
-import { serve } from "https://deno.land/std/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
-const ALLOWED_FIELDS = new Set([
-  "cluster_name",
-  "region",
-  "dock_number",
-  "backlogs",
-  "backlogs_ts",
-]);
+const ALLOWED_FIELDS = new Set(["cluster_name", "region", "dock_number", "backlogs", "backlogs_ts"]);
 const ALLOWED_SYNC_SOURCES = new Set(["google-apps-script"]);
+const MAX_BODY_BYTES = 1_000_000;
+const MAX_ROWS = 1_000;
 
-serve(async (req) => {
+type ClusterRow = {
+  cluster_name: string;
+  hub_name: string;
+  region: string;
+  dock_number: string | null;
+  backlogs: number;
+  backlogs_ts: string | null;
+};
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
+}
+
+async function readBody(req: Request): Promise<unknown> {
+  const contentLength = Number(req.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
+  const text = await req.text();
+  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
+  return JSON.parse(text);
+}
+
+export async function handleRequest(req: Request): Promise<Response> {
   try {
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
+    if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
     const syncSource = (req.headers.get("x-sync-source") ?? "").trim().toLowerCase();
-    if (!syncSource || !ALLOWED_SYNC_SOURCES.has(syncSource)) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: unknown sync source" }),
-        { status: 403, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
+    if (!ALLOWED_SYNC_SOURCES.has(syncSource)) return json({ error: "Forbidden: unknown sync source" }, 403);
     const expectedSecret = Deno.env.get("CLUSTER_SYNC_SECRET")?.trim();
-    if (!expectedSecret) {
-      return new Response(
-        JSON.stringify({ error: "Server misconfigured: missing CLUSTER_SYNC_SECRET" }),
-        { status: 500, headers: { "Content-Type": "application/json" } },
-      );
-    }
+    if (!expectedSecret) return json({ error: "Server misconfigured" }, 500);
+    if ((req.headers.get("x-sync-secret") ?? "").trim() !== expectedSecret) return json({ error: "Unauthorized" }, 401);
 
-    const providedSecret = (req.headers.get("x-sync-secret") ?? "").trim();
-    if (providedSecret !== expectedSecret) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
-    const body = await req.json();
+    const body = await readBody(req);
     const inputRows = Array.isArray(body) ? body : [body];
+    if (inputRows.length > MAX_ROWS) return json({ error: "Too many rows supplied." }, 413);
 
-    const rows = inputRows
-      .filter((row) => row && typeof row === "object")
-      .map((row) => {
+    let rejected = 0;
+    const rows: ClusterRow[] = [];
+    for (const input of inputRows) {
+      try {
+        if (!input || typeof input !== "object") throw new Error("invalid row");
+        const row = input as Record<string, unknown>;
         const clusterName = String(row.cluster_name ?? "").trim();
         const region = String(row.region ?? "").trim();
-        const dockNumber = String(row.dock_number ?? "").trim() || null;
         const rawBacklogs = row.backlogs;
-        const backlogs =
-          rawBacklogs === "" || rawBacklogs == null
-            ? 0
-            : Number(rawBacklogs);
-
-        if (!clusterName || !region) {
-          throw new Error("cluster_name and region are required");
-        }
-
-        if (!Number.isInteger(backlogs) || backlogs < 0) {
-          throw new Error(`Invalid backlogs for cluster: ${clusterName}`);
-        }
-
-        const backlogsTs =
-          row.backlogs_ts === "" || row.backlogs_ts == null
-            ? null
-            : new Date(row.backlogs_ts).toISOString();
-
-        return {
+        const backlogs = rawBacklogs === "" || rawBacklogs == null ? 0 : Number(rawBacklogs);
+        if (!clusterName || !region || !Number.isInteger(backlogs) || backlogs < 0) throw new Error("invalid row");
+        const rawTimestamp = row.backlogs_ts;
+        const backlogsTs = rawTimestamp === "" || rawTimestamp == null ? null : new Date(String(rawTimestamp)).toISOString();
+        rows.push({
           cluster_name: clusterName,
-          // The Google Sheet has no separate hub_name column. The lookup
-          // identity is therefore cluster_name for this source.
           hub_name: clusterName,
           region,
-          dock_number: dockNumber,
+          dock_number: String(row.dock_number ?? "").trim() || null,
           backlogs,
           backlogs_ts: backlogsTs,
-        };
-      });
-
-    const uniqueRows = [
-      ...new Map(rows.map((row) => [row.cluster_name, row])).values(),
-    ];
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { error } = await supabase
-      .from("clusters")
-      .upsert(uniqueRows, {
-        onConflict: "cluster_name",
-        ignoreDuplicates: false,
-      });
-
-    if (error) {
-      return new Response(JSON.stringify(error), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+        });
+      } catch {
+        rejected++;
+      }
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        received: inputRows.length,
-        processed: uniqueRows.length,
-        duplicatesRemoved: inputRows.length - uniqueRows.length,
-        source: "cluster!A1:E1000",
-        fields: [...ALLOWED_FIELDS],
-      }),
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    const uniqueRows = [...new Map(rows.map((row) => [row.cluster_name, row])).values()];
+    if (!uniqueRows.length) return json({ error: "No valid cluster rows supplied.", received: inputRows.length, rejected }, 422);
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+    if (!serviceRoleKey || !supabaseUrl) return json({ error: "Server misconfigured" }, 500);
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const { error } = await supabase.from("clusters").upsert(uniqueRows, { onConflict: "cluster_name", ignoreDuplicates: false });
+    if (error) {
+      console.error("Cluster sync database write failed", error);
+      return json({ error: "Unable to persist cluster data." }, 502);
+    }
+
+    return json({
+      success: true,
+      received: inputRows.length,
+      processed: uniqueRows.length,
+      rejected,
+      duplicatesRemoved: inputRows.length - uniqueRows.length,
+      source: "cluster!A1:E1000",
+      fields: [...ALLOWED_FIELDS],
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "PAYLOAD_TOO_LARGE") return json({ error: "Payload too large." }, 413);
+    console.error("Cluster sync request failed", error);
+    return json({ error: "Unable to process cluster sync request." }, 400);
   }
-});
+}
+
+if (import.meta.main) {
+  serve(handleRequest);
+}

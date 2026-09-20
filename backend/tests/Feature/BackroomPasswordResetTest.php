@@ -35,6 +35,14 @@ final class BackroomPasswordResetTest extends TestCase
             $table->timestamp('password_changed_at')->nullable();
             $table->timestamps();
         });
+        Schema::create('user_events', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('user_id');
+            $table->uuid('actor_id')->nullable();
+            $table->string('event_type');
+            $table->text('metadata');
+            $table->timestamp('created_at')->useCurrent();
+        });
         config()->set('services.supabase', [
             'url' => 'https://test-project.supabase.co',
             'anon_key' => 'test-anon-key',

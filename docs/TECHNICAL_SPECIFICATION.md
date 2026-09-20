@@ -1,5 +1,7 @@
 # SOC5-Outbound — Technical Specification Document
 
+> **Implementation note (2026-09-19):** This document contains historical design material and is not authoritative where it conflicts with the source. The current backend is Laravel 12 using `AuthenticateSupabase` with Supabase Auth bearer validation, query-builder repositories/services, and Supabase-managed SQL migrations. Protected writes go through Laravel; browser reads use Supabase RLS where explicitly supported. Deployment runs PHP-FPM behind NGINX with a separate Laravel scheduler container. See `backend/routes/api.php`, `backend/bootstrap/app.php`, `supabase/migrations/`, and `docker-compose.yml` for the executable contract. References below to Sanctum, Eloquent models, Laravel Form Requests, or Laravel-managed schema are legacy material pending rewrite.
+
 > **Document Version**: 1.0
 > **Date**: 2026-08-31
 > **Status**: Living Document

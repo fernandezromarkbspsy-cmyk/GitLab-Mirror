@@ -1,5 +1,7 @@
 # Database Audit & Recommendations — Supabase/PostgreSQL
 
+> **Status (2026-09-19):** This is a historical audit record. Findings about Edge Function JWT/shared-secret enforcement and unrestricted intraday reads were remediated by `015_fix_intraday_dispatch_rls.sql`, `019_identity_and_audit_hardening.sql`, `supabase/config.toml`, and the current function handlers. Re-evaluate any remaining recommendation against the current migrations and source before implementing it.
+
 **Scope:** `supabase/migrations/001` through `014`, `supabase/config.toml`, `supabase/functions/sync-clusters`, `supabase/functions/sync-intraday`.
 **Date:** 2026-09-15
 

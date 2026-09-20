@@ -2,11 +2,10 @@
 
 namespace App\Features\Users;
 
-use App\Integrations\SupabaseHttpOptions;
+use App\Integrations\SupabaseAdminClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -14,6 +13,13 @@ use Throwable;
 
 final class UserController
 {
+    private SupabaseAdminClient $supabaseAdmin;
+
+    public function __construct(?SupabaseAdminClient $supabaseAdmin = null)
+    {
+        $this->supabaseAdmin = $supabaseAdmin ?? new SupabaseAdminClient;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize($request);
@@ -28,34 +34,25 @@ final class UserController
 
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
-            'ops_id' => ['required', 'string', 'max:40', 'regex:/^ops[0-9]+$/i', Rule::unique('profiles', 'ops_id')],
+            'ops_id' => ['required', 'string', 'max:40', 'regex:/^ops[0-9]+$/i'],
         ]);
-        $opsId = strtolower($data['ops_id']);
+        $opsId = strtolower(trim($data['ops_id']));
+        abort_if(DB::table('profiles')->whereRaw('lower(ops_id) = ?', [$opsId])->exists(), 422, 'That Ops ID is already registered.');
         $email = $opsId.'@backroom.soc5.internal';
-        $url = rtrim((string) config('services.supabase.url'), '/');
-        $key = (string) config('services.supabase.service_key');
-        abort_if($url === '' || $key === '', 503, 'Backroom provisioning is not configured.');
 
         $initialPassword = Str::password(20);
-        $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
-            ->timeout(10)->post($url.'/auth/v1/admin/users', [
-                'email' => $email,
-                'password' => $initialPassword,
-                'email_confirm' => true,
-                'user_metadata' => ['ops_id' => $opsId, 'account_type' => 'backroom'],
-            ]);
-        if (! $response->successful() || ! $response->json('id')) {
+        try {
+            $authUserId = $this->supabaseAdmin->createUser($email, $initialPassword, ['ops_id' => $opsId, 'account_type' => 'backroom']);
+        } catch (Throwable $exception) {
             Log::warning('Unable to create Supabase Backroom user.', [
-                'status' => $response->status(),
                 'ops_id' => $opsId,
+                'error' => $exception->getMessage(),
             ]);
             abort(422, 'Unable to create authentication account.');
         }
 
-        $authUserId = $response->json('id');
-
         try {
-            $profile = DB::transaction(function () use ($authUserId, $data, $opsId) {
+            $profile = DB::transaction(function () use ($authUserId, $data, $opsId, $actor) {
                 $profile = DB::table('profiles')->insertGetId([
                     'id' => $authUserId, 'name' => $data['name'], 'role' => 'ops_pic',
                     'ops_id' => $opsId, 'email' => null, 'is_active' => true,
@@ -69,15 +66,22 @@ final class UserController
                     ]);
                 }
 
+                $this->userEvent($profile, $actor->id, 'USER_CREATED', ['name' => $data['name'], 'ops_id' => $opsId]);
+
                 return $profile;
             });
         } catch (Throwable $exception) {
-            Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
-                ->timeout(10)->delete($url.'/auth/v1/admin/users/'.$authUserId);
+            try {
+                $this->supabaseAdmin->deleteUser($authUserId);
+            } catch (Throwable $compensationException) {
+                Log::critical('Supabase user compensation failed after profile creation rollback.', [
+                    'user_id' => $authUserId,
+                    'ops_id' => $opsId,
+                    'error' => $compensationException->getMessage(),
+                ]);
+            }
             throw $exception;
         }
-
-        $this->userEvent($profile, $actor->id, 'USER_CREATED', ['name' => $data['name'], 'ops_id' => $opsId]);
 
         return response()->json([
             'id' => $profile,
@@ -93,9 +97,11 @@ final class UserController
         $this->authorize($request);
         abort_if($request->attributes->get('actor')->id === $id, 409, 'You cannot change your own role.');
         $data = $request->validate(['name' => 'required|string|min:2|max:120', 'role' => ['required', Rule::in(['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'])]]);
-        $updated = DB::table('profiles')->where('id', $id)->update($data + ['updated_at' => now()]);
-        abort_unless($updated, 404, 'User not found.');
-        $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_UPDATED', $data);
+        DB::transaction(function () use ($id, $data, $request): void {
+            $updated = DB::table('profiles')->where('id', $id)->update($data + ['updated_at' => now()]);
+            abort_unless($updated, 404, 'User not found.');
+            $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_UPDATED', $data);
+        });
 
         return response()->json(DB::table('profiles')->where('id', $id)->firstOrFail());
     }
@@ -104,9 +110,11 @@ final class UserController
     {
         $this->authorize($request);
         abort_if($request->attributes->get('actor')->id === $id, 409, 'You cannot disable your own account.');
-        $updated = DB::table('profiles')->where('id', $id)->update(['is_active' => false, 'updated_at' => now()]);
-        abort_unless($updated, 404, 'User not found.');
-        $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_DISABLED');
+        DB::transaction(function () use ($id, $request): void {
+            $updated = DB::table('profiles')->where('id', $id)->update(['is_active' => false, 'updated_at' => now()]);
+            abort_unless($updated, 404, 'User not found.');
+            $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_DISABLED');
+        });
 
         return response()->json(['ok' => true]);
     }
@@ -116,10 +124,6 @@ final class UserController
         $this->authorize($request);
         $profile = DB::table('profiles')->where('id', $id)->where('role', 'ops_pic')->where('is_active', true)->first(['id', 'ops_id', 'must_change_password', 'password_changed_at', 'password_reset_at']);
         abort_unless($profile, 404, 'Active Backroom user not found.');
-
-        $url = rtrim((string) config('services.supabase.url'), '/');
-        $key = (string) config('services.supabase.service_key');
-        abort_if($url === '' || $key === '', 503, 'Backroom provisioning is not configured.');
 
         $newPassword = Str::password(20);
         $resetAt = now();
@@ -143,22 +147,22 @@ final class UserController
         };
 
         try {
-            $response = Http::withHeaders(['apikey' => $key, 'Authorization' => 'Bearer '.$key])
-                ->withOptions(SupabaseHttpOptions::guzzle())
-                ->withOptions(['verify' => config('services.supabase.ca_bundle') ?: true])
-                ->timeout(10)
-                ->put($url.'/auth/v1/admin/users/'.$profile->id, ['password' => $newPassword]);
+            $this->supabaseAdmin->updatePassword($profile->id, $newPassword);
         } catch (Throwable $exception) {
             $restoreResetState();
             Log::warning('Unable to reach Supabase during Backroom password reset.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
             abort(502, 'Unable to reset the Backroom password.');
         }
 
-        if (! $response->successful()) {
+        try {
+            DB::transaction(function () use ($profile, $request): void {
+                $this->userEvent($profile->id, $request->attributes->get('actor')->id, 'PASSWORD_RESET', ['ops_id' => $profile->ops_id]);
+            });
+        } catch (Throwable $exception) {
             $restoreResetState();
-            abort(502, 'Unable to reset the Backroom password.');
+            Log::critical('Backroom password reset audit failed after Supabase update.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
+            throw $exception;
         }
-        $this->userEvent($profile->id, $request->attributes->get('actor')->id, 'PASSWORD_RESET', ['ops_id' => $profile->ops_id]);
 
         return response()->json(['ok' => true, 'initial_password' => $newPassword]);
     }
@@ -170,8 +174,6 @@ final class UserController
 
     private function userEvent(string $userId, string $actorId, string $type, array $metadata = []): void
     {
-        if (DB::getSchemaBuilder()->hasTable('user_events')) {
-            DB::table('user_events')->insert(['user_id' => $userId, 'actor_id' => $actorId, 'event_type' => $type, 'metadata' => json_encode($metadata)]);
-        }
+        DB::table('user_events')->insert(['user_id' => $userId, 'actor_id' => $actorId, 'event_type' => $type, 'metadata' => json_encode($metadata)]);
     }
 }

@@ -87,7 +87,7 @@ final class BackroomLoginTest extends TestCase
         ])->assertOk()->assertJsonPath('access_token', 'test-access-token');
     }
 
-    public function test_first_login_is_rejected_once_the_account_has_already_completed_it(): void
+    public function test_first_login_does_not_reveal_that_the_account_has_already_completed_it(): void
     {
         $this->insertProfile(['must_change_password' => false]);
         Http::fake();
@@ -96,9 +96,7 @@ final class BackroomLoginTest extends TestCase
             'ops_id' => 'ops123',
             'password' => 'anything',
             'mode' => 'first-login',
-        ])->assertStatus(409);
-
-        Http::assertNothingSent();
+        ])->assertStatus(401);
     }
 
     public function test_completed_backroom_user_can_sign_in_without_first_login_mode(): void

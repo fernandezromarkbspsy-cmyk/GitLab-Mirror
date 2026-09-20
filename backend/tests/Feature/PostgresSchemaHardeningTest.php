@@ -51,17 +51,34 @@ final class PostgresSchemaHardeningTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_identity_migration_enforces_case_insensitive_ops_ids_and_audit_events(): void
+    public function test_identity_migration_normalizes_existing_ops_ids(): void
     {
         $migration = dirname(base_path()).'/supabase/migrations/019_identity_and_audit_hardening.sql';
         DB::unprepared((string) file_get_contents($migration));
 
         DB::table('profiles')->insert(['id' => '00000000-0000-0000-0000-000000000001', 'ops_id' => 'OPS123']);
+        DB::table('user_imports')->insert(['id' => '00000000-0000-0000-0000-000000000002', 'ops_id' => ' OPS456 ']);
+
+        $this->assertSame('ops123', DB::table('profiles')->where('id', '00000000-0000-0000-0000-000000000001')->value('ops_id'));
+        $this->assertSame('ops456', DB::table('user_imports')->where('id', '00000000-0000-0000-0000-000000000002')->value('ops_id'));
+    }
+
+    public function test_identity_migration_allows_supported_audit_event(): void
+    {
+        $migration = dirname(base_path()).'/supabase/migrations/019_identity_and_audit_hardening.sql';
+        DB::unprepared((string) file_get_contents($migration));
+
         DB::table('user_events')->insert([
             'user_id' => '00000000-0000-0000-0000-000000000001',
             'event_type' => 'PASSWORD_RESET',
         ]);
         $this->assertDatabaseHas('user_events', ['event_type' => 'PASSWORD_RESET']);
+    }
+
+    public function test_identity_migration_rejects_unsupported_audit_event(): void
+    {
+        $migration = dirname(base_path()).'/supabase/migrations/019_identity_and_audit_hardening.sql';
+        DB::unprepared((string) file_get_contents($migration));
 
         $this->expectException(QueryException::class);
         DB::table('user_events')->insert([
@@ -75,10 +92,7 @@ final class PostgresSchemaHardeningTest extends TestCase
         $migration = dirname(base_path()).'/supabase/migrations/019_identity_and_audit_hardening.sql';
         DB::unprepared((string) file_get_contents($migration));
 
-        DB::table('user_imports')->insert([
-            ['id' => '10000000-0000-0000-0000-000000000001', 'ops_id' => 'OPS123'],
-            ['id' => '10000000-0000-0000-0000-000000000002', 'ops_id' => ' ops123  '],
-        ]);
+        DB::table('user_imports')->insert(['id' => '10000000-0000-0000-0000-000000000001', 'ops_id' => 'OPS123']);
 
         $this->expectException(QueryException::class);
         DB::table('user_imports')->insert(['id' => '10000000-0000-0000-0000-000000000003', 'ops_id' => 'ops123']);

@@ -14,12 +14,11 @@ final class ProvisionBackroomUsers extends Command
 
     protected $description = 'Create Supabase Auth identities for staged Backroom users';
 
-    private SupabaseAdminClient $supabaseAdmin;
+    private ?SupabaseAdminClient $supabaseAdmin = null;
 
     public function __construct()
     {
         parent::__construct();
-        $this->supabaseAdmin = new SupabaseAdminClient;
     }
 
     public function handle(): int
@@ -67,7 +66,7 @@ final class ProvisionBackroomUsers extends Command
 
             if (! $authUserId) {
                 try {
-                    $authUserId = $this->supabaseAdmin->createUser($opsId.'@backroom.soc5.internal', $initialPassword, ['ops_id' => $opsId, 'account_type' => 'backroom']);
+                    $authUserId = $this->supabaseAdmin()->createUser($opsId.'@backroom.soc5.internal', $initialPassword, ['ops_id' => $opsId, 'account_type' => 'backroom']);
                     $created++;
                     $this->line($opsId.': initial password '.$initialPassword);
                 } catch (SupabaseAdminException $exception) {
@@ -77,11 +76,11 @@ final class ProvisionBackroomUsers extends Command
                     continue;
                 }
             } else {
-                $mustChangePassword = (bool) ($existingProfile->must_change_password ?? false);
+                $mustChangePassword = $existingProfile === null || (bool) $existingProfile->must_change_password;
 
                 if ($mustChangePassword) {
                     try {
-                        $this->supabaseAdmin->updatePassword($authUserId, $initialPassword);
+                        $this->supabaseAdmin()->updatePassword($authUserId, $initialPassword);
                         $shouldRepairPassword = true;
                         $this->line($opsId.': initial password '.$initialPassword);
                     } catch (SupabaseAdminException $exception) {
@@ -92,10 +91,13 @@ final class ProvisionBackroomUsers extends Command
                     }
                 }
 
-                $repaired++;
+                if ($shouldRepairPassword) {
+                    $repaired++;
+                }
             }
 
-            DB::transaction(function () use ($user, $authUserId, $opsId, $existingProfile, $shouldRepairPassword): void {
+            $resetFirstLogin = $existingProfile === null || $shouldRepairPassword;
+            DB::transaction(function () use ($user, $authUserId, $opsId, $existingProfile, $resetFirstLogin): void {
                 $profileValues = [
                     'id' => $authUserId,
                     'name' => $user->name,
@@ -103,8 +105,8 @@ final class ProvisionBackroomUsers extends Command
                     'email' => null,
                     'ops_id' => $opsId,
                     'is_active' => true,
-                    'must_change_password' => $shouldRepairPassword ? true : ((bool) ($existingProfile->must_change_password ?? false)),
-                    'password_reset_at' => $shouldRepairPassword ? now() : ($existingProfile->password_reset_at ?? null),
+                    'must_change_password' => $resetFirstLogin ? true : (bool) $existingProfile->must_change_password,
+                    'password_reset_at' => $resetFirstLogin ? now() : $existingProfile->password_reset_at,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -123,5 +125,10 @@ final class ProvisionBackroomUsers extends Command
         $this->line("Created: {$created}; repaired: {$repaired}; failed: {$failed}");
 
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
+    }
+
+    private function supabaseAdmin(): SupabaseAdminClient
+    {
+        return $this->supabaseAdmin ??= new SupabaseAdminClient;
     }
 }

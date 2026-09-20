@@ -63,13 +63,13 @@ type IncomingRow = {
   orderQty?: number | string;
 };
 
-function asRows(body: unknown): IncomingRow[] {
-  if (Array.isArray(body)) return body as IncomingRow[];
+function asRows(body: unknown): unknown[] {
+  if (Array.isArray(body)) return body;
   if (body && typeof body === 'object') {
     const value = body as { rows?: unknown; data?: unknown };
-    if (Array.isArray(value.rows)) return value.rows as IncomingRow[];
-    if (Array.isArray(value.data)) return value.data as IncomingRow[];
-    return [body as IncomingRow];
+    if (Array.isArray(value.rows)) return value.rows;
+    if (Array.isArray(value.data)) return value.data;
+    return [body];
   }
   return [];
 }
@@ -100,7 +100,12 @@ export async function handleRequest(req: Request): Promise<Response> {
     const aggregates = new Map<string, { dispatch_date: string; hour: number; order_qty: number }>();
     let rejected = 0;
 
-    for (const row of rows) {
+    for (const input of rows) {
+      if (!input || typeof input !== 'object' || Array.isArray(input)) {
+        rejected++;
+        continue;
+      }
+      const row = input as IncomingRow;
       if (row.status_desc && row.status_desc.trim() !== 'SOC_LHTransporting') continue;
 
       const dispatchDate = row.c_date_6am ?? row.dispatch_date ?? row.date;

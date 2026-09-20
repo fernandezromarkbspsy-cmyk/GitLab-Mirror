@@ -1,6 +1,6 @@
 # SOC5-Outbound — Technical Specification Document
 
-> **Implementation note (2026-09-19):** This document contains historical design material and is not authoritative where it conflicts with the source. The current backend is Laravel 12 using `AuthenticateSupabase` with Supabase Auth bearer validation, query-builder repositories/services, and Supabase-managed SQL migrations. Protected writes go through Laravel; browser reads use Supabase RLS where explicitly supported. Deployment runs PHP-FPM behind NGINX with a separate Laravel scheduler container. See `backend/routes/api.php`, `backend/bootstrap/app.php`, `supabase/migrations/`, and `docker-compose.yml` for the executable contract. References below to Sanctum, Eloquent models, Laravel Form Requests, or Laravel-managed schema are legacy material pending rewrite.
+> **Implementation note (2026-09-20):** This document contains historical design material and is not authoritative where it conflicts with the source. The current backend is Laravel 12 using `AuthenticateSupabase` with Supabase Auth bearer validation, query-builder repositories/services, and Supabase-managed SQL migrations. Protected writes go through Laravel; browser reads use Supabase RLS where explicitly supported. Deployment runs PHP-FPM and NGINX under Supervisor, with a separate Laravel `schedule:work` container; `deploy/deploy-production.sh` applies Laravel migrations before rollout. See `backend/routes/api.php`, `backend/bootstrap/app.php`, `supabase/migrations/`, `docker-compose.yml`, and `deploy/deploy-production.sh` for the executable contract. References below to Sanctum, Eloquent models, Laravel Form Requests, or Laravel-managed schema are legacy material pending rewrite.
 > **Document Version**: 1.0
 > **Date**: 2026-08-31
 > **Status**: Living Document
@@ -345,7 +345,7 @@ class OrderController extends Controller
 
 ### 7.1 Overview
 
-The database is hosted on **Supabase Cloud** (PostgreSQL 15). Schema is managed via Laravel migrations and the Supabase dashboard DDL. Row Level Security is enforced on all tables.
+The database is hosted on **Supabase Cloud** (PostgreSQL 15). Application schema is managed by Laravel migrations, while identity, audit, and Edge Function tables are maintained in `supabase/migrations/`. Row Level Security is enforced on all tables.
 
 ### 7.2 Core Domain Tables
 
@@ -1211,7 +1211,7 @@ Post-deploy commands:
 ### 18.4 Supabase
 
 - Managed cloud instance on Supabase Cloud (no self-hosted infrastructure)
-- Migrations tracked via Supabase dashboard DDL and Laravel migrations
+- Laravel migrations run during deployment; Supabase SQL migrations own the identity, audit, and Edge Function database objects.
 - Realtime enabled per-table via Supabase dashboard configuration
 - Backups: daily automated via Supabase Cloud
 - Connection pooling: via Supabase Pooler (PgBouncer)

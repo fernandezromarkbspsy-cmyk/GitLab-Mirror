@@ -93,4 +93,21 @@ final class ProvisionBackroomUsersTest extends TestCase
         $this->assertFalse((bool) DB::table('profiles')->where('id', $this->authUserId)->value('must_change_password'));
         Http::assertNothingSent();
     }
+
+    public function test_all_creates_accounts_that_require_first_login(): void
+    {
+        Http::fake([
+            'https://test-project.supabase.co/auth/v1/admin/users' => Http::response(['id' => (string) Str::uuid()], 200),
+        ]);
+        DB::table('user_imports')->where('auth_user_id', $this->authUserId)->update([
+            'auth_user_id' => null,
+            'ops_id' => 'OPS456',
+        ]);
+        DB::table('profiles')->where('id', $this->authUserId)->delete();
+
+        $this->artisan('users:provision-backroom', ['--all' => true])->assertExitCode(0);
+
+        $this->assertTrue((bool) DB::table('profiles')->where('ops_id', 'ops456')->value('must_change_password'));
+        $this->assertNotNull(DB::table('profiles')->where('ops_id', 'ops456')->value('password_reset_at'));
+    }
 }

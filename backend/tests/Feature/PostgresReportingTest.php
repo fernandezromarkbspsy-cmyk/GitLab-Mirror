@@ -19,6 +19,7 @@ final class PostgresReportingTest extends TestCase
             $this->markTestSkipped('PostgreSQL integration tests are enabled only in the PostgreSQL CI job.');
         }
 
+        config()->set('app.business_timezone', 'Asia/Manila');
         config()->set('database.default', 'pgsql');
         DB::purge('pgsql');
         DB::reconnect('pgsql');

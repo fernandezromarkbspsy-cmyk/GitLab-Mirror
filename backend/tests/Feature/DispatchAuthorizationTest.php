@@ -50,10 +50,12 @@ final class DispatchAuthorizationTest extends TestCase
         $request = Request::create('/api/dispatch/intraday?date=2026-09-19', 'GET', ['date' => '2026-09-19']);
         $request->attributes->set('actor', (object) ['id' => 'doc-user', 'role' => 'doc_officer']);
 
-        $this->expectException(HttpException::class);
-        $this->expectExceptionCode(403);
-
-        (new DispatchController)->intraday($request);
+        try {
+            (new DispatchController)->intraday($request);
+            $this->fail('Doc Officer should not be able to read intraday dispatch data.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
     }
 
     public function test_fte_role_can_read_intraday_dispatch(): void

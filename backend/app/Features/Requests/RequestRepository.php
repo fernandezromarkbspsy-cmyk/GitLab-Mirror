@@ -55,7 +55,8 @@ final class RequestRepository
         $sizes = DB::table('requests')->select('truck_size', DB::raw('count(*) as total'))->groupBy('truck_size');
         $this->scope($sizes, $actor, $filters);
 
-        $now = CarbonImmutable::now('Asia/Manila');
+        $businessTimezone = (string) config('app.business_timezone', 'Asia/Manila');
+        $now = CarbonImmutable::now($businessTimezone);
         $shiftStart = $now->hour < 6 || $now->hour >= 18
             ? $now->setTime(18, 0)
             : $now->subDay()->setTime(18, 0);
@@ -85,7 +86,7 @@ final class RequestRepository
             }
         } else {
             foreach ($shiftQuery->pluck('request_timestamp') as $timestamp) {
-                $index = $shiftStart->diffInHours(CarbonImmutable::parse($timestamp)->setTimezone('Asia/Manila'), false);
+                $index = (int) $shiftStart->diffInHours(CarbonImmutable::parse($timestamp)->setTimezone($businessTimezone), false);
                 if ($index >= 0 && $index <= 12) {
                     $counts[$index]++;
                 }

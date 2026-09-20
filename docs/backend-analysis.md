@@ -3,20 +3,22 @@
 Analyzed revision: current working tree with pending PR changes included  
 Scope: Laravel API, Supabase schema/RLS/functions, deployment path, backend tests, and frontend callers that define API behavior.
 
+Status (2026-09-20): Remediated findings include idempotency cleanup and client keys, dispatch authorization, business-timezone reporting, Edge Function body/configuration controls, Backroom provisioning state preservation, Supabase Admin request centralization, and deployment migration/scheduler checks. The historical findings below remain as review context only where the current source no longer matches them.
+
 ## Executive summary
 
 The backend is a compact Laravel 12 modular monolith backed by Supabase PostgreSQL and Auth. Its basic shape is appropriate for the product: controllers validate HTTP input, the Requests feature separates authorization/service/repository concerns, workflow mutations use database transactions and row locks, and browser-side database writes are blocked by RLS.
 
-The current implementation is not yet production-safe. The most important issues are authorization gaps in docking and dispatch, a bypass of mandatory first-login password rotation, action payloads that can mutate fields outside the caller's workflow step, shared notification read state, and a deployment topology that neither runs scheduled work nor applies backend migrations. The request state machine also differs materially from its documentation: `ASSIGNED` never becomes an externally observable state, and the first “mark docked” call can report success without docking or auditing the partial change.
+The current implementation still has verified product and authorization risks: mandatory first-login completion needs stronger remote-password verification, request actions need stricter field ownership, role notifications have shared read state, and the request state machine documents transient `ASSIGNED` behavior differently from the committed result. Deployment, scheduler, idempotency headers/cleanup, business-timezone handling, normalized Ops ID uniqueness, centralized Supabase Admin handling, and bounded Edge Function controls are resolved in the current branch.
 
 | Area | Assessment |
 |---|---|
 | Architecture | Sensible small modular monolith; uneven feature boundaries outside Requests |
-| Authentication | Supabase validation and active-profile checks are sound; first-login completion is bypassable |
+| Authentication | Supabase validation and active-profile checks are sound; first-login completion still needs remote-password verification |
 | Authorization | Role checks exist, but two important object/route gaps remain |
 | Data integrity | Transactions and row locks are strong; generic action updates and non-atomic external sync weaken them |
 | Database security | RLS blocks browser writes and scopes reads; Laravel can bypass policies and must mirror every rule |
-| Reliability | Idempotency core is good but unused by the client and lacks cleanup; deploy omits scheduler/migrations |
+| Reliability | Idempotency, scheduled work, and migration deployment checks are present; Google Sheets full-rewrite recovery remains an open concern |
 | Scalability | Fine for current scale; offset pagination, aggregate scans, full-sheet rewrites, and file cache are limits |
 | Test confidence | Useful feature tests, but SQLite hand-built schemas miss PostgreSQL, RLS, migration, and concurrency behavior |
 
@@ -117,23 +119,17 @@ A role-targeted notification is one row with one `read_at`. The first FTE Ops us
 
 Remediation: separate notification content from per-user receipts, or fan out one notification row per intended user. Do not store user-specific acknowledgement on the shared role row.
 
-### H6 — Production deployment omits both scheduled work and migrations
+### H6 — Historical: production deployment previously omitted scheduled work and migrations
 
 Evidence: `docker-compose.yml:1`, `backend/bootstrap/app.php:18`, `deploy/deploy-production.sh:130`.
 
-The application schedules the Google Sheets mirror every five minutes, but Compose starts only API and web containers; there is no `schedule:work`, cron, or external scheduler. The mirror therefore never runs in the declared production topology.
+The current Compose topology includes a dedicated `schedule:work` container, and `deploy/deploy-production.sh` runs `php artisan migrate --force` before rollout. The `idempotency_keys` table remains owned by the Laravel migration; identity, audit, and Edge Function objects are owned by `supabase/migrations/`. This finding is retained as historical context and is remediated in the current branch.
 
-The deployment script also builds and starts containers without `php artisan migrate --force`. The `idempotency_keys` table exists only as a Laravel migration, not a Supabase SQL migration. Any client that supplies `Idempotency-Key` will fail if that migration was not applied manually.
-
-Remediation: add an explicit scheduler service or managed schedule and a controlled migration phase with backup/rollback procedure. Verify migration status before health is declared.
-
-### H7 — The production API uses Laravel's development server
+### H7 — Historical: the production API previously used Laravel's development server
 
 Evidence: `backend/Dockerfile:28`, `docker-compose.yml:5`, `frontend/nginx.conf:15`.
 
-The Dockerfile builds a PHP-FPM image, but Compose overrides its command with `php artisan serve`. NGINX then proxies HTTP to that development server. This leaves production on a single development server process and makes the FPM configuration dead code.
-
-Remediation: run PHP-FPM behind an HTTP server configured with FastCGI, or use a supported production Laravel runtime. Add concurrency/load and graceful-restart checks.
+The current Dockerfile runs Supervisor with PHP-FPM and NGINX, and the Compose service does not override that command with `php artisan serve`. This finding is retained as historical context and is remediated in the current branch.
 
 ### H8 — Google Sheets mirroring can erase the sheet on a transient failure
 
@@ -149,11 +145,11 @@ Remediation: write to a staging sheet/range and swap, or update before clearing 
 
 2. **Idempotency is not wired into the frontend and expired keys are not purged.** The middleware's locking/replay design is solid, but no frontend mutation sends `Idempotency-Key`. Rows with unique keys are retained indefinitely because cleanup only occurs when the same key is reused. Add client-generated keys and scheduled/batched expiry deletion.
 
-3. **The Backroom provisioning command can force completed users back into first-login state without rotating their password.** In `ProvisionBackroomUsers`, an existing profile with `must_change_password === false` skips the remote reset, but the subsequent upsert always writes `must_change_password = true` and a new reset timestamp. Make `--all` preserve completed state unless an explicit reset option is supplied.
+3. **Remediated: Backroom provisioning now preserves completed users and only sets first-login state for new or password-repaired identities.**
 
 4. **User audit writes are not atomic with user changes.** Create/update/disable commit first and call `userEvent()` afterward; the helper also silently does nothing when the table is absent. A failed audit insert can leave a successful change with a 500 response and no audit. Put the data change and audit insert in one local transaction and fail production readiness when the audit table is missing.
 
-5. **Business-day reporting is not explicitly converted to Asia/Manila in SQL.** `whereDate()` and `date(request_timestamp)` use the PostgreSQL session timezone, while product documentation specifies local calendar dates. Configure the connection timezone or use `AT TIME ZONE 'Asia/Manila'` consistently. Add boundary tests around midnight.
+5. **Remediated: analytics uses the configured business timezone consistently for current-shift and non-PostgreSQL timestamp conversion.**
 
 6. **The “current night shift” calculation points at a future shift between 06:00 and 18:00.** It chooses today's 18:00 start for all times after 06:00. Clarify whether daytime should show the last completed shift or the upcoming shift and encode that decision in tests.
 
@@ -161,13 +157,13 @@ Remediation: write to a staging sheet/range and swap, or update before clearing 
 
 8. **Cookie authentication is accepted without a CSRF control.** `AuthenticateSupabase` accepts `sb-access-token` cookies on state-changing API routes, while the application primarily uses bearer tokens. Remove the cookie fallback or add an explicit same-site/CSRF design before using it.
 
-9. **Case-insensitive Ops ID uniqueness is not enforced.** Login normalizes with `lower()`, but the schema's unique constraint and validation are case-sensitive; the lower-case index is non-unique. Normalize before validation and add a unique index on `lower(ops_id)`.
+9. **Remediated: migration 019 preflights normalized duplicates, normalizes Ops IDs, and adds partial unique indexes.**
 
-10. **Supabase Admin HTTP handling is inconsistent.** User creation and the provisioning command omit the configured proxy/CA options used by login, reset, and authentication. Create failure compensation ignores delete failure. Centralize a Supabase Admin client with timeouts, TLS/proxy settings, typed errors, and observable compensation.
+10. **Remediated: provisioning and user management use the centralized, typed Supabase Admin client with configured timeout/TLS options.**
 
 11. **Edge Function dependencies are floating.** `deno.land/std/http/server.ts` and `@supabase/supabase-js@2` resolved during validation to std `0.224.0` and Supabase `2.116.0`, but future deployments can resolve different code. Pin exact versions and commit a lockfile.
 
-12. **Edge Function input/error controls are incomplete.** Neither function caps body size or batch length; invalid intraday rows are silently skipped when at least one row is valid; raw provider/database errors are returned to callers. Bound batches, report accepted/rejected counts, and return stable external errors while logging details server-side.
+12. **Remediated: Edge Functions incrementally bound request bodies, cap batches, validate rows, report rejected counts, and return stable external errors.**
 
 13. **API and architecture documentation has significant drift.** The technical specification describes Sanctum, Eloquent models, Form Requests, policies, Laravel-managed schema, and older framework versions that do not match the source. `docs/database-audit-recommendations.md` also still describes Edge Function and RLS issues that have since been fixed. Treat source-derived API/state documentation as a release artifact.
 

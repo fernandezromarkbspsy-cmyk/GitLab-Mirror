@@ -16,14 +16,10 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   try {
     const viewRole = useUiStore.getState().viewRole;
     const method = (init.method ?? 'GET').toUpperCase();
-    const idempotencyKey = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
-      ? (init.headers instanceof Headers
-        ? init.headers.get('Idempotency-Key') ?? crypto.randomUUID()
-        : (typeof init.headers === 'object' && init.headers && 'Idempotency-Key' in init.headers
-          ? (init.headers as Record<string, string>)['Idempotency-Key'] ?? crypto.randomUUID()
-          : crypto.randomUUID()))
-      : undefined;
     const headers = new Headers(init.headers);
+    const idempotencyKey = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+      ? headers.get('Idempotency-Key') ?? crypto.randomUUID()
+      : undefined;
     headers.set('Content-Type', 'application/json');
     headers.set('Accept', 'application/json');
     if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);

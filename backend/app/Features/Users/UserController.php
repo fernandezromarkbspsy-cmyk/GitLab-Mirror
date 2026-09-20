@@ -13,11 +13,11 @@ use Throwable;
 
 final class UserController
 {
-    private SupabaseAdminClient $supabaseAdmin;
+    private ?SupabaseAdminClient $supabaseAdmin;
 
     public function __construct(?SupabaseAdminClient $supabaseAdmin = null)
     {
-        $this->supabaseAdmin = $supabaseAdmin ?? new SupabaseAdminClient;
+        $this->supabaseAdmin = $supabaseAdmin;
     }
 
     public function index(Request $request): JsonResponse
@@ -42,7 +42,7 @@ final class UserController
 
         $initialPassword = Str::password(20);
         try {
-            $authUserId = $this->supabaseAdmin->createUser($email, $initialPassword, ['ops_id' => $opsId, 'account_type' => 'backroom']);
+            $authUserId = $this->supabaseAdmin()->createUser($email, $initialPassword, ['ops_id' => $opsId, 'account_type' => 'backroom']);
         } catch (Throwable $exception) {
             Log::warning('Unable to create Supabase Backroom user.', [
                 'ops_id' => $opsId,
@@ -72,7 +72,7 @@ final class UserController
             });
         } catch (Throwable $exception) {
             try {
-                $this->supabaseAdmin->deleteUser($authUserId);
+                $this->supabaseAdmin()->deleteUser($authUserId);
             } catch (Throwable $compensationException) {
                 Log::critical('Supabase user compensation failed after profile creation rollback.', [
                     'user_id' => $authUserId,
@@ -147,7 +147,7 @@ final class UserController
         };
 
         try {
-            $this->supabaseAdmin->updatePassword($profile->id, $newPassword);
+            $this->supabaseAdmin()->updatePassword($profile->id, $newPassword);
         } catch (Throwable $exception) {
             $restoreResetState();
             Log::warning('Unable to reach Supabase during Backroom password reset.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
@@ -160,7 +160,23 @@ final class UserController
             });
         } catch (Throwable $exception) {
             Log::critical('Backroom password reset audit failed after Supabase update.', ['user_id' => $profile->id, 'error' => $exception->getMessage()]);
-            throw $exception;
+            try {
+                DB::table('user_event_retries')->insert([
+                    'user_id' => $profile->id,
+                    'actor_id' => $request->attributes->get('actor')->id,
+                    'event_type' => 'PASSWORD_RESET',
+                    'metadata' => json_encode(['ops_id' => $profile->ops_id]),
+                    'available_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } catch (Throwable $retryException) {
+                Log::critical('Unable to queue failed Backroom password reset audit.', [
+                    'user_id' => $profile->id,
+                    'error' => $retryException->getMessage(),
+                ]);
+            }
+            return response()->json(['ok' => true, 'initial_password' => $newPassword, 'audit_recorded' => false]);
         }
 
         return response()->json(['ok' => true, 'initial_password' => $newPassword]);
@@ -169,6 +185,11 @@ final class UserController
     private function authorize(Request $request): void
     {
         abort_unless(in_array($request->attributes->get('actor')->role, ['fte_ops', 'fte_mm'], true), 403, 'Only FTE users can manage users.');
+    }
+
+    private function supabaseAdmin(): SupabaseAdminClient
+    {
+        return $this->supabaseAdmin ??= new SupabaseAdminClient;
     }
 
     private function userEvent(string $userId, string $actorId, string $type, array $metadata = []): void

@@ -2,6 +2,7 @@
 
 use App\Console\Commands\ProvisionBackroomUsers;
 use App\Console\Commands\PruneIdempotencyKeys;
+use App\Console\Commands\RetryUserEvents;
 use App\Console\Commands\SentryTest;
 use App\Console\Commands\SyncRequestsToGoogleSheet;
 use App\Console\Commands\VerifyProductionConfig;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         ProvisionBackroomUsers::class,
         PruneIdempotencyKeys::class,
+        RetryUserEvents::class,
         SyncRequestsToGoogleSheet::class,
         VerifyProductionConfig::class,
         SentryTest::class,
@@ -32,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->everyFiveMinutes()
             ->withoutOverlapping();
         $schedule->command('idempotency:prune')->hourly()->withoutOverlapping();
+        $schedule->command('audit:retry-user-events')->everyFiveMinutes()->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

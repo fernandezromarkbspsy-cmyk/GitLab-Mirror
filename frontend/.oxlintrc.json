@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "eslint/no-unused-vars": "warn",
+    "eslint/no-constant-condition": "warn",
+    "eslint/no-constant-binary-expression": "warn",
+    "unicorn/no-useless-spread": "warn"
+  }
+}

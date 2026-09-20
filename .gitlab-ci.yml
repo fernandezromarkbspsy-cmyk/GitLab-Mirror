@@ -45,7 +45,55 @@ backend:
   script:
     - composer validate --no-check-publish
     - vendor/bin/pint --test
-    - php artisan test --fail-on-skipped
+    - php artisan test --fail-on-skipped --exclude-group=postgres
+
+backend-postgres:
+  stage: test
+  image: php:8.3-cli-bookworm
+  services:
+    - name: postgres:16
+      alias: postgres
+  variables:
+    POSTGRES_DB: soc5_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_HOST_AUTH_METHOD: trust
+    POSTGRES_TESTS: "1"
+    DB_CONNECTION: pgsql
+    DB_HOST: postgres
+    DB_PORT: "5432"
+    DB_DATABASE: soc5_test
+    DB_USERNAME: postgres
+    DB_PASSWORD: postgres
+    DB_SSLMODE: disable
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends git unzip libxml2-dev libonig-dev libpq-dev
+    - docker-php-ext-install dom mbstring pdo_pgsql
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+    - cd backend
+    - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+    - composer install --no-interaction --prefer-dist --no-progress
+  script:
+    - php artisan test --group=postgres --fail-on-skipped
+
+edge-functions:
+  stage: test
+  image: denoland/deno:2.9.7
+  script:
+    - deno check supabase/functions/sync-clusters/index.ts supabase/functions/sync-intraday/index.ts
+    - deno test --allow-env supabase/functions/sync-clusters/index_test.ts supabase/functions/sync-intraday/index_test.ts
+
+deployment-config:
+  stage: test
+  image: bash:5.2
+  script:
+    - bash -n deploy/deploy-production.sh
+    - grep -q 'php artisan migrate --force' deploy/deploy-production.sh
+    - grep -q 'system:verify-config --production' deploy/deploy-production.sh
+    - grep -q 'scheduler' docker-compose.yml
 
 # .gitlab-ci.yml
 
@@ -85,3 +133,18 @@ update-readme:
     - git add README.md
     - 'git commit -m "docs: automatically update README"'
     - git push "https://oauth2:${GITLAB_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:main
+
+mirror_to_github:
+  image: alpine:latest
+
+  before_script:
+    - apk add --no-cache git
+
+  script:
+    - git clone --mirror "$CI_REPOSITORY_URL" mirror.git
+    - cd mirror.git
+    - git remote add github "https://x-access-token:${GITHUB_TOKEN}@github.com/fernandezromarkbspsy-cmyk/GitLab-Mirror.git"
+    - git push --mirror github
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

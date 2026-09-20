@@ -40,6 +40,7 @@ backend:
     - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
     - rm composer-setup.php
     - cd backend
+    - cp .env.example .env
     - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
     - composer install --no-interaction --prefer-dist --no-progress
   script:

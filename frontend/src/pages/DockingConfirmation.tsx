@@ -3,16 +3,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ShipWheel, X } from "lucide-react";
 import { Modal } from "../components/Modal";
 import { api } from "../lib/api";
+import { idempotencyHeaders } from "../lib/idempotency";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
 import type { Page, TruckRequest, User } from "../types";
 
 type DockAction = "mark-docked" | "confirm";
+type IdempotencyHeaders = ReturnType<typeof idempotencyHeaders>;
 
 export function DockingConfirmation({ user }: { user: User }) {
   const client = useQueryClient();
-  const [selected, setSelected] = useState<TruckRequest | null>(null);
+  const [selected, setSelected] = useState<{
+    request: TruckRequest;
+    headers: IdempotencyHeaders;
+  } | null>(null);
   const [printable, setPrintable] = useState<TruckRequest | null>(null);
   const queue = useQuery({
     queryKey: ["requests", "docking"],
@@ -26,15 +31,18 @@ export function DockingConfirmation({ user }: { user: User }) {
     mutationFn: ({
       request,
       action,
+      headers,
       payload,
     }: {
       request: TruckRequest;
       action: DockAction;
+      headers: IdempotencyHeaders;
       payload?: Record<string, unknown>;
     }) =>
       api<TruckRequest>(`/requests/${request.id}/${action}`, {
         method: "POST",
         body: JSON.stringify(payload ?? {}),
+        headers: { ...headers },
       }),
     onSuccess: async (updated, variables) => {
       setSelected(null);
@@ -52,7 +60,14 @@ export function DockingConfirmation({ user }: { user: User }) {
       <button
         type="button"
         className="table-action approve"
-        onClick={() => action.mutate({ request, action: "confirm" })}
+        disabled={action.isPending}
+        onClick={() =>
+          action.mutate({
+            request,
+            action: "confirm",
+            headers: idempotencyHeaders(),
+          })
+        }
       >
         <CheckCircle2 size={15} />
         Confirm
@@ -61,7 +76,8 @@ export function DockingConfirmation({ user }: { user: User }) {
       <button
         type="button"
         className="table-action assign"
-        onClick={() => setSelected(request)}
+        disabled={action.isPending}
+        onClick={() => setSelected({ request, headers: idempotencyHeaders() })}
       >
         <ShipWheel size={15} />
         Dock truck
@@ -96,12 +112,17 @@ export function DockingConfirmation({ user }: { user: User }) {
       </section>
       {selected && (
       <DockDialog
-          request={selected}
+          request={selected.request}
           role={user.role}
           busy={action.isPending}
           onClose={() => setSelected(null)}
           onSubmit={(payload) =>
-            action.mutate({ request: selected, action: "mark-docked", payload })
+            action.mutate({
+              request: selected.request,
+              action: "mark-docked",
+              headers: selected.headers,
+              payload,
+            })
           }
         />
       )}

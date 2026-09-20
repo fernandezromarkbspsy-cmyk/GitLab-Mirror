@@ -22,6 +22,7 @@ import { SkeletonTable } from "../components/SkeletonTable";
 import { SkeletonRequestTable } from "../components/Skeleton";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
+import { idempotencyHeaders } from "../lib/idempotency";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import {
   defaultRequestFilters,
@@ -31,6 +32,7 @@ import {
 import type { Page, RequestSort, TruckRequest, User } from "../types";
 
 type MmAction = "assign-truck" | "reject-mm";
+type IdempotencyHeaders = ReturnType<typeof idempotencyHeaders>;
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
@@ -54,6 +56,7 @@ export function MidmileRequests({
   const [selected, setSelected] = useState<{
     request: TruckRequest;
     action: MmAction;
+    headers: IdempotencyHeaders;
   } | null>(null);
   const [notice, setNotice] = useState("");
   const [openRow, setOpenRow] = useState<string | null>(null);
@@ -71,15 +74,18 @@ export function MidmileRequests({
     mutationFn: ({
       request,
       action,
+      headers,
       payload,
     }: {
       request: TruckRequest;
       action: MmAction;
+      headers: IdempotencyHeaders;
       payload: Record<string, unknown>;
     }) =>
       api<TruckRequest>(`/requests/${request.id}/${action}`, {
         method: "POST",
         body: JSON.stringify(payload),
+        headers: { ...headers },
       }),
     onSuccess: async (_, variables) => {
       setSelected(null);
@@ -93,13 +99,18 @@ export function MidmileRequests({
     },
   });
 
+  function openTransition(request: TruckRequest, action: MmAction) {
+    setSelected({ request, action, headers: idempotencyHeaders() });
+  }
+
   const actions = (request: TruckRequest) =>
     request.status === "APPROVED" ? (
       <>
         <button
           className="table-action assign"
           type="button"
-          onClick={() => setSelected({ request, action: "assign-truck" })}
+          disabled={transition.isPending}
+          onClick={() => openTransition(request, "assign-truck")}
         >
           <CheckCircle2 size={15} />
           Assign
@@ -107,7 +118,8 @@ export function MidmileRequests({
         <button
           className="table-action reject"
           type="button"
-          onClick={() => setSelected({ request, action: "reject-mm" })}
+          disabled={transition.isPending}
+          onClick={() => openTransition(request, "reject-mm")}
         >
           <XCircle size={15} />
           Reject
@@ -294,11 +306,9 @@ export function MidmileRequests({
                         <span className="lh-row-menu">
                           <button
                             type="button"
+                            disabled={transition.isPending}
                             onClick={() => {
-                              setSelected({
-                                request: row,
-                                action: "assign-truck",
-                              });
+                              openTransition(row, "assign-truck");
                               setOpenRow(null);
                             }}
                           >
@@ -306,11 +316,9 @@ export function MidmileRequests({
                           </button>
                           <button
                             type="button"
+                            disabled={transition.isPending}
                             onClick={() => {
-                              setSelected({
-                                request: row,
-                                action: "reject-mm",
-                              });
+                              openTransition(row, "reject-mm");
                               setOpenRow(null);
                             }}
                           >

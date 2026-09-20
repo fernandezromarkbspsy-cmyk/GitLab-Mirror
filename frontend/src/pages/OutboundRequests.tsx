@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import {
   BadgeCheck,
@@ -23,6 +23,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
+import { idempotencyHeaders } from "../lib/idempotency";
 import { defaultRequestFilters, openRequestsSheet } from "../lib/requests";
 import type {
   ClusterLookup,
@@ -80,6 +81,8 @@ export function OutboundRequests({
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TruckRequest | null>(null);
   const [toast, setToast] = useState("");
+  const createHeaders = useRef<ReturnType<typeof idempotencyHeaders> | null>(null);
+  const updateHeaders = useRef<ReturnType<typeof idempotencyHeaders> | null>(null);
   const requests = useQuery({
     queryKey: ["requests", "outbound-all", filters],
     queryFn: () =>
@@ -107,23 +110,27 @@ export function OutboundRequests({
     await queryClient.invalidateQueries({ queryKey: ["requests"] });
   }
   const createRequest = useMutation({
-    mutationFn: (payload: RequestPayload) =>
+    mutationFn: ({ payload, headers }: { payload: RequestPayload; headers: ReturnType<typeof idempotencyHeaders> }) =>
       api<TruckRequest>("/requests", {
         method: "POST",
         body: JSON.stringify(payload),
+        headers: { ...headers },
       }),
     onSuccess: async () => {
+      createHeaders.current = null;
       setCreating(false);
       await refreshData("LH request created.");
     },
   });
   const updateRequest = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: RequestPayload }) =>
+    mutationFn: ({ id, payload, headers }: { id: string; payload: RequestPayload; headers: ReturnType<typeof idempotencyHeaders> }) =>
       api<TruckRequest>(`/requests/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
+        headers: { ...headers },
       }),
     onSuccess: async () => {
+      updateHeaders.current = null;
       setEditing(null);
       await refreshData("LH request updated.");
     },
@@ -182,6 +189,7 @@ export function OutboundRequests({
           onExport={() => void exportRows()}
           onAddNew={() => {
             createRequest.reset();
+            createHeaders.current = idempotencyHeaders();
             setCreating(true);
           }}
           onNotice={showToast}
@@ -194,9 +202,13 @@ export function OutboundRequests({
               error={updateRequest.error?.message}
               onCancel={() => {
                 updateRequest.reset();
+                updateHeaders.current = null;
                 setEditing(null);
               }}
-              onSubmit={(payload) => updateRequest.mutate({ id: editing.id, payload })}
+              onSubmit={(payload) => {
+                updateHeaders.current ??= idempotencyHeaders();
+                updateRequest.mutate({ id: editing.id, payload, headers: updateHeaders.current });
+              }}
             />
           </div>
         )}
@@ -207,9 +219,13 @@ export function OutboundRequests({
               error={createRequest.error?.message}
               onCancel={() => {
                 createRequest.reset();
+                createHeaders.current = null;
                 setCreating(false);
               }}
-              onSubmit={(payload) => createRequest.mutate(payload)}
+              onSubmit={(payload) => {
+                createHeaders.current ??= idempotencyHeaders();
+                createRequest.mutate({ payload, headers: createHeaders.current });
+              }}
             />
           </div>
         )}
@@ -384,6 +400,7 @@ export function OutboundRequests({
                               type="button"
                               onClick={() => {
                                 updateRequest.reset();
+                                updateHeaders.current = idempotencyHeaders();
                                 setEditing(row);
                                 setOpenRow(null);
                               }}

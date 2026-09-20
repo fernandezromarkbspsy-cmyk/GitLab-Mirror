@@ -25,6 +25,7 @@ known_hosts
 .ssh/
 .aws/
 deploy/certs/
+tools/google/service-account.json
 .env
 .env.*
 !.env.example

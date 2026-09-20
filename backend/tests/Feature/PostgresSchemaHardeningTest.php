@@ -54,10 +54,9 @@ final class PostgresSchemaHardeningTest extends TestCase
     public function test_identity_migration_normalizes_existing_ops_ids(): void
     {
         $migration = dirname(base_path()).'/supabase/migrations/019_identity_and_audit_hardening.sql';
-        DB::unprepared((string) file_get_contents($migration));
-
         DB::table('profiles')->insert(['id' => '00000000-0000-0000-0000-000000000001', 'ops_id' => 'OPS123']);
         DB::table('user_imports')->insert(['id' => '00000000-0000-0000-0000-000000000002', 'ops_id' => ' OPS456 ']);
+        DB::unprepared((string) file_get_contents($migration));
 
         $this->assertSame('ops123', DB::table('profiles')->where('id', '00000000-0000-0000-0000-000000000001')->value('ops_id'));
         $this->assertSame('ops456', DB::table('user_imports')->where('id', '00000000-0000-0000-0000-000000000002')->value('ops_id'));

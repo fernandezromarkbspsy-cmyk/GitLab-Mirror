@@ -110,4 +110,20 @@ final class ProvisionBackroomUsersTest extends TestCase
         $this->assertTrue((bool) DB::table('profiles')->where('ops_id', 'ops456')->value('must_change_password'));
         $this->assertNotNull(DB::table('profiles')->where('ops_id', 'ops456')->value('password_reset_at'));
     }
+
+    public function test_supabase_admin_client_defers_validation_until_it_is_used(): void
+    {
+        config()->set('services.supabase.url', null);
+        config()->set('services.supabase.service_key', null);
+
+        $client = new \App\Integrations\SupabaseAdminClient;
+
+        $this->assertFalse($client->isConfigured());
+
+        $this->expectException(\App\Integrations\SupabaseAdminException::class);
+        $this->expectExceptionMessage('Supabase admin credentials are not configured.');
+
+        Http::fake();
+        $client->createUser('ops999@backroom.soc5.internal', 'password123');
+    }
 }

@@ -15,14 +15,17 @@ final class SupabaseAdminClient
     {
         $this->url = rtrim((string) config('services.supabase.url'), '/');
         $this->key = (string) config('services.supabase.service_key');
+    }
 
-        if ($this->url === '' || $this->key === '') {
-            throw new SupabaseAdminException('Supabase admin credentials are not configured.');
-        }
+    public function isConfigured(): bool
+    {
+        return $this->url !== '' && $this->key !== '';
     }
 
     public function createUser(string $email, string $password, array $metadata = []): string
     {
+        $this->requireConfigured();
+
         $response = $this->request('post', '/auth/v1/admin/users', [
             'email' => $email,
             'password' => $password,
@@ -40,16 +43,22 @@ final class SupabaseAdminClient
 
     public function updatePassword(string $userId, string $password): void
     {
+        $this->requireConfigured();
+
         $this->request('put', '/auth/v1/admin/users/'.$userId, ['password' => $password]);
     }
 
     public function deleteUser(string $userId): void
     {
+        $this->requireConfigured();
+
         $this->request('delete', '/auth/v1/admin/users/'.$userId);
     }
 
     private function request(string $method, string $path, array $payload = [])
     {
+        $this->requireConfigured();
+
         try {
             $request = Http::withHeaders([
                 'apikey' => $this->key,
@@ -72,5 +81,12 @@ final class SupabaseAdminClient
         }
 
         return $response;
+    }
+
+    private function requireConfigured(): void
+    {
+        if (! $this->isConfigured()) {
+            throw new SupabaseAdminException('Supabase admin credentials are not configured.');
+        }
     }
 }

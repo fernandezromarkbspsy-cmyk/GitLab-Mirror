@@ -161,7 +161,6 @@ final class UserController
         try {
             $auditRetryId = DB::table('user_event_retries')->insertGetId($auditRetry);
         } catch (Throwable $exception) {
-            $restoreResetState();
             Log::critical('Unable to stage Backroom password reset audit before Supabase update.', [
                 'user_id' => $profile->id,
                 'error' => $exception->getMessage(),

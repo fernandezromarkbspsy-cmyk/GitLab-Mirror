@@ -6,7 +6,7 @@ interface QrPanelProps {
   enabled?: boolean;
 }
 
-export function QrPanel({ enabled = true }: QrPanelProps) {
+export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
   return (
     <section className="relative hidden lg:flex flex-col overflow-hidden px-5 pb-24 pt-6 sm:px-7">
       <div

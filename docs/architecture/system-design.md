@@ -200,6 +200,15 @@ or oversized input. Upserts make repeated synchronization safer, but sync
 latency, failure rates, and retry behavior are not yet measured in this
 baseline.
 
+## Real-Time Updates
+
+The `notifications` table is included in the Supabase Realtime publication,
+but the frontend does not currently subscribe to that publication. Notifications
+and role-specific request queues use authenticated polling: both the notification
+query and the active role queue refetch every five seconds. Polling remains the
+current operational transport until freshness requirements, polling volume, and
+Realtime authorization and reconnect behavior are measured.
+
 ## Database Design Baseline
 
 The migration history includes schema hardening, role policies, reporting and

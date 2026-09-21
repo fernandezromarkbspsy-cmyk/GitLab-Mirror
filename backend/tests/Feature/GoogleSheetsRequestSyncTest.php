@@ -98,4 +98,10 @@ final class GoogleSheetsRequestSyncTest extends TestCase
 
         $this->assertSame(1, $sync->sync());
     }
+
+    public function test_google_sheets_timeout_configuration_has_bounded_defaults(): void
+    {
+        $this->assertSame(5.0, (float) config('services.google_sheets.connect_timeout'));
+        $this->assertSame(30.0, (float) config('services.google_sheets.timeout'));
+    }
 }

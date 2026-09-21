@@ -5,6 +5,7 @@ namespace App\Integrations\GoogleSheets;
 use Closure;
 use Google\Client;
 use Google\Service\Sheets;
+use GuzzleHttp\Client as GuzzleClient;
 use Google\Service\Sheets\BatchClearValuesRequest;
 use Google\Service\Sheets\ValueRange;
 use Illuminate\Support\Facades\DB;
@@ -140,6 +141,10 @@ final class GoogleSheetsRequestSync
         $client->setApplicationName(config('app.name'));
         $client->setAuthConfig($decoded);
         $client->setScopes([Sheets::SPREADSHEETS]);
+        $client->setHttpClient(new GuzzleClient([
+            'connect_timeout' => config('services.google_sheets.connect_timeout', 5),
+            'timeout' => config('services.google_sheets.timeout', 30),
+        ]));
 
         return new Sheets($client);
     }

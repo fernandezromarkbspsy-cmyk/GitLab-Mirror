@@ -160,13 +160,6 @@ final class RequestRepository
 
     private function whereBusinessDate(Builder $query, string $operator, string $date): void
     {
-        if (DB::connection()->getDriverName() === 'pgsql') {
-            $timezone = str_replace("'", "''", (string) config('app.business_timezone', 'Asia/Manila'));
-            $query->whereRaw("(request_timestamp AT TIME ZONE '{$timezone}')::date {$operator} ?", [$date]);
-
-            return;
-        }
-
         $timezone = (string) config('app.business_timezone', 'Asia/Manila');
         $businessDate = CarbonImmutable::createFromFormat('!Y-m-d', $date, $timezone);
         $bound = $operator === '>='

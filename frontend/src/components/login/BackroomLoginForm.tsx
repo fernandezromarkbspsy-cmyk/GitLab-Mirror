@@ -30,6 +30,7 @@ export function BackroomLoginForm({
   const [requestError, setRequestError] = useState("");
   const [requestSent, setRequestSent] = useState(false);
   const [requestBusy, setRequestBusy] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
 
   const triggerShake = () => {
     setShaking(true);
@@ -175,20 +176,29 @@ export function BackroomLoginForm({
       <div className="mt-3.5 flex items-center justify-between">
         <label className="group flex cursor-pointer items-center gap-2 text-[12px] font-medium text-muted leading-snug">
           <span
-            className="grid h-4 w-4 place-items-center rounded border border-accent bg-accent transition-all duration-200"
+            className={`grid h-4 w-4 place-items-center rounded border transition-all duration-200 ${
+              keepSignedIn ? "border-accent bg-accent" : "border-line bg-transparent"
+            }`}
           >
-            <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
-              <path
-                d="M2.5 6.3 4.8 8.6 9.5 3.9"
-                fill="none"
-                stroke="#fff"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            {keepSignedIn && (
+              <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
+                <path
+                  d="M2.5 6.3 4.8 8.6 9.5 3.9"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
           </span>
-          <input type="checkbox" className="sr-only" defaultChecked />
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={keepSignedIn}
+            onChange={(event) => setKeepSignedIn(event.target.checked)}
+          />
           Keep me signed in
         </label>
         <button type="button" onClick={onForgotPassword} className="text-[12px] font-bold text-link underline-offset-4 hover:underline tracking-tight">

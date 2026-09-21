@@ -420,11 +420,7 @@ export function Overview({
               <h2>Recent linehaul trips</h2>
               <p>Latest trips with driver assignments</p>
             </div>
-            <span
-                          className="trips-live-status"
-                          role="status"
-                          aria-label="Live trip feed"
-                        >
+            <span className="trips-live-status">
               <i aria-hidden="true" /> Live
             </span>
             <button

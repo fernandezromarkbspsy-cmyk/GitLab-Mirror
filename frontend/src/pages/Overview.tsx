@@ -353,7 +353,7 @@ export function Overview({
                 </text>
                 {areaPath && <path className="line-area" d={areaPath} />}
                 <path className="line-stroke" d={linePath} />
-                {chartPoints.map((point, index) => (
+                {chartPoints.map((point, _index) => (
                   <g
                     key={point.label}
                   >

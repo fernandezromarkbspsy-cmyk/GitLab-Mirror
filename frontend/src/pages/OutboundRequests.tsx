@@ -61,7 +61,7 @@ type RequestPayload = {
 };
 
 export function OutboundRequests({
-  user,
+  user: _user,
   queue: _queue,
 }: {
   user: User;

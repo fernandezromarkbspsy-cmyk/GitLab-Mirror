@@ -1,6 +1,9 @@
 reviews:
   profile: assertive
 
+  auto-auto_review:
+    enabled: false
+
   path_instructions:
     - path: "backend/**/*.php"
       instructions: >

@@ -44,6 +44,13 @@ jobs:
         - postgresql
       env:
         - POSTGRES_TESTS=1
+        - DB_CONNECTION=pgsql
+        - DB_HOST=127.0.0.1
+        - DB_PORT=5432
+        - DB_DATABASE=postgres
+        - DB_USERNAME=postgres
+        - DB_PASSWORD=Mrkfrnndz_0103
+        - DB_SSLMODE=disable
       before_script:
         - sudo apt-get update
         - sudo apt-get install -y --no-install-recommends unzip libxml2-dev libonig-dev libpq-dev

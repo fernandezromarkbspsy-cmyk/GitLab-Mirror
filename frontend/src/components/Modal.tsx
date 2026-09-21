@@ -7,7 +7,7 @@ type Props = {
   className?: string;
   ariaLabelledBy?: string;
   ariaLabel?: string;
-  role?: "dialog" | "alertdialog";
+  role?: "dialog";
 };
 
 function getFocusable(container: HTMLElement) {

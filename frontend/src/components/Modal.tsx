@@ -28,7 +28,7 @@ export function Modal({
   className = "form-dialog",
   ariaLabelledBy,
   ariaLabel,
-    role,
+    role: _role,
 }: Props) {
   const panelRef = useRef<HTMLElement>(null);
   const lastActiveRef = useRef<HTMLElement | null>(null);

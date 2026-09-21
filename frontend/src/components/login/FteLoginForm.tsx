@@ -17,7 +17,7 @@ interface FteLoginFormProps {
 
 export function FteLoginForm({
   email,
-  code,
+  code: _code,
   codeSent,
   resendAfter,
   busy,

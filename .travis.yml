@@ -42,6 +42,8 @@ jobs:
       php: "8.3"
       services:
         - postgresql
+      env:
+        - POSTGRES_TESTS=1
       before_script:
         - sudo apt-get update
         - sudo apt-get install -y --no-install-recommends unzip libxml2-dev libonig-dev libpq-dev

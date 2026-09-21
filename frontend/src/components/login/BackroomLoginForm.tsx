@@ -176,24 +176,18 @@ export function BackroomLoginForm({
       <div className="mt-3.5 flex items-center justify-between">
         <label className="group flex cursor-pointer items-center gap-2 text-[12px] font-medium text-muted leading-snug">
           <span
-            className={`grid h-4 w-4 place-items-center rounded border transition-all duration-200 ${
-              true
-                ? "border-accent bg-accent"
-                : "border-white/30 bg-white/[0.07] group-hover:border-white/50"
-            }`}
+            className="grid h-4 w-4 place-items-center rounded border border-accent bg-accent transition-all duration-200"
           >
-            {true && (
-              <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
-                <path
-                  d="M2.5 6.3 4.8 8.6 9.5 3.9"
-                  fill="none"
-                  stroke="#fff"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
+            <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
+              <path
+                d="M2.5 6.3 4.8 8.6 9.5 3.9"
+                fill="none"
+                stroke="#fff"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </span>
           <input type="checkbox" className="sr-only" defaultChecked />
           Keep me signed in

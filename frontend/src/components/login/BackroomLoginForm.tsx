@@ -127,10 +127,9 @@ export function BackroomLoginForm({
         Ops ID
       </label>
       <div
-        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/[0.11] focus-within:ring-4 focus-within:ring-accent/20 ${
-          shaking ? "animate-shake" : ""
-        } ${error ? "border-danger/70" : "border-line"}`}
-      >
+        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/11 focus-within:ring-4 focus-within:ring-accent/20 ${shaking ? "animate-shake" : ""
+      } ${error ? "border-danger/70" : "border-line"}`}
+    >
         <span className="grid w-10 shrink-0 place-items-center text-faint">
           <IdCard className="h-4 w-4" />
         </span>

@@ -1483,6 +1483,60 @@ body:has(.app-sidebar) {
   min-height: 310px;
 }
 
+.dashboard-list-panel--trips {
+  overflow: hidden;
+  border-color: rgb(8 127 124 / 14%);
+  background:
+    linear-gradient(180deg, rgb(239 249 247 / 72%), rgb(255 255 255 / 0%) 35%),
+    #fff;
+}
+
+.dashboard-list-panel--trips .panel-head {
+  position: relative;
+  padding-bottom: 13px;
+}
+
+.dashboard-list-panel--trips .panel-head::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(8 127 124 / 24%), rgb(8 127 124 / 0%));
+  content: '';
+}
+
+.trips-live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  align-self: flex-start;
+  color: #087f7c;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.trips-live-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #58b979;
+  box-shadow: 0 0 0 3px rgb(88 185 121 / 15%);
+}
+
+.dashboard-list-panel--trips .panel-body {
+  padding: 13px 14px 14px;
+  background: linear-gradient(135deg, #f6fbfa, #fff);
+}
+
+.dashboard-list-panel--trips .dashboard-list {
+  gap: 8px;
+}
+
 .dashboard-list-panel:not(.dashboard-list-panel--trips) .panel-body {
   padding: 16px;
   background: linear-gradient(135deg, #fbfdec, #f5f9e5);
@@ -1524,6 +1578,61 @@ body:has(.app-sidebar) {
   border: 1px solid #f0f0f0;
   border-radius: 10px;
   background: #fafafa;
+}
+
+.dashboard-list-panel--trips .linehaul-row {
+  position: relative;
+  grid-template-columns: 30px minmax(100px, 1.15fr) minmax(92px, .9fr) minmax(68px, .7fr);
+  min-height: 54px;
+  padding: 10px 10px 10px 13px;
+  border-color: rgb(8 127 124 / 9%);
+  background: rgb(255 255 255 / 82%);
+}
+
+.dashboard-list-panel--trips .linehaul-row::before {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: #087f7c;
+  content: '';
+}
+
+.dashboard-list-panel--trips .linehaul-row strong {
+  color: #173f41;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+
+.dashboard-list-panel--trips .linehaul-row small {
+  color: #7a8b8d;
+  font-size: 7px;
+}
+
+.dashboard-list-panel--trips .linehaul-row > span:not(.avatar) {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.dashboard-list-panel--trips .linehaul-row b {
+  overflow: hidden;
+  color: #31575a;
+  font-size: 8px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-list-panel--trips .linehaul-cluster {
+  justify-items: end;
+  text-align: right;
+}
+
+.dashboard-list-panel--trips .linehaul-cluster b {
+  color: #087f7c;
 }
 
 .linehaul-row > div,

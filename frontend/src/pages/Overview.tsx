@@ -416,10 +416,13 @@ export function Overview({
         <article className="panel dashboard-list-panel dashboard-list-panel--trips">
           <div className="panel-head">
             <div>
-              <p className="panel-kicker">Linehaul activity</p>
+              <p className="panel-kicker">Live dispatch board</p>
               <h2>Recent linehaul trips</h2>
               <p>Latest trips with driver assignments</p>
             </div>
+            <span className="trips-live-status" aria-label="Live trip feed">
+              <i aria-hidden="true" /> Live
+            </span>
             <button
               className="text-button"
               type="button"
@@ -440,11 +443,17 @@ export function Overview({
                       .toUpperCase()}
                   </span>
                   <div>
-                    <strong>{request.driver_id || "Driver pending"}</strong>
+                    <strong>{request.linehaul_trip_no || "Trip pending"}</strong>
                     <small>Doc Officer: {request.created_by}</small>
                   </div>
-                  <span>{request.linehaul_trip_no || "Trip pending"}</span>
-                  <span>{request.cluster}</span>
+                  <span className="linehaul-driver">
+                    <b>{request.driver_id || "Driver pending"}</b>
+                    <small>Assigned driver</small>
+                  </span>
+                  <span className="linehaul-cluster">
+                    <b>{request.cluster}</b>
+                    <small>Cluster</small>
+                  </span>
                 </div>
               )}
             />

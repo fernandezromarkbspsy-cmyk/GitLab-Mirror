@@ -8,6 +8,7 @@ use App\Console\Commands\SyncRequestsToGoogleSheet;
 use App\Console\Commands\VerifyProductionConfig;
 use App\Http\Middleware\AuthenticateSupabase;
 use App\Http\Middleware\IdempotencyMiddleware;
+use App\Http\Middleware\RequestTelemetry;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('audit:retry-user-events')->everyFiveMinutes()->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(RequestTelemetry::class);
         $middleware->alias([
             'supabase.auth' => AuthenticateSupabase::class,
             'idempotency' => IdempotencyMiddleware::class,

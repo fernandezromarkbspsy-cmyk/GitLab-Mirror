@@ -61,7 +61,7 @@ jobs:
       script:
         - php artisan test --group=postgres --fail-on-skipped
 
-    - name: "Edge Functions"
+    - name: "Edge Functions and Deployment Config"
       language: minimal
       dist: jammy
       before_script:
@@ -71,10 +71,5 @@ jobs:
       script:
         - deno check supabase/functions/sync-clusters/index.ts supabase/functions/sync-intraday/index.ts
         - deno test --allow-env supabase/functions/sync-clusters/index_test.ts supabase/functions/sync-intraday/index_test.ts
-
-    - name: "Deployment Config"
-      language: minimal
-      dist: jammy
-      script:
         - bash -n deploy/deploy-production.sh
         - grep -q 'scheduler' docker-compose.yml

@@ -68,12 +68,26 @@ final class PostgresReportingTest extends TestCase
             [
                 'id' => '00000000-0000-0000-0000-000000000001',
                 'request_timestamp' => '2026-09-18 15:59:59+00',
+                'cluster' => 'SOC 5',
+                'region' => 'NCR',
+                'dock_no' => 'D-01',
+                'backlogs' => 0,
+                'truck_size' => '4W',
+                'truck_type' => 'Closed Van',
                 'status' => 'CONFIRMED',
+                'created_by' => '00000000-0000-0000-0000-000000000099',
             ],
             [
                 'id' => '00000000-0000-0000-0000-000000000002',
                 'request_timestamp' => '2026-09-18 16:00:00+00',
+                'cluster' => 'SOC 5',
+                'region' => 'NCR',
+                'dock_no' => 'D-02',
+                'backlogs' => 0,
+                'truck_size' => '4W',
+                'truck_type' => 'Closed Van',
                 'status' => 'CONFIRMED',
+                'created_by' => '00000000-0000-0000-0000-000000000099',
             ],
         ]);
 

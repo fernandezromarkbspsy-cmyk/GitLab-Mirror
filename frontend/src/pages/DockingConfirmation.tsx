@@ -139,11 +139,11 @@ function DockDialog({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    onSubmit({
-      ...(role === "doc_officer"
+    onSubmit(
+      role === "doc_officer"
         ? { driver_id: data.get("driver_id") }
-        : { linehaul_trip_no: data.get("linehaul_trip_no") }),
-    });
+        : { linehaul_trip_no: data.get("linehaul_trip_no") },
+    );
   }
   return (
     <Modal

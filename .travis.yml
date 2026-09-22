@@ -1,0 +1,80 @@
+language: minimal
+jobs:
+  include:
+    - name: "Frontend"
+      language: node_js
+      dist: jammy
+      node_js: "22"
+      cache: npm
+      before_script:
+        - cd frontend
+        - npm ci --cache .npm --prefer-offline
+      script:
+        - npm run check:source
+        - npm run check:robots
+        - npm run lint
+        - npm run lint:a11y
+        - npm run format:check
+        - npm test
+        - npx playwright install --with-deps chromium
+        - npm run test:e2e
+        - npm run build
+
+    - name: "Backend"
+      language: php
+      dist: jammy
+      php: "8.3"
+      before_script:
+        - sudo apt-get update
+        - sudo apt-get install -y --no-install-recommends unzip libxml2-dev libonig-dev libsqlite3-dev
+        - cd backend
+        - cp .env.example .env
+        - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+        - composer install --no-interaction --prefer-dist --no-progress
+      script:
+        - composer validate --no-check-publish
+        - vendor/bin/pint --test
+        - php artisan test --fail-on-skipped --exclude-group=postgres
+
+    - name: "Backend PostgreSQL"
+      language: php
+      dist: jammy
+      php: "8.3"
+      services:
+        - postgresql
+      env:
+        - POSTGRES_TESTS=1
+        - DB_CONNECTION=pgsql
+        - DB_HOST=127.0.0.1
+        - DB_PORT=5432
+        - DB_DATABASE=postgres
+        - DB_USERNAME=postgres
+        - DB_PASSWORD=Mrkfrnndz_0103
+        - DB_SSLMODE=disable
+      before_script:
+        - sudo apt-get update
+        - sudo apt-get install -y --no-install-recommends unzip libxml2-dev libonig-dev libpq-dev
+        - cd backend
+        - cp .env.example .env
+        - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+        - composer install --no-interaction --prefer-dist --no-progress
+      script:
+        - php artisan test --group=postgres --fail-on-skipped
+
+    - name: "Edge Functions"
+      language: minimal
+      dist: jammy
+      before_script:
+        - curl -fsSL https://deno.land/install.sh | sh
+        - export DENO_INSTALL="$HOME/.deno"
+        - export PATH="$DENO_INSTALL/bin:$PATH"
+      script:
+        - deno check supabase/functions/sync-clusters/index.ts supabase/functions/sync-intraday/index.ts
+        - deno test --allow-env supabase/functions/sync-clusters/index_test.ts supabase/functions/sync-intraday/index_test.ts
+
+    - name: "Deployment Config"
+      language: minimal
+      dist: jammy
+      script:
+        - bash -n deploy/deploy-production.sh
+        - grep -q 'scheduler' docker-compose.yml

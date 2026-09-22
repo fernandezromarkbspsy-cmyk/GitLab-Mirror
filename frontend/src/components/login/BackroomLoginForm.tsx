@@ -30,6 +30,7 @@ export function BackroomLoginForm({
   const [requestError, setRequestError] = useState("");
   const [requestSent, setRequestSent] = useState(false);
   const [requestBusy, setRequestBusy] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
 
   const triggerShake = () => {
     setShaking(true);
@@ -127,10 +128,9 @@ export function BackroomLoginForm({
         Ops ID
       </label>
       <div
-        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/[0.11] focus-within:ring-4 focus-within:ring-accent/20 ${
-          shaking ? "animate-shake" : ""
-        } ${error ? "border-danger/70" : "border-line"}`}
-      >
+        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/11 focus-within:ring-4 focus-within:ring-accent/20 ${shaking ? "animate-shake" : ""
+      } ${error ? "border-danger/70" : "border-line"}`}
+    >
         <span className="grid w-10 shrink-0 place-items-center text-faint">
           <IdCard className="h-4 w-4" />
         </span>
@@ -177,12 +177,10 @@ export function BackroomLoginForm({
         <label className="group flex cursor-pointer items-center gap-2 text-[12px] font-medium text-muted leading-snug">
           <span
             className={`grid h-4 w-4 place-items-center rounded border transition-all duration-200 ${
-              true
-                ? "border-accent bg-accent"
-                : "border-white/30 bg-white/[0.07] group-hover:border-white/50"
+              keepSignedIn ? "border-accent bg-accent" : "border-line bg-transparent"
             }`}
           >
-            {true && (
+            {keepSignedIn && (
               <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden>
                 <path
                   d="M2.5 6.3 4.8 8.6 9.5 3.9"
@@ -195,7 +193,12 @@ export function BackroomLoginForm({
               </svg>
             )}
           </span>
-          <input type="checkbox" className="sr-only" defaultChecked />
+          <input
+            type="checkbox"
+            className="sr-only"
+            checked={keepSignedIn}
+            onChange={(event) => setKeepSignedIn(event.target.checked)}
+          />
           Keep me signed in
         </label>
         <button type="button" onClick={onForgotPassword} className="text-[12px] font-bold text-link underline-offset-4 hover:underline tracking-tight">

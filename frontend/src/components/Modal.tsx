@@ -7,7 +7,7 @@ type Props = {
   className?: string;
   ariaLabelledBy?: string;
   ariaLabel?: string;
-  role?: "dialog" | "alertdialog";
+  role?: "dialog";
 };
 
 function getFocusable(container: HTMLElement) {
@@ -28,7 +28,7 @@ export function Modal({
   className = "form-dialog",
   ariaLabelledBy,
   ariaLabel,
-    role,
+    role: _role,
 }: Props) {
   const panelRef = useRef<HTMLElement>(null);
   const lastActiveRef = useRef<HTMLElement | null>(null);

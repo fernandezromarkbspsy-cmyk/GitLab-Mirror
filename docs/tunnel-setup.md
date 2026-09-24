@@ -37,7 +37,7 @@ Start with these values:
 ```dotenv
 # backend/.env
 APP_URL=http://127.0.0.1:8000
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://127.0.0.1:5173
 
 # frontend/.env
 VITE_API_URL=/api

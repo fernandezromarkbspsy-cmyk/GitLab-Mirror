@@ -55,7 +55,7 @@ configuration in `tools/php.ini`.
    ```powershell
    cd frontend
    npm install
-   npm run preview -- --host 0.0.0.0 --port 5173
+   npx vite preview --host 0.0.0.0 --port 5173
    ```
 
 5. Start the Cloudflare Tunnel in a third terminal after configuring

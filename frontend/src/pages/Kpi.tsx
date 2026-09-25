@@ -1,6 +1,94 @@
-import { useQuery } from '@tanstack/react-query';
-import { BarChart3, CheckCircle2, Clock3, XCircle } from 'lucide-react';
-import { api } from '../lib/api';
+import { useQuery } from "@tanstack/react-query";
+import { BarChart3, CheckCircle2, Clock3, XCircle } from "lucide-react";
+import { api } from "../lib/api";
 
-type Summary={total:number;confirmed:number;cancelled:number;averageApprovalMinutes:number|null}; type Daily={data:Array<{date:string;total:number;confirmed:number}>};
-export function Kpi(){const summary=useQuery({queryKey:['kpi','summary'],queryFn:()=>api<Summary>('/kpi/summary')});const daily=useQuery({queryKey:['kpi','daily'],queryFn:()=>api<Daily>('/kpi/daily')});const max=Math.max(1,...(daily.data?.data??[]).map(row=>row.total));return <div className="workspace-view"><section className="overview-metrics"><article><div className="metric-icon neutral"><BarChart3/></div><div><span>Total requests</span><strong>{summary.data?.total??'-'}</strong></div></article><article><div className="metric-icon success"><CheckCircle2/></div><div><span>Confirmed</span><strong>{summary.data?.confirmed??'-'}</strong></div></article><article><div className="metric-icon warning"><XCircle/></div><div><span>Cancelled</span><strong>{summary.data?.cancelled??'-'}</strong></div></article><article><div className="metric-icon info"><Clock3/></div><div><span>Avg. approval</span><strong>{summary.data?.averageApprovalMinutes==null?'-':`${Math.round(summary.data.averageApprovalMinutes)}m`}</strong></div></article></section><section className="panel kpi-chart"><div className="panel-head"><div><h2>Daily volume</h2><p>Last 30 days</p></div></div><div className="bar-chart">{(daily.data?.data??[]).map(row=><div key={row.date}><span style={{height:`${Math.max(4,row.total/max*180)}px`}} title={`${row.date}: ${row.total}`}/><small>{new Date(row.date).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></div>)}</div></section></div>}
+type Summary = {
+  total: number;
+  confirmed: number;
+  cancelled: number;
+  averageApprovalMinutes: number | null;
+};
+type Daily = {
+  data: Array<{ date: string; total: number; confirmed: number }>;
+};
+export function Kpi() {
+  const summary = useQuery({
+    queryKey: ["kpi", "summary"],
+    queryFn: () => api<Summary>("/kpi/summary"),
+  });
+  const daily = useQuery({
+    queryKey: ["kpi", "daily"],
+    queryFn: () => api<Daily>("/kpi/daily"),
+  });
+  const max = Math.max(1, ...(daily.data?.data ?? []).map((row) => row.total));
+  return (
+    <div className="workspace-view">
+      <section className="overview-metrics">
+        <article>
+          <div className="metric-icon neutral">
+            <BarChart3 />
+          </div>
+          <div>
+            <span>Total requests</span>
+            <strong>{summary.data?.total ?? "-"}</strong>
+          </div>
+        </article>
+        <article>
+          <div className="metric-icon success">
+            <CheckCircle2 />
+          </div>
+          <div>
+            <span>Confirmed</span>
+            <strong>{summary.data?.confirmed ?? "-"}</strong>
+          </div>
+        </article>
+        <article>
+          <div className="metric-icon warning">
+            <XCircle />
+          </div>
+          <div>
+            <span>Cancelled</span>
+            <strong>{summary.data?.cancelled ?? "-"}</strong>
+          </div>
+        </article>
+        <article>
+          <div className="metric-icon info">
+            <Clock3 />
+          </div>
+          <div>
+            <span>Avg. approval</span>
+            <strong>
+              {summary.data?.averageApprovalMinutes == null
+                ? "-"
+                : `${Math.round(summary.data.averageApprovalMinutes)}m`}
+            </strong>
+          </div>
+        </article>
+      </section>
+      <section className="panel kpi-chart">
+        <div className="panel-head">
+          <div>
+            <h2>Daily volume</h2>
+            <p>Last 30 days</p>
+          </div>
+        </div>
+        <div className="bar-chart">
+          {(daily.data?.data ?? []).map((row) => (
+            <div key={row.date}>
+              <span
+                style={{ height: `${Math.max(4, (row.total / max) * 180)}px` }}
+                title={`${row.date}: ${row.total}`}
+              />
+              <small>
+                {new Date(row.date).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </small>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}

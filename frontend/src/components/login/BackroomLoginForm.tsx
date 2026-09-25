@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { ArrowRight, IdCard, KeyRound, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { api } from "../../lib/api";
 
 interface BackroomLoginFormProps {
@@ -49,11 +49,18 @@ export function BackroomLoginForm({
     try {
       await api("/access-requests", {
         method: "POST",
-        body: JSON.stringify({ name: requestName.trim(), ops_id: requestedOpsId.trim() }),
+        body: JSON.stringify({
+          name: requestName.trim(),
+          ops_id: requestedOpsId.trim(),
+        }),
       });
       setRequestSent(true);
     } catch (cause) {
-      setRequestError(cause instanceof Error ? cause.message : "Unable to send the access request.");
+      setRequestError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to send the access request.",
+      );
     } finally {
       setRequestBusy(false);
     }
@@ -68,7 +75,10 @@ export function BackroomLoginForm({
         <p className="mt-1.5 text-[12.5px] text-muted leading-relaxed">
           An FTE user will review your details before creating an account.
         </p>
-        <label htmlFor="access-request-name" className="mt-4 block text-[11.5px] font-bold uppercase tracking-wider text-faint">
+        <label
+          htmlFor="access-request-name"
+          className="mt-4 block text-[11.5px] font-bold uppercase tracking-wider text-faint"
+        >
           Full name
         </label>
         <input
@@ -79,30 +89,47 @@ export function BackroomLoginForm({
           maxLength={120}
           className="mt-1.5 h-10 w-full rounded-lg border border-line bg-white/[0.07] px-3 text-[13px] text-ink outline-none focus:border-accent focus:ring-4 focus:ring-accent/20"
         />
-        <label htmlFor="access-request-ops-id" className="mt-3 block text-[11.5px] font-bold uppercase tracking-wider text-faint">
+        <label
+          htmlFor="access-request-ops-id"
+          className="mt-3 block text-[11.5px] font-bold uppercase tracking-wider text-faint"
+        >
           Requested Ops ID
         </label>
         <input
           id="access-request-ops-id"
           value={requestedOpsId}
-          onChange={(event) => setRequestedOpsId(event.target.value.toUpperCase())}
+          onChange={(event) =>
+            setRequestedOpsId(event.target.value.toUpperCase())
+          }
           placeholder="OPS123"
           required
           pattern="[Oo][Pp][Ss][0-9]+"
           maxLength={40}
           className="mt-1.5 h-10 w-full rounded-lg border border-line bg-white/[0.07] px-3 text-[13px] uppercase text-ink outline-none placeholder:text-faint focus:border-accent focus:ring-4 focus:ring-accent/20"
         />
-        {requestError && <p className="mt-2 text-[12px] font-medium text-danger leading-snug">{requestError}</p>}
+        {requestError && (
+          <p className="mt-2 text-[12px] font-medium text-danger leading-snug">
+            {requestError}
+          </p>
+        )}
         {requestSent ? (
           <p className="mt-3 text-[12px] font-medium text-success leading-snug">
             Request sent. An FTE user will review and create your account.
           </p>
         ) : (
           <div className="mt-4 flex items-center gap-3">
-            <button type="submit" disabled={requestBusy} className="text-[12px] font-bold text-link disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={requestBusy}
+              className="text-[12px] font-bold text-link disabled:opacity-50"
+            >
               {requestBusy ? "Sending..." : "Send request"}
             </button>
-            <button type="button" onClick={() => setRequestOpen(false)} className="text-[12px] font-semibold text-muted hover:text-ink">
+            <button
+              type="button"
+              onClick={() => setRequestOpen(false)}
+              className="text-[12px] font-semibold text-muted hover:text-ink"
+            >
               Cancel
             </button>
           </div>
@@ -128,9 +155,10 @@ export function BackroomLoginForm({
         Ops ID
       </label>
       <div
-        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/11 focus-within:ring-4 focus-within:ring-accent/20 ${shaking ? "animate-shake" : ""
-      } ${error ? "border-danger/70" : "border-line"}`}
-    >
+        className={`mt-1.5 flex h-11 items-stretch rounded-xl border bg-white/[0.07] transition-all duration-200 focus-within:border-accent focus-within:bg-white/11 focus-within:ring-4 focus-within:ring-accent/20 ${
+          shaking ? "animate-shake" : ""
+        } ${error ? "border-danger/70" : "border-line"}`}
+      >
         <span className="grid w-10 shrink-0 place-items-center text-faint">
           <IdCard className="h-4 w-4" />
         </span>
@@ -171,13 +199,19 @@ export function BackroomLoginForm({
         />
       </div>
 
-      {error && <p className="mt-2.5 text-[12px] font-medium text-danger leading-snug">{error}</p>}
+      {error && (
+        <p className="mt-2.5 text-[12px] font-medium text-danger leading-snug">
+          {error}
+        </p>
+      )}
 
       <div className="mt-3.5 flex items-center justify-between">
         <label className="group flex cursor-pointer items-center gap-2 text-[12px] font-medium text-muted leading-snug">
           <span
             className={`grid h-4 w-4 place-items-center rounded border transition-all duration-200 ${
-              keepSignedIn ? "border-accent bg-accent" : "border-line bg-transparent"
+              keepSignedIn
+                ? "border-accent bg-accent"
+                : "border-line bg-transparent"
             }`}
           >
             {keepSignedIn && (
@@ -201,7 +235,11 @@ export function BackroomLoginForm({
           />
           Keep me signed in
         </label>
-        <button type="button" onClick={onForgotPassword} className="text-[12px] font-bold text-link underline-offset-4 hover:underline tracking-tight">
+        <button
+          type="button"
+          onClick={onForgotPassword}
+          className="text-[12px] font-bold text-link underline-offset-4 hover:underline tracking-tight"
+        >
           Forgot password?
         </button>
       </div>

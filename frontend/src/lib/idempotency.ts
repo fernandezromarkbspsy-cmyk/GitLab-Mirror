@@ -32,7 +32,10 @@ export function generateIdempotencyKey(scope: string, value: JsonLike): string {
   return `${scope}:${(hash >>> 0).toString(16)}`;
 }
 
-export function buildIdempotencyHeaders(scope: string, value: JsonLike): Record<string, string> {
+export function buildIdempotencyHeaders(
+  scope: string,
+  value: JsonLike,
+): Record<string, string> {
   return {
     "Idempotency-Key": generateIdempotencyKey(scope, value),
   };

@@ -139,7 +139,7 @@ export function AppSidebar({
                 <button
                   className={`nav-subitem${activeView === "lh-request" ? " active" : ""}`}
                   type="button"
-                                  onClick={() => navigate("lh-request")}
+                  onClick={() => navigate("lh-request")}
                 >
                   <Route size={17} />
                   <span>LH Request</span>
@@ -170,7 +170,7 @@ export function AppSidebar({
                 <button
                   className={`nav-subitem${activeView === "truck-request" ? " active" : ""}`}
                   type="button"
-                                  onClick={() => navigate("truck-request")}
+                  onClick={() => navigate("truck-request")}
                 >
                   <Truck size={17} />
                   <span>Truck Request</span>

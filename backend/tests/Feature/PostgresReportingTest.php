@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use PDO;
 use Tests\TestCase;
 
 /** @group postgres */
@@ -17,7 +18,7 @@ final class PostgresReportingTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (getenv('POSTGRES_TESTS') !== '1' || ! in_array('pgsql', \PDO::getAvailableDrivers(), true)) {
+        if (getenv('POSTGRES_TESTS') !== '1' || ! in_array('pgsql', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('PostgreSQL integration tests are enabled only in the PostgreSQL CI job.');
         }
 
@@ -55,7 +56,7 @@ final class PostgresReportingTest extends TestCase
 
     protected function tearDown(): void
     {
-        if (getenv('POSTGRES_TESTS') === '1' && in_array('pgsql', \PDO::getAvailableDrivers(), true)) {
+        if (getenv('POSTGRES_TESTS') === '1' && in_array('pgsql', PDO::getAvailableDrivers(), true)) {
             Schema::dropIfExists('requests');
         }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 type Props = {
   children: ReactNode;
@@ -6,7 +6,7 @@ type Props = {
   className?: string;
 };
 
-export function Reveal({ children, delay = 0, className = '' }: Props) {
+export function Reveal({ children, delay = 0, className = "" }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
 
@@ -20,7 +20,7 @@ export function Reveal({ children, delay = 0, className = '' }: Props) {
           io.disconnect();
         }
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -29,7 +29,7 @@ export function Reveal({ children, delay = 0, className = '' }: Props) {
   return (
     <div
       ref={ref}
-      className={`reveal ${inView ? 'is-in' : ''} ${className}`}
+      className={`reveal ${inView ? "is-in" : ""} ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}

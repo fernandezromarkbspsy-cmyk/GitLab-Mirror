@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react";
-import { Reveal } from "./Reveal";
 import trucksImage from "../../assets/trucks.jpg";
+import { Reveal } from "./Reveal";
 
 interface QrPanelProps {
   enabled?: boolean;
@@ -49,7 +49,8 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
 
       <Reveal delay={180} className="mt-6">
         <div className="rounded-2xl border border-line bg-white/[0.03] p-4 text-[12px] leading-relaxed text-muted">
-          Standard sign-in is available for FTE and backroom access. No QR-based login is required.
+          Standard sign-in is available for FTE and backroom access. No QR-based
+          login is required.
         </div>
       </Reveal>
 

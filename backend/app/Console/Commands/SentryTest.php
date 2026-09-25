@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Sentry\Severity;
+use function Sentry\captureMessage;
 
 class SentryTest extends Command
 {
@@ -21,7 +22,7 @@ class SentryTest extends Command
             return self::FAILURE;
         }
 
-        \Sentry\captureMessage('SOC5 Outbound Sentry test event', Severity::info());
+        captureMessage('SOC5 Outbound Sentry test event', Severity::info());
         \Sentry\flush(2.0);
 
         $this->info('Sentry test event submitted. Check the configured Sentry project.');

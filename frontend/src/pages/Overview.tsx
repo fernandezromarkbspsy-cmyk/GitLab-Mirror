@@ -1,19 +1,13 @@
-import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CheckCircle2,
-  ClipboardList,
-  Clock3,
-  Truck,
-  X,
-} from "lucide-react";
-import { RequestTable } from "../components/RequestTable";
-import { SkeletonTable } from "../components/SkeletonTable";
-import { Skeleton } from "../components/Skeleton";
+import { CheckCircle2, ClipboardList, Clock3, Truck, X } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
 import { ChartHeader } from "../components/dashboard/ChartHeader";
 import { MetricCard } from "../components/dashboard/MetricCard";
 import { Panel } from "../components/dashboard/Panel";
 import { QueuePreview } from "../components/dashboard/QueuePreview";
+import { RequestTable } from "../components/RequestTable";
+import { Skeleton } from "../components/Skeleton";
+import { SkeletonTable } from "../components/SkeletonTable";
 import { api } from "../lib/api";
 import { useUiStore } from "../stores/ui";
 import type {
@@ -242,10 +236,18 @@ export function Overview({
             <MetricCard
               key={card.status}
               label={card.label}
-              value={metrics.isPending ? <Skeleton width={64} height={26} /> : card.value.toLocaleString()}
+              value={
+                metrics.isPending ? (
+                  <Skeleton width={64} height={26} />
+                ) : (
+                  card.value.toLocaleString()
+                )
+              }
               icon={card.icon}
               chip={card.chip}
-              footnote={metrics.isPending ? <Skeleton width={112} /> : card.footnote}
+              footnote={
+                metrics.isPending ? <Skeleton width={112} /> : card.footnote
+              }
               primary={card.primary}
               onClick={() => setDetailStatus(card.status)}
             />
@@ -285,13 +287,24 @@ export function Overview({
               <div>
                 <span>Total dispatched</span>
                 <strong>
-                  {intraday.isPending ? <Skeleton width={56} height={24} /> : activeSignal.toLocaleString()}
+                  {intraday.isPending ? (
+                    <Skeleton width={56} height={24} />
+                  ) : (
+                    activeSignal.toLocaleString()
+                  )}
                 </strong>
               </div>
               <div>
                 <span>Peak hour</span>
                 <strong>
-                  {intraday.isPending ? <Skeleton width={78} height={24} /> : <>{peakDispatch.orderQty.toLocaleString()} <small>{formatHour(peakDispatch.hour)}</small></>}
+                  {intraday.isPending ? (
+                    <Skeleton width={78} height={24} />
+                  ) : (
+                    <>
+                      {peakDispatch.orderQty.toLocaleString()}{" "}
+                      <small>{formatHour(peakDispatch.hour)}</small>
+                    </>
+                  )}
                 </strong>
               </div>
               <span
@@ -354,9 +367,7 @@ export function Overview({
                 {areaPath && <path className="line-area" d={areaPath} />}
                 <path className="line-stroke" d={linePath} />
                 {chartPoints.map((point, _index) => (
-                  <g
-                    key={point.label}
-                  >
+                  <g key={point.label}>
                     <circle cx={point.x} cy={point.y} r="4">
                       <title>
                         {formatHour(Number(point.label))}: {point.count} orders
@@ -443,7 +454,9 @@ export function Overview({
                       .toUpperCase()}
                   </span>
                   <div>
-                    <strong>{request.linehaul_trip_no || "Trip pending"}</strong>
+                    <strong>
+                      {request.linehaul_trip_no || "Trip pending"}
+                    </strong>
                     <small>Doc Officer: {request.created_by}</small>
                   </div>
                   <span className="linehaul-driver">
@@ -497,10 +510,7 @@ export function Overview({
         </article>
       </section>
       {detailStatus !== null && (
-        <div
-          className="dialog-layer"
-          role="presentation"
-        >
+        <div className="dialog-layer" role="presentation">
           <section
             className="form-dialog request-detail-dialog"
             role="dialog"

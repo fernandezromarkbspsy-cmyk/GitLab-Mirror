@@ -6,6 +6,7 @@ use App\Integrations\SupabaseAdminClient;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 final class ProvisionBackroomUsers extends Command
 {
@@ -59,7 +60,7 @@ final class ProvisionBackroomUsers extends Command
             if (! $authUserId) {
                 try {
                     $authUserId = $this->supabaseAdmin->createUser($opsId.'@backroom.soc5.internal', $initialPassword, ['ops_id' => $opsId, 'account_type' => 'backroom']);
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     $this->error($opsId.': Supabase user creation failed');
                     $failed++;
 
@@ -72,7 +73,7 @@ final class ProvisionBackroomUsers extends Command
                 if ($resetExisting || $mustChangePassword) {
                     try {
                         $this->supabaseAdmin->updatePassword($authUserId, $initialPassword);
-                    } catch (\Throwable) {
+                    } catch (Throwable) {
                         $this->error($opsId.': Supabase user password repair failed');
                         $failed++;
 

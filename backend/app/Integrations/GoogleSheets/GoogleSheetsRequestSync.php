@@ -10,7 +10,7 @@ use Google\Service\Sheets\ValueRange;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
-final class GoogleSheetsRequestSync
+class GoogleSheetsRequestSync
 {
     private const HEADERS = [
         'Request timestamp',

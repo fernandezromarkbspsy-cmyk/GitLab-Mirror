@@ -1,5 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check } from "lucide-react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface OtpVerifyProps {
   destination: string;
@@ -16,9 +22,9 @@ export function OtpVerify({
   onBack,
   onDone,
   onResend,
-  backLabel = 'Change email',
+  backLabel = "Change email",
 }: OtpVerifyProps) {
-  const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const refs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
@@ -26,10 +32,10 @@ export function OtpVerify({
     return () => window.clearTimeout(id);
   }, []);
 
-  const complete = otp.every((d) => d !== '');
+  const complete = otp.every((d) => d !== "");
 
   const set = (i: number, value: string) => {
-    const d = value.replace(/\D/g, '').slice(-1);
+    const d = value.replace(/\D/g, "").slice(-1);
     setOtp((p) => {
       const n = [...p];
       n[i] = d;
@@ -39,22 +45,22 @@ export function OtpVerify({
   };
 
   const key = (i: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[i] && i > 0) refs.current[i - 1]?.focus();
+    if (e.key === "Backspace" && !otp[i] && i > 0) refs.current[i - 1]?.focus();
   };
 
   const paste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const t = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const t = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     if (!t) return;
     e.preventDefault();
-    const arr = Array(6).fill('');
-    t.split('').forEach((c, i) => (arr[i] = c));
+    const arr = Array(6).fill("");
+    t.split("").forEach((c, i) => (arr[i] = c));
     setOtp(arr);
     refs.current[Math.min(t.length, 5)]?.focus();
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     if (complete) {
-      onDone(event, otp.join(''));
+      onDone(event, otp.join(""));
     }
   };
 
@@ -104,7 +110,7 @@ export function OtpVerify({
         type="submit"
         disabled={!complete}
         className={`btn-shine group mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-2 font-display text-[14px] font-bold text-white shadow-lg shadow-accent/30 transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:translate-y-0 tracking-tight ${
-          complete ? 'ready-pulse' : ''
+          complete ? "ready-pulse" : ""
         }`}
       >
         <span className="font-bold">Verify &amp; Continue</span>
@@ -114,10 +120,13 @@ export function OtpVerify({
       <div className="mt-3.5 text-center text-[12px] text-muted leading-snug">
         {resendAfter > 0 ? (
           <>
-            <span className="block mb-2">Resend in{' '}
-            <span className="font-bold tabular-nums text-ink">
-              {Math.floor(resendAfter / 60)}:{String(resendAfter % 60).padStart(2, '0')}
-            </span></span>
+            <span className="block mb-2">
+              Resend in{" "}
+              <span className="font-bold tabular-nums text-ink">
+                {Math.floor(resendAfter / 60)}:
+                {String(resendAfter % 60).padStart(2, "0")}
+              </span>
+            </span>
           </>
         ) : (
           <button

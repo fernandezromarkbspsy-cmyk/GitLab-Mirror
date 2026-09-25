@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 final class RetryUserEvents extends Command
 {
@@ -40,7 +41,7 @@ final class RetryUserEvents extends Command
                     ]);
                     DB::table('user_event_retries')->where('id', $claimed->id)->delete();
                 });
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 DB::transaction(function () use ($retry, $exception): void {
                     $claimed = DB::table('user_event_retries')
                         ->where('id', $retry->id)

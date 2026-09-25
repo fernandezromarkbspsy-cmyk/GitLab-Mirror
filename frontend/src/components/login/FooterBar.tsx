@@ -1,5 +1,5 @@
-import { Lock, ShieldCheck } from 'lucide-react';
-import { Reveal } from './Reveal';
+import { Lock, ShieldCheck } from "lucide-react";
+import { Reveal } from "./Reveal";
 
 function Icon24() {
   return (
@@ -33,18 +33,18 @@ function Icon24() {
 const ITEMS = [
   {
     icon: <ShieldCheck className="h-[17px] w-[17px]" strokeWidth={2} />,
-    title: 'Secure & Protected',
-    sub: 'Your data is safe',
+    title: "Secure & Protected",
+    sub: "Your data is safe",
   },
   {
     icon: <Lock className="h-4 w-4" strokeWidth={2} />,
-    title: 'Authorized Access Only',
-    sub: 'For operations personnel',
+    title: "Authorized Access Only",
+    sub: "For operations personnel",
   },
   {
     icon: <Icon24 />,
-    title: '24/7 Operations',
-    sub: 'AI Chart Support',
+    title: "24/7 Operations",
+    sub: "AI Chart Support",
   },
 ];
 

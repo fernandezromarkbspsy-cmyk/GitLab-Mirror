@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use PDO;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
+use Throwable;
 
 final class UserManagementAuthorizationTest extends TestCase
 {
@@ -19,7 +21,7 @@ final class UserManagementAuthorizationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (! in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+        if (! in_array('sqlite', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('The pdo_sqlite extension is required for user management tests.');
         }
 
@@ -74,7 +76,7 @@ final class UserManagementAuthorizationTest extends TestCase
         $request = Request::create('/api/users', 'POST', ['name' => 'New user', 'ops_id' => 'ops999']);
         $request->attributes->set('actor', (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops']);
 
-        $this->expectException(\Throwable::class);
+        $this->expectException(Throwable::class);
         try {
             (new UserController)->store($request);
         } finally {

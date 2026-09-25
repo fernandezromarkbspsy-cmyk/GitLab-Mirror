@@ -7,6 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use PDO;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
@@ -15,7 +16,7 @@ final class DispatchAuthorizationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (! in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+        if (! in_array('sqlite', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('The pdo_sqlite extension is required for dispatch authorization tests.');
         }
 

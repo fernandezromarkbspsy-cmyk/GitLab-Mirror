@@ -1,29 +1,24 @@
-import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus,
   Check,
   Copy,
+  Plus,
   RotateCcw,
   Search,
   ShieldCheck,
   UserRound,
-  UserX,
   Users,
+  UserX,
   X,
 } from "lucide-react";
+import { FormEvent, useState } from "react";
 import { Modal } from "../components/Modal";
 import { Skeleton } from "../components/Skeleton";
+import { Skiper87 } from "../components/ui/skiper-ui/skiper87";
 import { api } from "../lib/api";
 import type { ManagedUser, Role } from "../types";
-import { Skiper87 } from "../components/ui/skiper-ui/skiper87";
 
-const roles: Role[] = [
-  "ops_pic",
-  "fte_ops",
-  "fte_mm",
-  "doc_officer",
-];
+const roles: Role[] = ["ops_pic", "fte_ops", "fte_mm", "doc_officer"];
 const roleLabels: Record<Role, string> = {
   ops_pic: "Ops PIC",
   fte_ops: "FTE Operations",
@@ -302,12 +297,22 @@ export function UserManagement() {
                         {user.is_active && (
                           <>
                             {user.role === "ops_pic" && (
-                              <button className="table-action" type="button" aria-label={`Reset password for ${user.name}`} onClick={() => setResetUser(user)}>
+                              <button
+                                className="table-action"
+                                type="button"
+                                aria-label={`Reset password for ${user.name}`}
+                                onClick={() => setResetUser(user)}
+                              >
                                 <RotateCcw size={15} />
                                 Reset Password
                               </button>
                             )}
-                            <button className="table-action reject" type="button" aria-label={`Disable ${user.name}`} onClick={() => disable.mutate(user.id)}>
+                            <button
+                              className="table-action reject"
+                              type="button"
+                              aria-label={`Disable ${user.name}`}
+                              onClick={() => disable.mutate(user.id)}
+                            >
                               <UserX size={15} />
                               Disable
                             </button>
@@ -330,39 +335,94 @@ export function UserManagement() {
           onSubmit={(body) => create.mutate(body)}
         />
       )}
-      <Modal open={resetUser !== null} onClose={() => !reset.isPending && setResetUser(null)} ariaLabel="Reset user password" className="form-dialog compact">
+      <Modal
+        open={resetUser !== null}
+        onClose={() => !reset.isPending && setResetUser(null)}
+        ariaLabel="Reset user password"
+        className="form-dialog compact"
+      >
         <div className="dialog-head">
           <div>
             <p className="users-page-kicker">Account recovery</p>
             <h2>Reset User Password</h2>
           </div>
-          <button className="icon-button" type="button" onClick={() => setResetUser(null)} aria-label="Cancel password reset"><X size={18} /></button>
+          <button
+            className="icon-button"
+            type="button"
+            onClick={() => setResetUser(null)}
+            aria-label="Cancel password reset"
+          >
+            <X size={18} />
+          </button>
         </div>
-        <p>Reset {resetUser?.name}'s password to a new one-time password? They will create a new permanent password at their next sign-in.</p>
-        {reset.error && <p className="notice error" role="alert">{reset.error.message}</p>}
+        <p>
+          Reset {resetUser?.name}'s password to a new one-time password? They
+          will create a new permanent password at their next sign-in.
+        </p>
+        {reset.error && (
+          <p className="notice error" role="alert">
+            {reset.error.message}
+          </p>
+        )}
         <div className="dialog-actions">
-          <button type="button" className="secondary-button" disabled={reset.isPending} onClick={() => setResetUser(null)}>Cancel</button>
-          <button type="button" disabled={reset.isPending} onClick={() => resetUser && reset.mutate(resetUser.id)}>{reset.isPending ? "Resetting..." : "Confirm"}</button>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={reset.isPending}
+            onClick={() => setResetUser(null)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={reset.isPending}
+            onClick={() => resetUser && reset.mutate(resetUser.id)}
+          >
+            {reset.isPending ? "Resetting..." : "Confirm"}
+          </button>
         </div>
       </Modal>
-      <Modal open={issuedCredential !== null} onClose={closeIssuedCredential} ariaLabel="One-time password issued" className="form-dialog compact">
+      <Modal
+        open={issuedCredential !== null}
+        onClose={closeIssuedCredential}
+        ariaLabel="One-time password issued"
+        className="form-dialog compact"
+      >
         <div className="dialog-head">
           <div>
             <p className="users-page-kicker">Share securely</p>
             <h2>One-time password for {issuedCredential?.name}</h2>
           </div>
-          <button className="icon-button" type="button" onClick={closeIssuedCredential} aria-label="Close"><X size={18} /></button>
+          <button
+            className="icon-button"
+            type="button"
+            onClick={closeIssuedCredential}
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
         </div>
-        <p>This password is shown only once. Share it with {issuedCredential?.name} through a secure channel — it will not be shown again.</p>
+        <p>
+          This password is shown only once. Share it with{" "}
+          {issuedCredential?.name} through a secure channel — it will not be
+          shown again.
+        </p>
         <div className="user-issued-password">
           <code>{issuedCredential?.password}</code>
-          <button type="button" className="secondary-button" onClick={() => void copyIssuedCredential()} aria-label="Copy one-time password">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void copyIssuedCredential()}
+            aria-label="Copy one-time password"
+          >
             {credentialCopied ? <Check size={15} /> : <Copy size={15} />}
             {credentialCopied ? "Copied" : "Copy"}
           </button>
         </div>
         <div className="dialog-actions">
-          <button type="button" onClick={closeIssuedCredential}>Done</button>
+          <button type="button" onClick={closeIssuedCredential}>
+            Done
+          </button>
         </div>
       </Modal>
     </div>

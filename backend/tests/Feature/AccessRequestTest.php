@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use PDO;
 use Tests\TestCase;
 
 final class AccessRequestTest extends TestCase
@@ -12,7 +13,7 @@ final class AccessRequestTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (! in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+        if (! in_array('sqlite', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('The pdo_sqlite extension is required for access request tests.');
         }
         config()->set('database.default', 'sqlite');

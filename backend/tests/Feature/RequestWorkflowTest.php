@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use PDO;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
@@ -22,7 +23,7 @@ final class RequestWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (! in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+        if (! in_array('sqlite', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('The pdo_sqlite extension is required for isolated request workflow tests.');
         }
         config()->set('database.default', 'sqlite');

@@ -19,7 +19,13 @@ export function Skeleton({
     ...(radius !== undefined ? { borderRadius: radius } : {}),
   };
 
-  return <span className={`skeleton-line ${className}`.trim()} style={style} aria-hidden="true" />;
+  return (
+    <span
+      className={`skeleton-line ${className}`.trim()}
+      style={style}
+      aria-hidden="true"
+    />
+  );
 }
 
 export function SkeletonList({ rows = 4 }: { rows?: number }) {
@@ -27,10 +33,18 @@ export function SkeletonList({ rows = 4 }: { rows?: number }) {
     <div className="skeleton-list" role="status" aria-label="Loading list">
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
         <div className="skeleton-list-row" key={index}>
-          <Skeleton className="skeleton-avatar" width={34} height={34} radius="50%" />
+          <Skeleton
+            className="skeleton-avatar"
+            width={34}
+            height={34}
+            radius="50%"
+          />
           <span className="skeleton-list-copy">
             <Skeleton width={`${58 + (index % 3) * 10}%`} />
-            <Skeleton width={`${38 + (index % 2) * 14}%`} className="skeleton-line--subtle" />
+            <Skeleton
+              width={`${38 + (index % 2) * 14}%`}
+              className="skeleton-line--subtle"
+            />
           </span>
           <Skeleton width={56} className="skeleton-line--short" />
         </div>
@@ -41,7 +55,11 @@ export function SkeletonList({ rows = 4 }: { rows?: number }) {
 
 export function SkeletonCardList({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="skeleton-card-list" role="status" aria-label="Loading cards">
+    <div
+      className="skeleton-card-list"
+      role="status"
+      aria-label="Loading cards"
+    >
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
         <article className="skeleton-card" key={index}>
           <Skeleton width="34%" className="skeleton-line--head" />
@@ -67,7 +85,11 @@ export function SkeletonStatus({ children }: { children?: ReactNode }) {
 
 export function SkeletonRequestTable({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="lh-skeleton-table" role="status" aria-label="Loading requests">
+    <div
+      className="lh-skeleton-table"
+      role="status"
+      aria-label="Loading requests"
+    >
       {Array.from({ length: Math.max(1, rows) }).map((_, rowIndex) => (
         <div className="lh-table-row lh-table-grid" key={rowIndex}>
           <Skeleton width={76} className="skeleton-line--pill" />

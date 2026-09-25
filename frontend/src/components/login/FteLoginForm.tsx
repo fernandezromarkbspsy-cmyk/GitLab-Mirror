@@ -86,7 +86,11 @@ export function FteLoginForm({
         />
       </div>
 
-      {error && <p className="mt-2.5 text-[12px] font-medium text-danger leading-snug">{error}</p>}
+      {error && (
+        <p className="mt-2.5 text-[12px] font-medium text-danger leading-snug">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"

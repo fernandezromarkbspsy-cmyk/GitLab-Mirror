@@ -28,7 +28,7 @@ export function Modal({
   className = "form-dialog",
   ariaLabelledBy,
   ariaLabel,
-    role: _role,
+  role: _role,
 }: Props) {
   const panelRef = useRef<HTMLElement>(null);
   const lastActiveRef = useRef<HTMLElement | null>(null);
@@ -89,7 +89,7 @@ export function Modal({
   return (
     <div
       className="dialog-layer"
-        role="dialog"
+      role="dialog"
       aria-labelledby={ariaLabelledBy}
       aria-label={ariaLabel}
       tabIndex={-1}

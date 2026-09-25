@@ -20,9 +20,7 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
       onComplete();
     } catch (cause) {
       const message =
-        cause instanceof Error
-          ? cause.message
-          : "Unable to change password.";
+        cause instanceof Error ? cause.message : "Unable to change password.";
 
       if (/too many attempts|rate limit|too many requests/i.test(message)) {
         setError(

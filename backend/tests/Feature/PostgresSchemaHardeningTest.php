@@ -6,6 +6,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use PDO;
 use Tests\TestCase;
 
 /** @group postgres */
@@ -14,7 +15,7 @@ final class PostgresSchemaHardeningTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (getenv('POSTGRES_TESTS') !== '1' || ! in_array('pgsql', \PDO::getAvailableDrivers(), true)) {
+        if (getenv('POSTGRES_TESTS') !== '1' || ! in_array('pgsql', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('PostgreSQL integration tests are enabled only in the PostgreSQL CI job.');
         }
 
@@ -42,7 +43,7 @@ final class PostgresSchemaHardeningTest extends TestCase
 
     protected function tearDown(): void
     {
-        if (getenv('POSTGRES_TESTS') === '1' && in_array('pgsql', \PDO::getAvailableDrivers(), true)) {
+        if (getenv('POSTGRES_TESTS') === '1' && in_array('pgsql', PDO::getAvailableDrivers(), true)) {
             Schema::dropIfExists('user_events');
             Schema::dropIfExists('user_imports');
             Schema::dropIfExists('profiles');

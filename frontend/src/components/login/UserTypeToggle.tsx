@@ -1,9 +1,9 @@
-import { Users, Truck } from 'lucide-react';
-import type { UserType } from '../../pages/Login';
+import { Truck, Users } from "lucide-react";
+import type { UserType } from "../../pages/Login";
 
 const OPTIONS: { key: UserType; label: string; icon: typeof Users }[] = [
-  { key: 'fte', label: 'FTE', icon: Users },
-  { key: 'backroom', label: 'Backroom', icon: Truck },
+  { key: "fte", label: "FTE", icon: Users },
+  { key: "backroom", label: "Backroom", icon: Truck },
 ];
 
 interface UserTypeToggleProps {
@@ -37,7 +37,7 @@ export function UserTypeToggle({ value, onChange }: UserTypeToggleProps) {
             aria-selected={active}
             onClick={() => onChange(o.key)}
             className={`relative z-10 flex h-9 items-center justify-center gap-1.5 rounded-lg font-display text-[13px] font-semibold transition-colors duration-200 ${
-              active ? 'text-white' : 'text-faint hover:text-ink'
+              active ? "text-white" : "text-faint hover:text-ink"
             }`}
           >
             <Icon className="h-4 w-4 shrink-0" strokeWidth={2.1} />

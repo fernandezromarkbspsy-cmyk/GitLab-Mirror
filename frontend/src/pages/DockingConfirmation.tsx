@@ -1,12 +1,12 @@
-import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ShipWheel, X } from "lucide-react";
+import { FormEvent, useState } from "react";
 import { Modal } from "../components/Modal";
-import { api } from "../lib/api";
-import { buildIdempotencyHeaders } from "../lib/idempotency";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
+import { api } from "../lib/api";
+import { buildIdempotencyHeaders } from "../lib/idempotency";
 import type { Page, TruckRequest, User } from "../types";
 
 type DockAction = "mark-docked" | "confirm";
@@ -50,8 +50,7 @@ export function DockingConfirmation({ user }: { user: User }) {
   });
   const rows = (queue.data?.data ?? []).filter(
     (request) =>
-      request.status === "FOR_DOCKING" ||
-      request.status === "DOCKED",
+      request.status === "FOR_DOCKING" || request.status === "DOCKED",
   );
   const actions = (request: TruckRequest) =>
     request.status === "DOCKED" && user.role === "doc_officer" ? (
@@ -103,7 +102,7 @@ export function DockingConfirmation({ user }: { user: User }) {
         )}
       </section>
       {selected && (
-      <DockDialog
+        <DockDialog
           request={selected}
           role={user.role}
           busy={action.isPending}

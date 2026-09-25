@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Mockery;
+use PDO;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -18,7 +19,7 @@ final class GoogleSheetsRequestSyncTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (! in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+        if (! in_array('sqlite', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('The pdo_sqlite extension is required for Google Sheets sync tests.');
         }
 

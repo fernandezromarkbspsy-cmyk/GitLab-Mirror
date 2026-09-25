@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   Check,
@@ -11,13 +12,12 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
 import type {
-  AppView,
   Notification as AppNotification,
+  AppView,
   Role,
   User,
 } from "../types";
@@ -48,7 +48,13 @@ function formatDate(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }
 
-export function AppHeader({ user, preview = false, view, onRoleChange, onSearch }: Props) {
+export function AppHeader({
+  user,
+  preview = false,
+  view,
+  onRoleChange,
+  onSearch,
+}: Props) {
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);

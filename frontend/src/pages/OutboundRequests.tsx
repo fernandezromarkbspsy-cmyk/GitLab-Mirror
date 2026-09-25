@@ -1,5 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
-import type { MouseEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   ChartNoAxesCombined,
@@ -20,11 +19,16 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { MouseEvent } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
+import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
+import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
 import { defaultRequestFilters, openRequestsSheet } from "../lib/requests";
+import { useUiStore } from "../stores/ui";
 import type {
   ClusterLookup,
   Page,
@@ -33,10 +37,6 @@ import type {
   TruckRequest,
   User,
 } from "../types";
-import { useUiStore } from "../stores/ui";
-import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
-import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
-import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
@@ -174,9 +174,7 @@ export function OutboundRequests({
   }
 
   return (
-    <div
-      className="workspace-view lh-request-page"
-    >
+    <div className="workspace-view lh-request-page">
       <section className="lh-request-workspace" aria-label="Linehaul requests">
         <LinehaulFilterPanel
           filters={filters}
@@ -199,7 +197,9 @@ export function OutboundRequests({
                 updateRequest.reset();
                 setEditing(null);
               }}
-              onSubmit={(payload) => updateRequest.mutate({ id: editing.id, payload })}
+              onSubmit={(payload) =>
+                updateRequest.mutate({ id: editing.id, payload })
+              }
             />
           </div>
         )}
@@ -329,9 +329,7 @@ export function OutboundRequests({
                 <span />
               </div>
               <div className="lh-table-body">
-                {requests.isPending && (
-                  <SkeletonRequestTable rows={6} />
-                )}
+                {requests.isPending && <SkeletonRequestTable rows={6} />}
                 {requests.error && (
                   <div className="lh-empty-state">{requests.error.message}</div>
                 )}
@@ -409,34 +407,37 @@ export function OutboundRequests({
             </div>
           ) : (
             <div className="lh-card-view">
-              {requests.isPending ? <SkeletonCardList rows={4} /> : rows.map((row) => (
-                <article
-                  className="lh-record-card"
-                  key={row.id}
-                >
-                  <div>
-                    <small>{row.id}</small>
-                    <h3>{row.cluster}</h3>
-                    <p>
-                      {row.region}{" "}
-                      ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â·
-                      Dock {row.dock_no}
-                    </p>
-                  </div>
-                  <div className="lh-card-right">
-                    <strong>{row.truck_size}</strong>
-                    <span>{row.backlogs.toLocaleString()} backlogs</span>
-                    <span
-                      className={`lh-status lh-status-${row.status.toLowerCase()}`}
-                    >
-                      {statusLabel(row.status)}
-                    </span>
-                    <button type="button" className="text-button" onClick={(event) => selectRow(row, event)}>
-                      View details
-                    </button>
-                  </div>
-                </article>
-              ))}
+              {requests.isPending ? (
+                <SkeletonCardList rows={4} />
+              ) : (
+                rows.map((row) => (
+                  <article className="lh-record-card" key={row.id}>
+                    <div>
+                      <small>{row.id}</small>
+                      <h3>{row.cluster}</h3>
+                      <p>
+                        {row.region} · Dock {row.dock_no}
+                      </p>
+                    </div>
+                    <div className="lh-card-right">
+                      <strong>{row.truck_size}</strong>
+                      <span>{row.backlogs.toLocaleString()} backlogs</span>
+                      <span
+                        className={`lh-status lh-status-${row.status.toLowerCase()}`}
+                      >
+                        {statusLabel(row.status)}
+                      </span>
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={(event) => selectRow(row, event)}
+                      >
+                        View details
+                      </button>
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
           )}
           <footer className="lh-table-footer">
@@ -681,19 +682,40 @@ function InlineEditRow({
     <form className="inline-create-row" onSubmit={submit}>
       <label>
         Cluster
-        <input name="cluster" required maxLength={120} defaultValue={request.cluster} />
+        <input
+          name="cluster"
+          required
+          maxLength={120}
+          defaultValue={request.cluster}
+        />
       </label>
       <label>
         Region
-        <input name="region" required maxLength={120} defaultValue={request.region} />
+        <input
+          name="region"
+          required
+          maxLength={120}
+          defaultValue={request.region}
+        />
       </label>
       <label>
         Dock No
-        <input name="dock_no" required maxLength={50} defaultValue={request.dock_no} />
+        <input
+          name="dock_no"
+          required
+          maxLength={50}
+          defaultValue={request.dock_no}
+        />
       </label>
       <label>
         Backlogs
-        <input name="backlogs" type="number" required min={0} defaultValue={request.backlogs} />
+        <input
+          name="backlogs"
+          type="number"
+          required
+          min={0}
+          defaultValue={request.backlogs}
+        />
       </label>
       <label>
         Truck Size

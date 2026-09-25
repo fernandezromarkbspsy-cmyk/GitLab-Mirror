@@ -1,4 +1,3 @@
-import { FormEvent, useDeferredValue, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
@@ -16,14 +15,15 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { FormEvent, useDeferredValue, useState } from "react";
+import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import { Modal } from "../components/Modal";
 import { RequestTable } from "../components/RequestTable";
-import { SkeletonTable } from "../components/SkeletonTable";
 import { SkeletonRequestTable } from "../components/Skeleton";
+import { SkeletonTable } from "../components/SkeletonTable";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
-import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import {
   defaultRequestFilters,
   openRequestsSheet,
@@ -256,9 +256,7 @@ export function MidmileRequests({
               <span />
             </div>
             <div className="lh-table-body">
-              {requests.isPending && (
-                <SkeletonRequestTable rows={6} />
-              )}
+              {requests.isPending && <SkeletonRequestTable rows={6} />}
               {requests.error && (
                 <div className="lh-empty-state">{requests.error.message}</div>
               )}
@@ -494,7 +492,7 @@ function MidmileActionDialog({
               <input name="provide_time" type="datetime-local" />
             </label>
           </>
-          ) : (
+        ) : (
           <label>
             Rejection remarks
             <textarea name="rejection_remarks" required rows={4} />

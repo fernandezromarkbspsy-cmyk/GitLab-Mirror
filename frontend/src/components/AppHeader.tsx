@@ -13,6 +13,7 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
+import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
 import type {
   AppView,
@@ -72,7 +73,7 @@ export function AppHeader({ user, preview = false, view, onRoleChange, onSearch 
     queryKey: ["notifications", user.role],
     queryFn: () =>
       api<{ data: AppNotification[]; unread: number }>("/notifications"),
-    refetchInterval: 5_000,
+    refetchInterval: 30_000,
     enabled: !preview,
   });
   const read = useMutation({
@@ -86,6 +87,27 @@ export function AppHeader({ user, preview = false, view, onRoleChange, onSearch 
   });
   const count = notifications.data?.unread ?? 0;
   const alerts = notifications.data?.data ?? [];
+
+  useEffect(() => {
+    if (preview) return;
+
+    const channel = supabase
+      .channel(`notifications:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        () => {
+          void client.invalidateQueries({ queryKey: ["notifications"] });
+          void client.invalidateQueries({ queryKey: ["requests"] });
+          void client.invalidateQueries({ queryKey: ["kpi"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [client, preview, user.id]);
 
   useEffect(() => {
     const latest = alerts.find((item) => !item.read_at);

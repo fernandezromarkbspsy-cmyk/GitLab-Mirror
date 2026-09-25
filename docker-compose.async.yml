@@ -1,0 +1,23 @@
+services:
+  api:
+    environment:
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+
+  scheduler:
+    environment:
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+
+  worker:
+    image: soc5-outbound-api:local
+    env_file: ./backend/.env
+    environment:
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+    command: php artisan queue:work database --sleep=3 --tries=3 --backoff=5 --timeout=90
+    init: true
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

@@ -21,7 +21,23 @@ final class SyncRequestsToGoogleSheet extends Command
         }
 
         try {
-            $count = $sync->sync();
+            $attempts = max(1, (int) config('services.google_sheets.retry_attempts', 3));
+            $backoffMilliseconds = max(0, (int) config('services.google_sheets.retry_backoff_ms', 1000));
+            $count = 0;
+
+            for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+                try {
+                    $count = $sync->sync();
+                    break;
+                } catch (Throwable $exception) {
+                    if ($attempt === $attempts) {
+                        throw $exception;
+                    }
+
+                    usleep($backoffMilliseconds * (2 ** ($attempt - 1)) * 1000);
+                }
+            }
+
             $this->info("Synchronized {$count} request(s) to Google Sheets.");
 
             return self::SUCCESS;

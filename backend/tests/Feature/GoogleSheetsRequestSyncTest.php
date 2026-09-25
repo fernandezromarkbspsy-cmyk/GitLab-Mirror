@@ -6,6 +6,7 @@ use App\Integrations\GoogleSheets\GoogleSheetsRequestSync;
 use Google\Service\Sheets;
 use Google\Service\Sheets\Resource\SpreadsheetsValues;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Mockery;
@@ -97,5 +98,28 @@ final class GoogleSheetsRequestSyncTest extends TestCase
         $sync = new GoogleSheetsRequestSync(fn (): Sheets => $sheets);
 
         $this->assertSame(1, $sync->sync());
+    }
+
+    public function test_scheduled_command_retries_transient_sync_failures(): void
+    {
+        config()->set('services.google_sheets.sync_enabled', true);
+        config()->set('services.google_sheets.retry_attempts', 3);
+        config()->set('services.google_sheets.retry_backoff_ms', 0);
+
+        $sync = Mockery::mock(GoogleSheetsRequestSync::class);
+        $attempt = 0;
+        $sync->shouldReceive('sync')
+            ->times(3)
+            ->andReturnUsing(function () use (&$attempt): int {
+                $attempt++;
+                if ($attempt < 3) {
+                    throw new RuntimeException('temporary failure');
+                }
+
+                return 1;
+            });
+        $this->app->instance(GoogleSheetsRequestSync::class, $sync);
+
+        $this->assertSame(0, Artisan::call('requests:sync-google-sheet'));
     }
 }

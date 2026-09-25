@@ -68,3 +68,9 @@ First tune queries and indexes. Then add queue workers and Redis for measured ho
 reads. Because the API is stateless, multiple replicas can sit behind NGINX or the
 hosting platform. Add Supabase read replicas/partitioning only when database metrics
 justify them. Split a service only after it needs independent ownership or scaling.
+
+The repository now includes an opt-in database-backed async profile for deployments
+that need shared cache locks and queue workers. Run the queue-support migration first,
+then start the base compose file with `docker-compose.async.yml` as an override.
+The default local `.env` remains file cache and synchronous jobs until that profile is
+deliberately enabled.

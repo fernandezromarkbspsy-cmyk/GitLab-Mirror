@@ -71,7 +71,7 @@ export function useQueueNotifications(user: User): QueueSnapshot {
     queryKey: ['requests', 'notification-queue', status],
     queryFn: () => api<Page<TruckRequest>>(`/requests?status=${status}&per_page=100&sort=created_at&direction=desc`),
     enabled: status !== null,
-    refetchInterval: status ? 5_000 : false,
+    refetchInterval: status ? 30_000 : false,
     refetchIntervalInBackground: true,
   });
 

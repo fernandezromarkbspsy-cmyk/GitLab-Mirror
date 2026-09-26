@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppHeader } from "../components/AppHeader";
 import { AppSidebar } from "../components/AppSidebar";
+import { Skeleton } from "../components/Skeleton";
 import { SkeletonTable } from "../components/SkeletonTable";
 import { useQueueNotifications } from "../hooks/useQueueNotifications";
 import { getAppPath, getAppView } from "../lib/routes";
@@ -143,25 +144,21 @@ function ViewLoading({ view }: { view: AppView }) {
             <div key={index} className="metric-card">
               <span className="metric-card-top">
                 <span className="metric-icon">
-                  <span
-                    className="skeleton-line skeleton-line--head"
-                    style={{ width: 18, height: 18, borderRadius: 999 }}
+                  <Skeleton
+                    width={18}
+                    height={18}
+                    radius={999}
+                    variant="head"
                   />
                 </span>
                 <span className="skeleton-chip" />
               </span>
               <span className="metric-copy">
-                <span
-                  className="skeleton-line skeleton-line--head"
-                  style={{ width: 88, marginBottom: 10 }}
-                />
-                <span
-                  className="skeleton-line"
-                  style={{ width: 64, height: 26 }}
-                />
+                <Skeleton width={88} variant="head" className="mb-2.5" />
+                <Skeleton width={64} height={26} />
               </span>
               <span className="metric-foot">
-                <span className="skeleton-line" style={{ width: 140 }} />
+                <Skeleton width={140} />
               </span>
             </div>
           ))}
@@ -170,14 +167,8 @@ function ViewLoading({ view }: { view: AppView }) {
           <article className="intraday-card">
             <div className="intraday-head">
               <div>
-                <span
-                  className="skeleton-line skeleton-line--head"
-                  style={{ width: 150 }}
-                />
-                <span
-                  className="skeleton-line"
-                  style={{ width: 220, marginTop: 10 }}
-                />
+                <Skeleton width={150} variant="head" />
+                <Skeleton width={220} className="mt-2.5" />
               </div>
               <div className="intraday-filters">
                 <span className="skeleton-chip" />
@@ -194,14 +185,8 @@ function ViewLoading({ view }: { view: AppView }) {
           <article className="panel chart-panel truck-mix-panel">
             <div className="panel-head compact">
               <div>
-                <span
-                  className="skeleton-line skeleton-line--head"
-                  style={{ width: 110 }}
-                />
-                <span
-                  className="skeleton-line"
-                  style={{ width: 160, marginTop: 10 }}
-                />
+                <Skeleton width={110} variant="head" />
+                <Skeleton width={160} className="mt-2.5" />
               </div>
             </div>
             <div className="table-loading-shell">
@@ -211,14 +196,8 @@ function ViewLoading({ view }: { view: AppView }) {
           <article className="panel dashboard-list-panel dashboard-list-panel--trips">
             <div className="panel-head compact">
               <div>
-                <span
-                  className="skeleton-line skeleton-line--head"
-                  style={{ width: 120 }}
-                />
-                <span
-                  className="skeleton-line"
-                  style={{ width: 180, marginTop: 10 }}
-                />
+                <Skeleton width={120} variant="head" />
+                <Skeleton width={180} className="mt-2.5" />
               </div>
             </div>
             <div className="dashboard-list">
@@ -228,14 +207,8 @@ function ViewLoading({ view }: { view: AppView }) {
           <article className="panel dashboard-list-panel">
             <div className="panel-head compact">
               <div>
-                <span
-                  className="skeleton-line skeleton-line--head"
-                  style={{ width: 120 }}
-                />
-                <span
-                  className="skeleton-line"
-                  style={{ width: 180, marginTop: 10 }}
-                />
+                <Skeleton width={120} variant="head" />
+                <Skeleton width={180} className="mt-2.5" />
               </div>
             </div>
             <div className="dashboard-list">

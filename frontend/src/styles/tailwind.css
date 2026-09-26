@@ -6,4 +6,47 @@
   --color-faint: var(--auth-faint);
   --color-ink: var(--auth-ink);
   --color-line: var(--auth-line);
+
+  /* Existing SOC5 dashboard tokens exposed as Tailwind utilities. */
+  --color-soc5-ink: var(--soc5-ink);
+  --color-soc5-muted: var(--soc5-muted);
+  --color-soc5-line: var(--soc5-line);
+  --color-soc5-lime: var(--soc5-lime);
+  --color-soc5-lime-deep: var(--soc5-lime-deep);
+  --color-soc5-sidebar: var(--soc5-sidebar);
+  --color-soc5-page: var(--soc5-page);
+  --color-soc5-panel: var(--soc5-panel);
+
+  /* Active request-surface tokens; values remain owned by template-migration.css. */
+  --color-linehaul-line: var(--lh-2026-line);
+  --color-linehaul-surface: var(--lh-2026-surface);
+  --color-linehaul-teal: var(--lh-2026-teal);
+  --color-linehaul-teal-strong: var(--lh-2026-teal-strong);
+
+  /* Existing request status colors exposed as semantic utilities. */
+  --color-status-success-ink: var(--status-success-ink);
+  --color-status-success-surface: var(--status-success-surface);
+  --color-status-pending-ink: var(--status-pending-ink);
+  --color-status-pending-surface: var(--status-pending-surface);
+  --color-status-pending-line: var(--status-pending-line);
+  --color-status-info-ink: var(--status-info-ink);
+  --color-status-info-surface: var(--status-info-surface);
+  --color-status-danger-ink: var(--status-danger-ink);
+  --color-status-danger-surface: var(--status-danger-surface);
+
+  /* Existing dashboard card values exposed as semantic utilities. */
+  --color-card-surface: var(--card-surface);
+  --color-card-line: var(--card-line);
+  --color-card-heading: var(--card-heading);
+  --radius-card: var(--card-radius);
+  --shadow-card: var(--card-shadow);
+  --text-card-title: var(--card-title-size);
+  --text-card-title--line-height: 1.25;
+  --text-card-description: var(--card-description-size);
+  --text-card-description--line-height: 1.45;
+  --text-card-kicker: var(--card-kicker-size);
+
+  /* Existing loading-placeholder colors exposed as semantic utilities. */
+  --color-skeleton-base: var(--skeleton-base);
+  --color-skeleton-highlight: var(--skeleton-highlight);
 }

@@ -18,6 +18,14 @@ export const defaultRequestFilters: RequestFilters = {
   perPage: 20,
 };
 
+export function syncRequestSearch(
+  filters: RequestFilters,
+  search: string,
+): RequestFilters {
+  if (filters.search === search) return filters;
+  return { ...filters, search, page: 1 };
+}
+
 export function requestQueryString(
   filters: RequestFilters,
   overrides: Partial<RequestFilters> = {},

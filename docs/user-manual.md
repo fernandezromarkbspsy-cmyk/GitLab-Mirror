@@ -173,15 +173,11 @@ Select the action menu on a request and choose **View**. The details panel shows
 
 ### Change the list size or page
 
-Use **Show row** to choose how many rows appear at once. Use the previous and next arrow buttons to move between pages.
+Use **Rows per page** to choose how many rows appear at once. Use the previous and next arrow buttons to move between pages.
 
 ### Export a list
 
-1. Apply the filters you need.
-2. Select **Export**.
-3. Open the downloaded CSV file in Excel or another spreadsheet application.
-
-The export uses the current list filters.
+Select **Export** to open the shared request-tracking Google Sheet in a new browser tab. The sheet is a shared operational view; it is not a downloaded CSV and the filters selected in the app are not transferred to it.
 
 ## Dashboard
 

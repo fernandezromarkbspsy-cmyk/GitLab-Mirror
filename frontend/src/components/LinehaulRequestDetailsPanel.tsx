@@ -15,6 +15,7 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import type { TruckRequest } from "../types";
+import { StatusBadge } from "./StatusBadge";
 
 type Props = {
   request: TruckRequest;
@@ -48,7 +49,6 @@ export function LinehaulRequestDetailsPanel({
     offsetY: number;
   } | null>(null);
   const [activeTab, setActiveTab] = useState<"details" | "docs">("details");
-  const status = request.status.replaceAll("_", " ");
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -195,9 +195,7 @@ export function LinehaulRequestDetailsPanel({
           <strong>{request.cluster}</strong>
           <span>{request.region}</span>
         </div>
-        <span className={`lh-status lh-status-${request.status.toLowerCase()}`}>
-          {status}
-        </span>
+        <StatusBadge status={request.status} className="self-start" uppercase />
       </div>
       <div
         className="lh-details-panel-tabs"

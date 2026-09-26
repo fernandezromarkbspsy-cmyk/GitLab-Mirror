@@ -2,8 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   CircleCheck,
   Clock3,
   Hash,
@@ -15,20 +13,19 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { FormEvent, useDeferredValue, useState } from "react";
+import { FormEvent, useState } from "react";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import { Modal } from "../components/Modal";
+import { Pagination } from "../components/Pagination";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonRequestTable } from "../components/Skeleton";
 import { SkeletonTable } from "../components/SkeletonTable";
+import { StatusBadge } from "../components/StatusBadge";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
+import { useRequestFilters } from "../hooks/useRequestFilters";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
-import {
-  defaultRequestFilters,
-  openRequestsSheet,
-  requestQueryString,
-} from "../lib/requests";
+import { openRequestsSheet, requestQueryString } from "../lib/requests";
 import type { Page, RequestSort, TruckRequest, User } from "../types";
 
 type MmAction = "assign-truck" | "reject-mm";
@@ -50,15 +47,14 @@ export function MidmileRequests({
   queue: QueueSnapshot;
 }) {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState(defaultRequestFilters);
-  const deferredSearch = useDeferredValue(filters.search);
+  const { filters, appliedFilters, setFilters, changeFilters } =
+    useRequestFilters();
   const [selected, setSelected] = useState<{
     request: TruckRequest;
     action: MmAction;
   } | null>(null);
   const [notice, setNotice] = useState("");
   const [openRow, setOpenRow] = useState<string | null>(null);
-  const appliedFilters = { ...filters, search: deferredSearch };
   const requests = useQuery({
     queryKey: ["requests", "midmile-all", appliedFilters],
     queryFn: () =>
@@ -183,7 +179,7 @@ export function MidmileRequests({
 
         <LinehaulFilterPanel
           filters={filters}
-          onChange={setFilters}
+          onChange={changeFilters}
           onSort={sortBy}
           onExport={exportSheet}
           onNotice={setNotice}
@@ -269,11 +265,7 @@ export function MidmileRequests({
                     style={{ "--row-index": index } as React.CSSProperties}
                   >
                     <span>
-                      <span
-                        className={`lh-status lh-status-${row.status.toLowerCase()}`}
-                      >
-                        {row.status.replaceAll("_", " ")}
-                      </span>
+                      <StatusBadge status={row.status} uppercase />
                     </span>
                     <span>{formatDateTime(row.request_timestamp)}</span>
                     <span title={row.cluster}>{row.cluster}</span>
@@ -336,59 +328,16 @@ export function MidmileRequests({
                 )}
             </div>
           </div>
-          <footer className="lh-table-footer">
-            <span>
-              {requests.data
-                ? `Page ${requests.data.current_page} of ${requests.data.last_page}`
-                : "Page 1"}
-            </span>
-            <div className="lh-pagination">
-              <span>Show row</span>
-              <select
-                value={String(filters.perPage)}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    perPage: Number(event.target.value),
-                    page: 1,
-                  }))
-                }
-              >
-                <option value="8">8</option>
-                <option value="10">10</option>
-                <option value="20">20</option>
-              </select>
-              <button
-                type="button"
-                disabled={!requests.data || requests.data.current_page <= 1}
-                aria-label="Previous page"
-                onClick={() =>
-                  setFilters((current) => ({
-                    ...current,
-                    page: Math.max(1, current.page - 1),
-                  }))
-                }
-              >
-                <ChevronLeft size={16} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                disabled={
-                  !requests.data ||
-                  requests.data.current_page >= requests.data.last_page
-                }
-                aria-label="Next page"
-                onClick={() =>
-                  setFilters((current) => ({
-                    ...current,
-                    page: current.page + 1,
-                  }))
-                }
-              >
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
-            </div>
-          </footer>
+          <Pagination
+            page={requests.data}
+            perPage={filters.perPage}
+            onPageChange={(page) =>
+              setFilters((current) => ({ ...current, page }))
+            }
+            onPerPageChange={(perPage) =>
+              setFilters((current) => ({ ...current, perPage, page: 1 }))
+            }
+          />
         </section>
 
         {selected && (

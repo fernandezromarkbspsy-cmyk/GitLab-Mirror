@@ -18,7 +18,7 @@ export function SkeletonTable({ columns, rows = 5, compact = false }: Props) {
     >
       <div className="skeleton-table-head">
         {Array.from({ length: columnCount }).map((_, index) => (
-          <Skeleton key={index} className="skeleton-line--head" />
+          <Skeleton key={index} variant="head" />
         ))}
       </div>
       <div className="skeleton-table-body">
@@ -27,7 +27,13 @@ export function SkeletonTable({ columns, rows = 5, compact = false }: Props) {
             {Array.from({ length: columnCount }).map((__, columnIndex) => (
               <Skeleton
                 key={columnIndex}
-                className={`${columnIndex === 0 ? "skeleton-line--pill " : ""}${columnIndex === columnCount - 1 ? "skeleton-line--short" : ""}`}
+                variant={
+                  columnIndex === 0
+                    ? "pill"
+                    : columnIndex === columnCount - 1
+                      ? "short"
+                      : undefined
+                }
               />
             ))}
           </div>

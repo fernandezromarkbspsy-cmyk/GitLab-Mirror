@@ -13,7 +13,7 @@
     "lint:oxlint": "oxlint src scripts",
     "lint:a11y": "biome lint --only=a11y src",
     "format:check": "biome ci src/App.tsx src/lib/routes.ts src/lib/requests.test.ts scripts/check-source-artifacts.mjs",
-    "test": "vitest run --exclude e2e/**",
+    "test": "vitest run --exclude \"e2e/**\"",
     "test:e2e": "playwright test",
     "preview": "vite preview"
   },

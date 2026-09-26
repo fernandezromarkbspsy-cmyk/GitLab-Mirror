@@ -18,16 +18,24 @@ export function Panel({
   children,
 }: PanelProps) {
   return (
-    <article className={`panel${className ? ` ${className}` : ""}`}>
-      <div className="panel-head">
+    <article
+      className={`min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card${className ? ` ${className}` : ""}`}
+    >
+      <div className="flex items-start justify-between gap-3 px-3.5 pt-3.5">
         <div>
-          <p className="panel-kicker">{kicker}</p>
-          <h2>{title}</h2>
-          <p>{description}</p>
+          <p className="mb-[3px] text-card-kicker font-bold tracking-[var(--card-kicker-tracking)] text-soc5-lime-deep uppercase">
+            {kicker}
+          </p>
+          <h2 className="m-0 text-card-title font-[750] text-card-heading">
+            {title}
+          </h2>
+          <p className="mt-1 mb-0 text-card-description text-soc5-muted">
+            {description}
+          </p>
         </div>
         {action}
       </div>
-      <div className="panel-body">{children}</div>
+      <div className="min-w-0 px-3.5 pt-3 pb-3.5">{children}</div>
     </article>
   );
 }

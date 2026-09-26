@@ -1,8 +1,6 @@
 import {
   BadgeCheck,
   ChartNoAxesCombined,
-  ChevronLeft,
-  ChevronRight,
   CircleCheck,
   Clock3,
   Hash,
@@ -17,21 +15,20 @@ import {
   Users,
 } from "lucide-react";
 import type { MouseEvent } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import {
   InlineCreateRow,
   InlineEditRow,
 } from "../components/OutboundRequestForms";
 import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
+import { Pagination } from "../components/Pagination";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
+import { StatusBadge } from "../components/StatusBadge";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { useOutboundRequests } from "../hooks/useOutboundRequests";
 import { openRequestsSheet } from "../lib/requests";
-import type {
-  TruckRequest,
-  User,
-} from "../types";
+import type { TruckRequest, User } from "../types";
 import "../styles/pages/outbound-requests.css";
 
 function formatDateTime(value?: string | null) {
@@ -42,10 +39,6 @@ function formatDateTime(value?: string | null) {
 function displayValue(value?: string | null) {
   return value?.trim() ? value : "-";
 }
-function statusLabel(status: TruckRequest["status"]) {
-  return status.replaceAll("_", " ");
-}
-
 export function OutboundRequests({
   user: _user,
   queue: _queue,
@@ -56,6 +49,7 @@ export function OutboundRequests({
   const {
     filters,
     setFilters,
+    changeFilters,
     requests,
     rows,
     creating,
@@ -107,7 +101,7 @@ export function OutboundRequests({
       <section className="lh-request-workspace" aria-label="Linehaul requests">
         <LinehaulFilterPanel
           filters={filters}
-          onChange={setFilters}
+          onChange={changeFilters}
           onSort={sortBy}
           onExport={() => void exportRows()}
           onAddNew={() => {
@@ -271,11 +265,7 @@ export function OutboundRequests({
                       style={{ "--row-index": index } as React.CSSProperties}
                     >
                       <span>
-                        <span
-                          className={`lh-status lh-status-${row.status.toLowerCase()}`}
-                        >
-                          {statusLabel(row.status)}
-                        </span>
+                        <StatusBadge status={row.status} uppercase />
                       </span>
                       <span>{formatDateTime(row.request_timestamp)}</span>
                       <span title={row.cluster}>{row.cluster}</span>
@@ -351,11 +341,7 @@ export function OutboundRequests({
                     <div className="lh-card-right">
                       <strong>{row.truck_size}</strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
-                      <span
-                        className={`lh-status lh-status-${row.status.toLowerCase()}`}
-                      >
-                        {statusLabel(row.status)}
-                      </span>
+                      <StatusBadge status={row.status} uppercase />
                       <button
                         type="button"
                         className="text-button"
@@ -369,59 +355,16 @@ export function OutboundRequests({
               )}
             </div>
           )}
-          <footer className="lh-table-footer">
-            <span>
-              {requests.data
-                ? `Page ${requests.data.current_page} of ${requests.data.last_page}`
-                : "Page 1"}
-            </span>
-            <div className="lh-pagination">
-              <span>Show row</span>
-              <select
-                value={String(filters.perPage)}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    perPage: Number(event.target.value),
-                    page: 1,
-                  }))
-                }
-              >
-                <option value="8">8</option>
-                <option value="10">10</option>
-                <option value="20">20</option>
-              </select>
-              <button
-                type="button"
-                disabled={!requests.data || requests.data.current_page <= 1}
-                aria-label="Previous page"
-                onClick={() =>
-                  setFilters((current) => ({
-                    ...current,
-                    page: Math.max(1, current.page - 1),
-                  }))
-                }
-              >
-                <ChevronLeft size={16} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                disabled={
-                  !requests.data ||
-                  requests.data.current_page >= requests.data.last_page
-                }
-                aria-label="Next page"
-                onClick={() =>
-                  setFilters((current) => ({
-                    ...current,
-                    page: current.page + 1,
-                  }))
-                }
-              >
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
-            </div>
-          </footer>
+          <Pagination
+            page={requests.data}
+            perPage={filters.perPage}
+            onPageChange={(page) =>
+              setFilters((current) => ({ ...current, page }))
+            }
+            onPerPageChange={(perPage) =>
+              setFilters((current) => ({ ...current, perPage, page: 1 }))
+            }
+          />
         </section>
       </section>
       {toast && (

@@ -1,31 +1,32 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "./api";
-import { supabase } from "./supabase";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { getSession } = vi.hoisted(() => ({
+  getSession: vi.fn(),
+}));
+
+vi.mock("./supabase", () => ({
+  supabase: { auth: { getSession } },
+}));
+
+import { ApiError, api } from "./api";
 
 describe("api request helper", () => {
+  beforeEach(() => {
+    getSession.mockResolvedValue({
+      data: { session: { access_token: "token-123" } },
+      error: null,
+    });
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("adds JSON headers only when sending a JSON request body", async () => {
-    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
-      data: { session: { access_token: "token-123" } },
-      error: null,
-    } as any);
-
-    const fetchMock = vi.spyOn(globalThis, "fetch");
-    fetchMock
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
+  it("adds authorization and JSON headers only for a JSON string body", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(
+        async () => new Response(JSON.stringify({ ok: true }), { status: 200 }),
       );
 
     await api("/users", {
@@ -33,14 +34,70 @@ describe("api request helper", () => {
       body: JSON.stringify({ name: "Ops PIC" }),
     });
 
-    const postRequest = fetchMock.mock.calls[0]?.[1] as RequestInit;
-    const postHeaders = new Headers(postRequest.headers);
+    const postHeaders = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
+    expect(postHeaders.get("Authorization")).toBe("Bearer token-123");
+    expect(postHeaders.get("Accept")).toBe("application/json");
     expect(postHeaders.get("Content-Type")).toBe("application/json");
 
     await api("/health", { method: "GET" });
 
-    const getRequest = fetchMock.mock.calls[1]?.[1] as RequestInit;
-    const getHeaders = new Headers(getRequest.headers);
+    const getHeaders = new Headers(fetchMock.mock.calls[1]?.[1]?.headers);
     expect(getHeaders.has("Content-Type")).toBe(false);
+  });
+
+  it("preserves an explicitly supplied content type", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+
+    await api("/upload", {
+      method: "POST",
+      body: "plain text",
+      headers: { "Content-Type": "text/plain" },
+    });
+
+    const headers = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("Content-Type")).toBe("text/plain");
+  });
+
+  it("returns null for successful empty and non-JSON responses", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response("accepted", { status: 200 }));
+
+    await expect(api("/empty")).resolves.toBeNull();
+    await expect(api("/text")).resolves.toBeNull();
+  });
+
+  it("uses a backend error message when one is available", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ message: "Request is invalid." }), {
+        status: 422,
+      }),
+    );
+
+    await expect(api("/requests")).rejects.toMatchObject({
+      name: "ApiError",
+      message: "Request is invalid.",
+      status: 422,
+    });
+  });
+
+  it("falls back to the HTTP status for malformed error responses", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("not-json", { status: 503 }),
+    );
+
+    await expect(api("/health")).rejects.toEqual(
+      new ApiError("Request failed (503)", 503),
+    );
+  });
+
+  it("normalizes transport failures", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
+
+    await expect(api("/health")).rejects.toEqual(
+      new ApiError("Network error. Check your connection and try again.", 0),
+    );
   });
 });

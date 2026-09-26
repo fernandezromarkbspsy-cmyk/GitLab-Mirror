@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Sentry\Severity;
+
 use function Sentry\captureMessage;
 
 class SentryTest extends Command

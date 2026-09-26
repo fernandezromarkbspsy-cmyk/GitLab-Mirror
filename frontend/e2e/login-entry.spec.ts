@@ -1,5 +1,22 @@
 import { expect, test } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/requests**', async (route) => {
+    await route.fulfill({
+      json: {
+        data: [],
+        current_page: 1,
+        last_page: 1,
+        per_page: 20,
+        from: null,
+        to: null,
+        total: 0,
+      },
+    });
+  });
+});
+
 test('renders the unauthenticated login entry', async ({ page }) => {
   await page.goto('/');
 

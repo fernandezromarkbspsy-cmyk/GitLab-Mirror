@@ -4,6 +4,7 @@ import {
   defaultRequestFilters,
   requestMetricsQueryString,
   requestQueryString,
+  syncRequestSearch,
 } from "./requests";
 import { getAppPath, getAppView } from "./routes";
 
@@ -62,5 +63,16 @@ describe("request query builders", () => {
   it("keeps application paths and views reversible", () => {
     expect(getAppView(getAppPath("truck-request"))).toBe("truck-request");
     expect(getAppView("/unknown")).toBe("overview");
+  });
+
+  it("applies shared search changes and resets pagination", () => {
+    const filters = { ...defaultRequestFilters, search: "old", page: 4 };
+
+    expect(syncRequestSearch(filters, "new")).toEqual({
+      ...filters,
+      search: "new",
+      page: 1,
+    });
+    expect(syncRequestSearch(filters, "old")).toBe(filters);
   });
 });

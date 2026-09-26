@@ -11,6 +11,13 @@ import { useState } from "react";
 import type { RequestFilters, RequestSort } from "../types";
 import { statuses } from "./RequestFilters";
 
+const menuButtonClass =
+  "flex min-h-9 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-soc5-line bg-soc5-panel px-2.5 py-1.5 text-sm text-[#536264] transition-[color,border-color,background-color,box-shadow,transform] duration-200 hover:border-linehaul-teal/20 hover:bg-[#f5faf9] hover:text-linehaul-teal-strong hover:shadow-[var(--lh-2026-shadow-sm)] active:translate-y-px max-[480px]:w-full max-[480px]:justify-center";
+const popoverClass =
+  "absolute top-[calc(100%+8px)] left-0 z-20 grid min-w-[190px] gap-2.5 rounded-[10px] border border-[#dce9e8] bg-linehaul-surface p-3 shadow-[0_12px_28px_#1f4b4d1f] animate-[lh-popover-in_.18s_ease_both] max-[480px]:right-0 max-[480px]:left-auto";
+const actionButtonClass =
+  "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border px-4 py-1.5 text-sm font-medium transition-[color,border-color,background-color,box-shadow,transform] duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60";
+
 type Props = {
   filters: RequestFilters;
   exporting?: boolean;
@@ -38,10 +45,10 @@ export function LinehaulFilterPanel({
     onChange({ ...filters, ...values, page: 1 });
 
   return (
-    <div className="lh-filter-panel flex flex-col gap-3 lg:flex-row lg:items-center">
-      <div className="lh-filter-menu-wrap">
+    <div className="flex min-h-0 min-w-0 flex-col gap-3 min-[481px]:flex-row min-[481px]:items-center max-[1120px]:flex-wrap max-[760px]:mt-[15px] max-[760px]:gap-2.5 max-[480px]:grid max-[480px]:grid-cols-2 lg:flex-row lg:items-center">
+      <div className="relative inline-flex max-[760px]:order-none max-[760px]:flex-none">
         <button
-          className="lh-filter-control flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className={menuButtonClass}
           type="button"
           aria-expanded={openMenu === "status"}
           onClick={() => setOpenMenu(openMenu === "status" ? null : "status")}
@@ -52,12 +59,13 @@ export function LinehaulFilterPanel({
         </button>
         {openMenu === "status" && (
           <div
-            className="lh-filter-popover lh-status-popover"
+            className={`${popoverClass} min-w-40 gap-[3px] p-1.5`}
             role="menu"
             aria-label="Filter by request status"
           >
             {statuses.map((status) => (
               <button
+                className="min-h-[30px] cursor-pointer rounded-md border-0 bg-transparent px-2 text-left text-xs capitalize text-[#506062] hover:bg-[#eef8f7] hover:text-linehaul-teal"
                 key={status}
                 type="button"
                 role="menuitem"
@@ -74,9 +82,9 @@ export function LinehaulFilterPanel({
           </div>
         )}
       </div>
-      <div className="lh-filter-menu-wrap">
+      <div className="relative inline-flex max-[760px]:order-none max-[760px]:flex-none">
         <button
-          className="lh-filter-control flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className={menuButtonClass}
           type="button"
           aria-expanded={openMenu === "filters"}
           onClick={() => setOpenMenu(openMenu === "filters" ? null : "filters")}
@@ -87,12 +95,13 @@ export function LinehaulFilterPanel({
         </button>
         {openMenu === "filters" && (
           <fieldset
-            className="lh-filter-popover"
+            className={popoverClass}
             aria-label="Request filter controls"
           >
-            <label>
+            <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[.04em] text-[#657476]">
               Date
               <input
+                className="min-h-[34px] rounded-[7px] border border-[#dce7e6] bg-linehaul-surface px-2 text-xs text-[#293b3d]"
                 type="date"
                 value={filters.dateFrom}
                 onChange={(event) =>
@@ -106,9 +115,9 @@ export function LinehaulFilterPanel({
           </fieldset>
         )}
       </div>
-      <div className="lh-filter-menu-wrap">
+      <div className="relative inline-flex max-[760px]:order-none max-[760px]:flex-none">
         <button
-          className="lh-filter-control flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          className={menuButtonClass}
           type="button"
           aria-expanded={openMenu === "sort"}
           onClick={() => setOpenMenu(openMenu === "sort" ? null : "sort")}
@@ -119,7 +128,7 @@ export function LinehaulFilterPanel({
         </button>
         {openMenu === "sort" && (
           <div
-            className="lh-filter-popover lh-sort-popover"
+            className={`${popoverClass} min-w-40 gap-[3px] p-1.5`}
             role="menu"
             aria-label="Sort requests"
           >
@@ -133,6 +142,7 @@ export function LinehaulFilterPanel({
               ] as RequestSort[]
             ).map((sort) => (
               <button
+                className="min-h-[30px] cursor-pointer rounded-md border-0 bg-transparent px-2 text-left text-xs capitalize text-[#506062] hover:bg-[#eef8f7] hover:text-linehaul-teal"
                 key={sort}
                 type="button"
                 role="menuitem"
@@ -147,7 +157,7 @@ export function LinehaulFilterPanel({
           </div>
         )}
       </div>
-      <div className="relative order-first w-full flex-1 lg:order-none lg:ml-auto lg:max-w-xs">
+      <div className="relative order-first w-full flex-1 max-[760px]:basis-full max-[480px]:col-span-full lg:order-none lg:ml-auto lg:max-w-xs">
         <Search
           className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400"
           aria-hidden="true"
@@ -155,14 +165,14 @@ export function LinehaulFilterPanel({
         <input
           aria-label="Search"
           placeholder="Search requests"
-          className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-9 pr-3 text-sm placeholder:text-gray-400 focus:border-gray-300 focus:outline-none"
+          className="min-h-9 w-full rounded-[9px] border border-linehaul-line bg-linehaul-surface py-1.5 pr-3 pl-9 text-sm placeholder:text-gray-400 focus:border-linehaul-teal/30 focus:outline-none focus:ring-[3px] focus:ring-linehaul-teal/10"
           type="text"
           value={filters.search}
           onChange={(event) => set({ search: event.target.value })}
         />
       </div>
       <button
-        className="rounded-lg border border-gray-200 p-2 text-gray-600 hover:bg-gray-50"
+        className={`${actionButtonClass} border-soc5-line bg-linehaul-surface px-2 text-soc5-muted hover:border-linehaul-teal/20 hover:bg-[#f5faf9] hover:text-linehaul-teal-strong max-[480px]:w-full`}
         type="button"
         aria-label="Open settings"
         onClick={() => onNotice?.("Table settings opened")}
@@ -170,7 +180,7 @@ export function LinehaulFilterPanel({
         <Settings2 className="h-4 w-4" aria-hidden="true" />
       </button>
       <button
-        className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${actionButtonClass} border-soc5-ink bg-soc5-ink text-white hover:bg-[#4a4a4c] max-[480px]:w-full`}
         type="button"
         disabled={exporting}
         onClick={onExport}
@@ -179,7 +189,7 @@ export function LinehaulFilterPanel({
         {exporting ? "Exporting" : "Export"}
       </button>
       <button
-        className="flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700"
+        className={`${actionButtonClass} border-[#2563eb] bg-[#2563eb] text-white hover:bg-blue-700 max-[480px]:col-span-full max-[480px]:w-full`}
         type="button"
         onClick={onAddNew ?? (() => onNotice?.("Add new request opened"))}
       >

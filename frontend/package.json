@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "build": "npm run check:source && tsc -p tsconfig.app.json --noEmit && vite build",
     "check:encoding": "node scripts/check-visible-text-encoding.mjs",
     "check:source": "node scripts/check-source-artifacts.mjs",
     "check:robots": "node scripts/check-robots.mjs",

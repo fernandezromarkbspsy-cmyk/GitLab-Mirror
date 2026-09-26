@@ -1,0 +1,10 @@
+[
+  {
+    "label": "PHP: Listen to Xdebug",
+    "adapter": "Xdebug",
+    "request": "launch",
+    "program": "${ZED_WORKTREE_ROOT}/backend/public/index.php",
+    "cwd": "${ZED_WORKTREE_ROOT}/backend",
+    "port": 9003
+  }
+]

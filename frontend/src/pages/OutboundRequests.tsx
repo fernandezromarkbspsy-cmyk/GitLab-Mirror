@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   ChartNoAxesCombined,
@@ -10,33 +9,30 @@ import {
   ListChecks,
   MoreHorizontal,
   RefreshCw,
-  Save,
   Search,
   SlidersHorizontal,
   Table2,
   Tag,
   Truck,
   Users,
-  X,
 } from "lucide-react";
 import type { MouseEvent } from "react";
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
+import {
+  InlineCreateRow,
+  InlineEditRow,
+} from "../components/OutboundRequestForms";
 import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
-import { api } from "../lib/api";
-import { buildIdempotencyHeaders } from "../lib/idempotency";
-import { defaultRequestFilters, openRequestsSheet } from "../lib/requests";
-import { useUiStore } from "../stores/ui";
+import { useOutboundRequests } from "../hooks/useOutboundRequests";
+import { openRequestsSheet } from "../lib/requests";
 import type {
-  ClusterLookup,
-  Page,
-  RequestFilters,
-  RequestSort,
   TruckRequest,
   User,
 } from "../types";
+import "../styles/pages/outbound-requests.css";
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
@@ -50,16 +46,6 @@ function statusLabel(status: TruckRequest["status"]) {
   return status.replaceAll("_", " ");
 }
 
-type RequestPayload = {
-  cluster: FormDataEntryValue | null;
-  region: FormDataEntryValue | null;
-  dock_no: FormDataEntryValue | null;
-  backlogs: number;
-  backlogs_timestamp?: FormDataEntryValue | null;
-  truck_size: FormDataEntryValue | null;
-  truck_type: "WETLEASE";
-};
-
 export function OutboundRequests({
   user: _user,
   queue: _queue,
@@ -67,83 +53,26 @@ export function OutboundRequests({
   user: User;
   queue: QueueSnapshot;
 }) {
-  const queryClient = useQueryClient();
-  const globalSearch = useUiStore((state) => state.search);
-  const setGlobalSearch = useUiStore((state) => state.setSearch);
+  const {
+    filters,
+    setFilters,
+    requests,
+    rows,
+    creating,
+    setCreating,
+    editing,
+    setEditing,
+    toast,
+    showToast,
+    createRequest,
+    updateRequest,
+    updateSearch,
+    sortBy,
+  } = useOutboundRequests();
   const [view, setView] = useState<"table" | "card">("table");
-  const [filters, setFilters] = useState<RequestFilters>(() => ({
-    ...defaultRequestFilters,
-    search: globalSearch,
-  }));
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
   const [panelPosition, setPanelPosition] = useState({ x: 24, y: 112 });
-  const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<TruckRequest | null>(null);
-  const [toast, setToast] = useState("");
-  const requests = useQuery({
-    queryKey: ["requests", "outbound-all", filters],
-    queryFn: () =>
-      api<Page<TruckRequest>>(
-        `/requests?${new URLSearchParams({
-          page: String(filters.page),
-          per_page: String(filters.perPage),
-          sort: filters.sort,
-          direction: filters.direction,
-          ...(filters.status !== "ALL" ? { status: filters.status } : {}),
-          ...(filters.search.trim() ? { search: filters.search.trim() } : {}),
-          ...(filters.dateFrom ? { date_from: filters.dateFrom } : {}),
-          ...(filters.dateTo ? { date_to: filters.dateTo } : {}),
-        }).toString()}`,
-      ),
-    placeholderData: (previous) => previous,
-  });
-  const rows = useMemo(() => requests.data?.data ?? [], [requests.data]);
-  const showToast = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2400);
-  };
-  async function refreshData(message: string) {
-    showToast(message);
-    await queryClient.invalidateQueries({ queryKey: ["requests"] });
-  }
-  const createRequest = useMutation({
-    mutationFn: (payload: RequestPayload) =>
-      api<TruckRequest>("/requests", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: buildIdempotencyHeaders("outbound-create", payload),
-      }),
-    onSuccess: async () => {
-      setCreating(false);
-      await refreshData("LH request created.");
-    },
-  });
-  const updateRequest = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: RequestPayload }) =>
-      api<TruckRequest>(`/requests/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        headers: buildIdempotencyHeaders("outbound-update", { id, payload }),
-      }),
-    onSuccess: async () => {
-      setEditing(null);
-      await refreshData("LH request updated.");
-    },
-  });
-  function updateSearch(value: string) {
-    setFilters((current) => ({ ...current, search: value, page: 1 }));
-    setGlobalSearch(value);
-  }
-  function sortBy(sort: RequestSort) {
-    setFilters((current) => ({
-      ...current,
-      sort,
-      direction:
-        current.sort === sort && current.direction === "asc" ? "desc" : "asc",
-      page: 1,
-    }));
-  }
   function selectRow(row: TruckRequest, event: MouseEvent<HTMLElement>) {
     const workspace = event.currentTarget.closest<HTMLElement>(
       ".lh-request-workspace",
@@ -504,246 +433,3 @@ export function OutboundRequests({
   );
 }
 
-function requestPayload(form: HTMLFormElement): RequestPayload {
-  const data = new FormData(form);
-  return {
-    cluster: data.get("cluster"),
-    region: data.get("region"),
-    dock_no: data.get("dock_no"),
-    backlogs: Number(data.get("backlogs")),
-    backlogs_timestamp: data.get("backlogs_timestamp"),
-    truck_size: data.get("truck_size"),
-    truck_type: "WETLEASE",
-  };
-}
-
-function InlineCreateRow({
-  busy,
-  error,
-  onCancel,
-  onSubmit,
-}: {
-  busy: boolean;
-  error?: string;
-  onCancel: () => void;
-  onSubmit: (payload: RequestPayload) => void;
-}) {
-  const [clusterText, setClusterText] = useState("");
-  const [selected, setSelected] = useState<ClusterLookup | null>(null);
-  const clusterSearch = clusterText.trim();
-  const lookup = useQuery({
-    queryKey: ["clusters", clusterSearch],
-    queryFn: () =>
-      api<{ data: ClusterLookup[] }>(
-        `/clusters?search=${encodeURIComponent(clusterSearch)}`,
-      ),
-    enabled: clusterSearch.trim().length >= 3,
-  });
-
-  function pick(cluster: ClusterLookup) {
-    setSelected(cluster);
-    setClusterText(cluster.cluster_name);
-  }
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onSubmit(requestPayload(event.currentTarget));
-  }
-
-  return (
-    <form className="inline-create-row" onSubmit={submit}>
-      <label className="cluster-lookup-field">
-        Cluster
-        <input
-          name="cluster"
-          required
-          maxLength={120}
-          value={clusterText}
-          onChange={(event) => {
-            setClusterText(event.target.value);
-            setSelected(null);
-          }}
-          placeholder="Type 3 chars"
-        />
-        {clusterSearch.length >= 3 && lookup.isFetching && !lookup.data && (
-          <div className="cluster-suggestions">
-            <p>Searching...</p>
-          </div>
-        )}
-        {lookup.isError && (
-          <div className="cluster-suggestions">
-            <p>Unable to load clusters.</p>
-          </div>
-        )}
-        {lookup.data && !selected && !lookup.isFetching && (
-          <div className="cluster-suggestions">
-            {lookup.data.data.length ? (
-              lookup.data.data.map((cluster) => (
-                <button
-                  key={cluster.id}
-                  type="button"
-                  onClick={() => pick(cluster)}
-                >
-                  <strong>{cluster.cluster_name}</strong>
-                  <span>
-                    Dock {cluster.dock_number} / {cluster.region}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p>No cluster found.</p>
-            )}
-          </div>
-        )}
-      </label>
-      <label>
-        Region
-        <input name="region" required readOnly value={selected?.region ?? ""} />
-      </label>
-      <label>
-        Dock No
-        <input
-          name="dock_no"
-          required
-          maxLength={50}
-          defaultValue={selected?.dock_number ?? ""}
-          key={selected?.id ?? "dock"}
-        />
-      </label>
-      <label>
-        Backlogs
-        <input
-          name="backlogs"
-          type="number"
-          required
-          readOnly
-          min={0}
-          value={selected?.backlogs ?? 0}
-        />
-      </label>
-      <label>
-        Backlogs Timestamp
-        <input
-          readOnly
-          value={
-            selected?.backlogs_ts
-              ? new Date(selected.backlogs_ts).toLocaleString()
-              : ""
-          }
-        />
-        <input
-          type="hidden"
-          name="backlogs_timestamp"
-          value={selected?.backlogs_ts ?? ""}
-        />
-      </label>
-      <label>
-        Truck Size
-        <select name="truck_size" defaultValue="6W">
-          <option>4W</option>
-          <option>6W</option>
-          <option>10W</option>
-          <option>6WF</option>
-        </select>
-      </label>
-      {error && <p className="error notice">{error}</p>}
-      <div className="inline-create-actions">
-        <button className="secondary-button" type="button" onClick={onCancel}>
-          <X size={15} />
-          Cancel
-        </button>
-        <button type="submit" disabled={busy || !selected}>
-          <Save size={15} />
-          {busy ? "Saving..." : "Save"}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function InlineEditRow({
-  request,
-  busy,
-  error,
-  onCancel,
-  onSubmit,
-}: {
-  request: TruckRequest;
-  busy: boolean;
-  error?: string;
-  onCancel: () => void;
-  onSubmit: (payload: RequestPayload) => void;
-}) {
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onSubmit(requestPayload(event.currentTarget));
-  }
-
-  return (
-    <form className="inline-create-row" onSubmit={submit}>
-      <label>
-        Cluster
-        <input
-          name="cluster"
-          required
-          maxLength={120}
-          defaultValue={request.cluster}
-        />
-      </label>
-      <label>
-        Region
-        <input
-          name="region"
-          required
-          maxLength={120}
-          defaultValue={request.region}
-        />
-      </label>
-      <label>
-        Dock No
-        <input
-          name="dock_no"
-          required
-          maxLength={50}
-          defaultValue={request.dock_no}
-        />
-      </label>
-      <label>
-        Backlogs
-        <input
-          name="backlogs"
-          type="number"
-          required
-          min={0}
-          defaultValue={request.backlogs}
-        />
-      </label>
-      <label>
-        Truck Size
-        <select name="truck_size" defaultValue={request.truck_size}>
-          <option>4W</option>
-          <option>6W</option>
-          <option>10W</option>
-          <option>6WF</option>
-        </select>
-      </label>
-      <label>
-        Truck Type
-        <select name="truck_type" defaultValue={request.truck_type}>
-          <option>WETLEASE</option>
-          <option>DRYLEASE</option>
-        </select>
-      </label>
-      {error && <p className="error notice">{error}</p>}
-      <div className="inline-create-actions">
-        <button className="secondary-button" type="button" onClick={onCancel}>
-          <X size={15} />
-          Cancel
-        </button>
-        <button type="submit" disabled={busy}>
-          <Save size={15} />
-          {busy ? "Saving..." : "Save"}
-        </button>
-      </div>
-    </form>
-  );
-}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildRequestPayload,
   defaultRequestFilters,
   requestMetricsQueryString,
   requestQueryString,
@@ -36,6 +37,26 @@ describe("request query builders", () => {
         dateTo: "",
       }),
     ).toBe("search=Hub&date_from=2026-09-01");
+  });
+
+  it("defaults new outbound requests to WETLEASE", () => {
+    const data = new FormData();
+    data.set("cluster", "North Hub");
+    data.set("backlogs", "4");
+    data.set("truck_size", "6W");
+
+    expect(buildRequestPayload(data).truck_type).toBe("WETLEASE");
+    expect(buildRequestPayload(data).backlogs).toBe(4);
+  });
+
+  it("preserves the selected truck type when editing a request", () => {
+    const data = new FormData();
+    data.set("cluster", "North Hub");
+    data.set("backlogs", "4");
+    data.set("truck_size", "6W");
+    data.set("truck_type", "DRYLEASE");
+
+    expect(buildRequestPayload(data).truck_type).toBe("DRYLEASE");
   });
 
   it("keeps application paths and views reversible", () => {

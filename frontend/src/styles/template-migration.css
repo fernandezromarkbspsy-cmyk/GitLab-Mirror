@@ -2172,12 +2172,6 @@ body:has(.app-sidebar) {
   padding: 16px;
 }
 
-.skeleton-list { display: grid; gap: 0; }
-.skeleton-list-row { display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 10px 0; border-bottom: 1px solid #eef2f1; }
-.skeleton-list-copy { display: grid; flex: 1; gap: 7px; }
-.skeleton-card-list { display: grid; gap: 12px; }
-.skeleton-card { display: grid; gap: 10px; min-height: 138px; padding: 16px; border: 1px solid #e5ecea; border-radius: 8px; background: #fbfcfc; }
-.skeleton-card-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: auto; }
 .skeleton-status { min-height: 1px; }
 
 @keyframes skeleton-shimmer {

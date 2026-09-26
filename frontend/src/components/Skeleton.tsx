@@ -40,11 +40,14 @@ export function Skeleton({
 
 export function SkeletonList({ rows = 4 }: { rows?: number }) {
   return (
-    <div className="skeleton-list" role="status" aria-label="Loading list">
+    <div className="grid gap-0" role="status" aria-label="Loading list">
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
-        <div className="skeleton-list-row" key={index}>
+        <div
+          className="flex min-h-[62px] items-center gap-3 border-b border-soc5-line py-2.5"
+          key={index}
+        >
           <Skeleton variant="avatar" width={34} height={34} radius="50%" />
-          <span className="skeleton-list-copy">
+          <span className="grid flex-1 gap-[7px]">
             <Skeleton width={`${58 + (index % 3) * 10}%`} />
             <Skeleton width={`${38 + (index % 2) * 14}%`} variant="subtle" />
           </span>
@@ -58,16 +61,19 @@ export function SkeletonList({ rows = 4 }: { rows?: number }) {
 export function SkeletonCardList({ rows = 3 }: { rows?: number }) {
   return (
     <div
-      className="skeleton-card-list"
+      className="grid gap-3"
       role="status"
       aria-label="Loading cards"
     >
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
-        <article className="skeleton-card" key={index}>
+        <article
+          className="grid min-h-[138px] gap-2.5 rounded-card border border-card-line bg-card-surface p-4"
+          key={index}
+        >
           <Skeleton width="34%" variant="head" />
           <Skeleton width={`${72 - (index % 2) * 8}%`} height={18} />
           <Skeleton width="52%" variant="subtle" />
-          <div className="skeleton-card-foot">
+          <div className="mt-auto flex justify-between gap-3">
             <Skeleton width={72} variant="short" />
             <Skeleton width={48} variant="short" />
           </div>

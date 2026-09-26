@@ -26,6 +26,29 @@ export function syncRequestSearch(
   return { ...filters, search, page: 1 };
 }
 
+export type RequestPayload = {
+  cluster: FormDataEntryValue | null;
+  region: FormDataEntryValue | null;
+  dock_no: FormDataEntryValue | null;
+  backlogs: number;
+  backlogs_timestamp?: FormDataEntryValue | null;
+  truck_size: FormDataEntryValue | null;
+  truck_type: "WETLEASE" | "DRYLEASE";
+};
+
+export function buildRequestPayload(data: FormData): RequestPayload {
+  return {
+    cluster: data.get("cluster"),
+    region: data.get("region"),
+    dock_no: data.get("dock_no"),
+    backlogs: Number(data.get("backlogs")),
+    backlogs_timestamp: data.get("backlogs_timestamp"),
+    truck_size: data.get("truck_size"),
+    truck_type:
+      data.get("truck_type") === "DRYLEASE" ? "DRYLEASE" : "WETLEASE",
+  };
+}
+
 export function requestQueryString(
   filters: RequestFilters,
   overrides: Partial<RequestFilters> = {},

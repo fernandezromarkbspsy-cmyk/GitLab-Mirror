@@ -125,6 +125,7 @@ export function useQueueNotifications(user: User): QueueSnapshot {
     const current = new Set(query.data.data.map((request) => request.id));
     if (knownIds.current === null) {
       knownIds.current = current;
+      if (current.size) playNotificationSound(current.size);
       return;
     }
     const newCount = query.data.data.filter(

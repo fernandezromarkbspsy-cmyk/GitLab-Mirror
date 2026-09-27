@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 const user = {
   id: 'playwright-ops-user',
   name: 'Playwright Ops',
-  role: 'ops_pic',
+  role: 'fte_ops',
   is_admin: false,
   email: 'ops@example.com',
 };
@@ -55,6 +55,10 @@ test.beforeEach(async ({ page }) => {
     window.open = (url?: string | URL) => {
       localStorage.setItem('playwright-opened-url', String(url ?? ''));
       return null;
+    };
+    HTMLMediaElement.prototype.play = async () => {
+      const plays = Number(localStorage.getItem('playwright-audio-plays') ?? 0);
+      localStorage.setItem('playwright-audio-plays', String(plays + 1));
     };
   }, session);
 
@@ -187,4 +191,102 @@ test('switches views and supports row view and edit actions', async ({ page }) =
   await page.getByRole('button', { name: 'Actions for request request-1' }).click();
   await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await expect(page.getByLabel('Truck Type')).toHaveValue('WETLEASE');
+});
+
+test('selects requests, approves them, and expands a row inline', async ({ page }) => {
+  let approvedId = '';
+  await page.route('**/api/requests/*/approve', async (route) => {
+    approvedId = new URL(route.request().url()).pathname.split('/')[3] ?? '';
+    await route.fulfill({ json: { ...requestRow, status: 'APPROVED' } });
+  });
+  await openOutboundRequests(page);
+
+  const row = page.getByRole('button', {
+    name: 'View details for request request-1',
+  });
+  await row.click();
+  await expect(
+    page.getByLabel('Expanded details for request request-1'),
+  ).toBeVisible();
+  await expect(page.getByText('WETLEASE', { exact: true })).toBeVisible();
+
+  await page.getByLabel('Select request request-1').check();
+  await expect(page.getByRole('button', { name: 'Approved', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Approved', exact: true }).click();
+  await expect.poll(() => approvedId).toBe('request-1');
+});
+
+test('bulk approves more than two selected requests', async ({ page }) => {
+  const requestRows = [1, 2, 3].map((number) => ({
+    ...requestRow,
+    id: `request-${number}`,
+    cluster: `Hub ${number}`,
+  }));
+  let bulkIds: string[] = [];
+  await page.route('**/api/requests?*', async (route) => {
+    await route.fulfill({
+      json: {
+        data: requestRows,
+        current_page: 1,
+        last_page: 1,
+        per_page: 20,
+        from: 1,
+        to: 3,
+        total: 3,
+      },
+    });
+  });
+  await page.route('**/api/requests/bulk-approve', async (route) => {
+    bulkIds = (route.request().postDataJSON() as { ids: string[] }).ids;
+    await route.fulfill({ json: { data: [] } });
+  });
+  await page.goto('/outbound/lh-request');
+
+  await page.getByLabel('Select request request-1').check();
+  await page.getByLabel('Select request request-2').check();
+  await expect(page.getByRole('button', { name: 'Approved', exact: true })).toBeVisible();
+  await page.getByLabel('Select request request-3').check();
+  await expect(
+    page.getByRole('button', { name: 'Approved', exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Bulk Approved' }).click();
+  await expect.poll(() => bulkIds).toEqual([
+    'request-1',
+    'request-2',
+    'request-3',
+  ]);
+});
+
+test('alerts FTE Ops to pending requests and acknowledges opened rows', async ({
+  page,
+}) => {
+  await page.goto('/outbound/lh-request');
+
+  const row = page.getByRole('button', {
+    name: 'View details for request request-1',
+  });
+  await expect(row).toBeVisible();
+  await expect(row).toHaveClass(/animate-pulse/);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Number(localStorage.getItem('playwright-audio-plays') ?? 0),
+      ),
+    )
+    .toBeGreaterThan(0);
+
+  await row.click();
+  await expect(row).not.toHaveClass(/animate-pulse/);
+});
+
+test('does not allow FTE Midmile to access LH requests', async ({ page }) => {
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({ json: { ...user, role: 'fte_mm' } });
+  });
+  await page.goto('/outbound/lh-request');
+
+  await expect(page).toHaveURL(/\/overview$/);
+  await expect(
+    page.getByRole('region', { name: 'Linehaul requests' }),
+  ).toHaveCount(0);
 });

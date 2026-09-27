@@ -205,7 +205,7 @@ test('selects requests, approves them, and expands a row inline', async ({ page 
   await openOutboundRequests(page);
 
   const row = page.getByRole('button', {
-    name: 'View details for request request-1',
+    name: 'Show details for request request-1',
   });
   await row.click();
   await expect(
@@ -266,10 +266,11 @@ test('alerts FTE Ops to pending requests and acknowledges opened rows', async ({
   await openOutboundRequests(page);
 
   const row = page.getByRole('button', {
-    name: 'View details for request request-1',
+    name: 'Show details for request request-1',
   });
+  const alertRow = page.locator('.lh-table-row').first();
   await expect(row).toBeVisible();
-  await expect(row).toHaveClass(/animate-pulse/);
+  await expect(alertRow).toHaveClass(/animate-pulse/);
   await expect
     .poll(() =>
       page.evaluate(() =>
@@ -279,7 +280,7 @@ test('alerts FTE Ops to pending requests and acknowledges opened rows', async ({
     .toBeGreaterThan(0);
 
   await row.click();
-  await expect(row).not.toHaveClass(/animate-pulse/);
+  await expect(alertRow).not.toHaveClass(/animate-pulse/);
 });
 
 test('allows FTE Midmile to access LH requests', async ({ page }) => {

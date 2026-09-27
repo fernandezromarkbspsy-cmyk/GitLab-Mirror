@@ -21,65 +21,81 @@ export function Kpi() {
     queryFn: () => api<Daily>("/kpi/daily"),
   });
   const max = Math.max(1, ...(daily.data?.data ?? []).map((row) => row.total));
+  const cards = [
+    {
+      label: "Total requests",
+      value: summary.data?.total,
+      icon: BarChart3,
+      tone: "bg-soc5-page text-soc5-muted",
+    },
+    {
+      label: "Confirmed",
+      value: summary.data?.confirmed,
+      icon: CheckCircle2,
+      tone: "bg-status-success-surface text-status-success-ink",
+    },
+    {
+      label: "Cancelled",
+      value: summary.data?.cancelled,
+      icon: XCircle,
+      tone: "bg-status-danger-surface text-status-danger-ink",
+    },
+    {
+      label: "Avg. approval",
+      value:
+        summary.data?.averageApprovalMinutes == null
+          ? undefined
+          : `${Math.round(summary.data.averageApprovalMinutes)}m`,
+      icon: Clock3,
+      tone: "bg-status-info-surface text-status-info-ink",
+    },
+  ];
+
   return (
-    <div className="workspace-view">
-      <section className="overview-metrics">
-        <article>
-          <div className="metric-icon neutral">
-            <BarChart3 />
-          </div>
-          <div>
-            <span>Total requests</span>
-            <strong>{summary.data?.total ?? "-"}</strong>
-          </div>
-        </article>
-        <article>
-          <div className="metric-icon success">
-            <CheckCircle2 />
-          </div>
-          <div>
-            <span>Confirmed</span>
-            <strong>{summary.data?.confirmed ?? "-"}</strong>
-          </div>
-        </article>
-        <article>
-          <div className="metric-icon warning">
-            <XCircle />
-          </div>
-          <div>
-            <span>Cancelled</span>
-            <strong>{summary.data?.cancelled ?? "-"}</strong>
-          </div>
-        </article>
-        <article>
-          <div className="metric-icon info">
-            <Clock3 />
-          </div>
-          <div>
-            <span>Avg. approval</span>
-            <strong>
-              {summary.data?.averageApprovalMinutes == null
-                ? "-"
-                : `${Math.round(summary.data.averageApprovalMinutes)}m`}
-            </strong>
-          </div>
-        </article>
+    <div className="min-h-full bg-soc5-page p-4 sm:p-6 lg:p-8">
+      <section className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
+        {cards.map(({ label, value, icon: Icon, tone }) => (
+          <article
+            className="flex min-h-32 items-center gap-4 rounded-card border border-card-line bg-card-surface p-5 shadow-card"
+            key={label}
+          >
+            <div
+              className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}
+            >
+              <Icon className="size-5" />
+            </div>
+            <div className="grid gap-1">
+              <span className="text-sm font-semibold text-soc5-muted">
+                {label}
+              </span>
+              <strong className="text-2xl font-bold tracking-tight text-soc5-ink">
+                {value ?? "-"}
+              </strong>
+            </div>
+          </article>
+        ))}
       </section>
-      <section className="panel kpi-chart">
-        <div className="panel-head">
+      <section className="rounded-card border border-card-line bg-card-surface p-5 shadow-card">
+        <div className="mb-6 flex items-start justify-between">
           <div>
-            <h2>Daily volume</h2>
-            <p>Last 30 days</p>
+            <h2 className="text-lg font-bold text-card-heading">
+              Daily volume
+            </h2>
+            <p className="mt-1 text-sm text-soc5-muted">Last 30 days</p>
           </div>
         </div>
-        <div className="bar-chart">
+        <div className="flex min-h-56 items-end gap-2 overflow-x-auto pb-2">
           {(daily.data?.data ?? []).map((row) => (
-            <div key={row.date}>
+            <div
+              className="grid min-w-7 flex-1 justify-items-center gap-2"
+              key={row.date}
+            >
               <span
+                className="w-full max-w-8 rounded-t bg-soc5-lime-deep/80"
                 style={{ height: `${Math.max(4, (row.total / max) * 180)}px` }}
                 title={`${row.date}: ${row.total}`}
               />
-              <small>
+              <small className="text-[10px] whitespace-nowrap text-soc5-muted">
                 {new Date(row.date).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",

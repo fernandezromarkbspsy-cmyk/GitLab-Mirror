@@ -96,8 +96,7 @@ p { margin-top: 0; }
   clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
-.metric-value, .metric-card strong, .mono-text, td.mono-cell {
+.metric-value, .mono-text, td.mono-cell {
   font-family: var(--font-family-mono);
   letter-spacing: -0.03em;
 }
-

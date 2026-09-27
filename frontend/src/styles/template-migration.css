@@ -831,109 +831,6 @@ body:has(.app-sidebar) {
   margin-bottom: 14px;
 }
 
-.metric-card {
-  position: relative;
-  display: grid;
-  min-width: 0;
-  min-height: 150px;
-  gap: 8px;
-  padding: 14px;
-  border: 1px solid #e4e5e5;
-  border-radius: 16px;
-  color: #252527;
-  background: #fff;
-  text-align: left;
-  transition: transform .25s ease, box-shadow .25s ease, border-color .2s;
-}
-
-.metric-card:hover,
-.metric-card--primary {
-  border-color: #b6d41b;
-  box-shadow: 0 11px 23px rgb(36 37 39 / 8%);
-  transform: translateY(-2px);
-}
-
-.metric-card--primary {
-  color: #fff;
-  background: #29292c;
-}
-
-.metric-card-top,
-.metric-copy,
-.metric-foot {
-  display: flex;
-  align-items: center;
-}
-
-.metric-card-top,
-.metric-foot {
-  justify-content: space-between;
-}
-
-.metric-icon {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  place-items: center;
-  border-radius: 50%;
-  color: #a2c500;
-  background: #f7ffdf;
-}
-
-.metric-icon-image {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-}
-
-.metric-copy {
-  min-height: 52px;
-  align-items: flex-start;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-}
-
-.metric-copy small {
-  color: #77797c;
-  font-size: 9px;
-}
-
-.metric-card--primary .metric-copy small,
-.metric-card--primary .metric-foot {
-  color: #c4c4c6;
-}
-
-.metric-copy strong {
-  color: #242528;
-  font-size: 23px;
-  font-weight: 750;
-  letter-spacing: -.6px;
-}
-
-.metric-card--primary .metric-copy strong {
-  color: #fff;
-}
-
-.metric-chip {
-  padding: 4px 7px;
-  border-radius: 9px;
-  color: #5a6e00;
-  background: #f0ffb3;
-  font-size: 8px;
-  font-weight: 650;
-}
-
-.metric-foot {
-  gap: 7px;
-  color: #888a8e;
-  font-size: 8px;
-}
-
-.metric-foot svg {
-  flex: 0 0 auto;
-}
-
 .scorecards-layout {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -960,77 +857,6 @@ body:has(.app-sidebar) {
   border-radius: 18px;
   background: #f0f2f2;
   padding: 6px;
-}
-
-.scorecards-layout .metric-card,
-.scorecards-layout .metric-card--primary {
-  height: 100%;
-  min-height: 138px;
-  padding: 20px;
-  border: 0;
-  border-radius: 12px;
-  color: #252527;
-  background: #fff;
-  box-shadow: none;
-  transform: none;
-}
-
-.scorecards-layout .metric-card:hover,
-.scorecards-layout .metric-card--primary:hover {
-  border-color: transparent;
-  background: #fbfcfc;
-  box-shadow: none;
-  transform: none;
-}
-
-.scorecards-layout .metric-card--primary .metric-copy small,
-.scorecards-layout .metric-card--primary .metric-foot {
-  color: #77797c;
-}
-
-.scorecards-layout .metric-card--primary .metric-copy strong {
-  color: #242528;
-}
-
-.scorecards-layout .metric-card-top {
-  margin-bottom: 6px;
-}
-
-.scorecards-layout .metric-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-}
-
-.scorecards-layout .metric-chip {
-  display: none;
-}
-
-.scorecards-layout .metric-copy {
-  min-height: 0;
-  align-items: flex-start;
-  gap: 5px;
-}
-
-.scorecards-layout .metric-copy small {
-  color: #77797c;
-  font-size: 10px;
-}
-
-.scorecards-layout .metric-copy strong {
-  font-size: 23px;
-  font-weight: 650;
-}
-
-.scorecards-layout .metric-foot {
-  gap: 5px;
-  margin-top: 10px;
-  color: #687078;
-  font-size: 9px;
-}
-
-.scorecards-layout .metric-foot svg {
-  display: none;
 }
 
 .intraday-shell {
@@ -1774,19 +1600,6 @@ body:has(.app-sidebar) {
 
 /* Request detail dialog */
 
-.dialog-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: clamp(16px, 4vw, 40px);
-  background: rgb(14 23 38 / 54%);
-  -webkit-backdrop-filter: blur(10px) saturate(.86);
-  backdrop-filter: blur(10px) saturate(.86);
-  animation: dialog-backdrop-in .2s ease-out both;
-}
-
 .form-dialog {
   width: min(1100px, 100%);
   max-height: min(760px, calc(100dvh - 32px));
@@ -2098,11 +1911,6 @@ body:has(.app-sidebar) {
 }
 
 @media (max-width: 640px) {
-  .dialog-layer {
-    align-items: end;
-    padding: 12px;
-  }
-
   .form-dialog {
     max-height: calc(100dvh - 24px);
     border-radius: 16px 16px 12px 12px;
@@ -2154,7 +1962,6 @@ body:has(.app-sidebar) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dialog-layer,
   .form-dialog {
     animation: none;
   }
@@ -2171,8 +1978,6 @@ body:has(.app-sidebar) {
 .table-loading-shell {
   padding: 16px;
 }
-
-.skeleton-status { min-height: 1px; }
 
 @keyframes skeleton-shimmer {
   from { background-position: 100% 0; }
@@ -2719,12 +2524,6 @@ body:has(.app-sidebar) {
     gap: 12px;
   }
 
-  .metric-card {
-    min-height: 135px;
-    padding: 11px;
-    border-radius: 13px;
-  }
-
   .intraday-card {
     min-height: 230px;
     padding: 20px 17px 24px;
@@ -2751,10 +2550,6 @@ body:has(.app-sidebar) {
     font-size: 9px;
   }
 
-  .metric-copy strong {
-    font-size: 18px;
-  }
-
   .line-chart {
     min-height: 175px;
     height: 175px;
@@ -2778,9 +2573,6 @@ body:has(.app-sidebar) {
     display: none;
   }
 
-  .dialog-layer {
-    padding: 10px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2883,37 +2675,6 @@ body:has(.app-sidebar) {
 
 .text-button {
   font-size: 12px;
-}
-
-.metric-copy small,
-.scorecards-layout .metric-copy small {
-  color: #4b4e52;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 750;
-  letter-spacing: .01em;
-  line-height: 1.25;
-}
-
-.scorecards-layout .metric-card--primary .metric-copy small {
-  color: #4b4e52;
-}
-
-.metric-copy strong,
-.scorecards-layout .metric-copy strong {
-  font-size: 26px;
-  line-height: 1.1;
-  letter-spacing: -.45px;
-}
-
-.metric-chip {
-  font-size: 10px;
-}
-
-.metric-foot,
-.scorecards-layout .metric-foot {
-  font-size: 11px;
-  line-height: 1.35;
 }
 
 .panel-kicker {
@@ -3936,23 +3697,6 @@ body:has(.app-sidebar) {
     var(--soc5-page);
 }
 
-.metric-card {
-  border-color: rgb(25 45 47 / 9%);
-  border-radius: 15px;
-  box-shadow: 0 1px 2px rgb(20 40 41 / 3%);
-}
-
-.metric-card:hover {
-  border-color: rgb(166 195 25 / 45%);
-  box-shadow: 0 12px 28px rgb(25 43 44 / 8%);
-}
-
-.metric-card--primary {
-  border-color: #29292c;
-  background: linear-gradient(145deg, #29292c, #232427);
-  box-shadow: 0 10px 25px rgb(25 26 28 / 12%);
-}
-
 .panel,
 .intraday-shell {
   border-color: rgb(25 45 47 / 9%);
@@ -4023,12 +3767,6 @@ body:has(.app-sidebar) {
 /* =========================================================
    2026 DIALOGS
    ========================================================= */
-
-.dialog-layer {
-  background: rgb(11 24 25 / 43%);
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
-}
 
 .form-dialog {
   border-color: rgb(25 45 47 / 10%);

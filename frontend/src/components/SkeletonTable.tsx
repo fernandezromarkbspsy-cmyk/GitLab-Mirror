@@ -9,24 +9,34 @@ type Props = {
 export function SkeletonTable({ columns, rows = 5, compact = false }: Props) {
   const columnCount = Math.max(1, columns);
   const rowCount = Math.max(1, rows);
+  const gridClassName =
+    "grid grid-cols-[repeat(var(--skeleton-cols),minmax(0,1fr))] gap-3";
+  const cellHeight = compact ? 10 : 12;
+
   return (
     <div
-      className={`skeleton-table${compact ? " compact" : ""}`}
+      className="overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card"
       role="status"
       aria-label="Loading table"
       style={{ ["--skeleton-cols" as string]: columnCount }}
     >
-      <div className="skeleton-table-head">
+      <div
+        className={`${gridClassName} border-b border-soc5-line bg-soc5-page/70 ${compact ? "px-3 py-2.5" : "px-4 py-3"}`}
+      >
         {Array.from({ length: columnCount }).map((_, index) => (
           <Skeleton key={index} variant="head" />
         ))}
       </div>
-      <div className="skeleton-table-body">
+      <div className="divide-y divide-soc5-line">
         {Array.from({ length: rowCount }).map((_, rowIndex) => (
-          <div key={rowIndex} className="skeleton-table-row">
+          <div
+            key={rowIndex}
+            className={`${gridClassName} ${compact ? "px-3 py-2.5" : "px-4 py-3.5"}`}
+          >
             {Array.from({ length: columnCount }).map((__, columnIndex) => (
               <Skeleton
                 key={columnIndex}
+                height={cellHeight}
                 variant={
                   columnIndex === 0
                     ? "pill"

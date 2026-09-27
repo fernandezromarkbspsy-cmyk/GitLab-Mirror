@@ -33,6 +33,12 @@ final class VerifyProductionConfig extends Command
             }
         }
 
+        $supabaseCaBundle = config('services.supabase.ca_bundle');
+        if (filled($supabaseCaBundle) && (! is_file($supabaseCaBundle) || ! is_readable($supabaseCaBundle))) {
+            $this->error('SUPABASE_CA_BUNDLE must reference a readable file when configured.');
+            $failed = true;
+        }
+
         if (config('services.google_sheets.sync_enabled')) {
             $credentialsConfigured = filled(config('services.google_sheets.credentials_json'))
                 || filled(config('services.google_sheets.credentials_path'));

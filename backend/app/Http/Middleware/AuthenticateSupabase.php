@@ -39,6 +39,15 @@ final class AuthenticateSupabase
             $authUserId = $cached['id'];
             $supabaseUpdatedAt = $cached['updated_at'];
         } else {
+            $caBundle = config('services.supabase.ca_bundle');
+            if (filled($caBundle) && (! is_file($caBundle) || ! is_readable($caBundle))) {
+                Log::error('Supabase Auth TLS configuration is invalid.', [
+                    'ca_bundle' => $caBundle,
+                ]);
+
+                abort(503, 'Authentication service TLS configuration is invalid.');
+            }
+
             try {
                 $response = Http::withHeaders(['apikey' => $supabaseKey])
                     ->withToken($token)

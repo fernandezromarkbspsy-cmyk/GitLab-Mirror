@@ -310,6 +310,7 @@ export function OutboundRequests({
                       _queue.alerts.some((alert) => alert.id === row.id);
                     return (
                       <div className="contents" key={row.id}>
+                        {/* biome-ignore lint/a11y/useSemanticElements: This composite row contains nested checkbox and menu buttons, so a native button would create invalid interactive markup. */}
                         <div
                           className={`lh-table-row lh-table-grid ${approvalGrid} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
                           style={

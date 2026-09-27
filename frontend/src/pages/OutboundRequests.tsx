@@ -98,6 +98,8 @@ export function OutboundRequests({
   function exportRows() {
     openRequestsSheet();
   }
+  const canCreate = _user.role === "ops_pic" || _user.role === "fte_ops";
+  const canEdit = _user.role === "fte_ops";
   const canApprove = _user.role === "fte_ops";
   const approvalGrid = canApprove
     ? "!min-w-[1210px] ![grid-template-columns:116px_148px_145px_105px_88px_92px_90px_110px_105px_112px_99px]"
@@ -135,6 +137,7 @@ export function OutboundRequests({
           onChange={changeFilters}
           onSort={sortBy}
           onExport={() => void exportRows()}
+          showAddNew={canCreate}
           onAddNew={() => {
             createRequest.reset();
             setCreating(true);
@@ -370,16 +373,18 @@ export function OutboundRequests({
                                 >
                                   View
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    updateRequest.reset();
-                                    setEditing(row);
-                                    setOpenRow(null);
-                                  }}
-                                >
-                                  Edit
-                                </button>
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      updateRequest.reset();
+                                      setEditing(row);
+                                      setOpenRow(null);
+                                    }}
+                                  >
+                                    Edit
+                                  </button>
+                                )}
                               </span>
                             )}
                           </span>

@@ -182,6 +182,7 @@ export function MidmileRequests({
           onChange={changeFilters}
           onSort={sortBy}
           onExport={exportSheet}
+          showAddNew={false}
           onNotice={setNotice}
         />
 

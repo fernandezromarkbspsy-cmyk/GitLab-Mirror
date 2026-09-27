@@ -21,6 +21,7 @@ const actionButtonClass =
 type Props = {
   filters: RequestFilters;
   exporting?: boolean;
+  showAddNew?: boolean;
   onChange: (next: RequestFilters) => void;
   onSort: (sort: RequestSort) => void;
   onExport: () => void;
@@ -32,6 +33,7 @@ type Props = {
 export function LinehaulFilterPanel({
   filters,
   exporting = false,
+  showAddNew = true,
   onChange,
   onSort,
   onExport,
@@ -188,14 +190,16 @@ export function LinehaulFilterPanel({
         <Download size={16} />
         {exporting ? "Exporting" : "Export"}
       </button>
-      <button
-        className={`${actionButtonClass} border-[#2563eb] bg-[#2563eb] text-white hover:bg-blue-700 max-[480px]:col-span-full max-[480px]:w-full`}
-        type="button"
-        onClick={onAddNew ?? (() => onNotice?.("Add new request opened"))}
-      >
-        <Plus size={16} />
-        Add new
-      </button>
+      {showAddNew && (
+        <button
+          className={`${actionButtonClass} border-[#2563eb] bg-[#2563eb] text-white hover:bg-blue-700 max-[480px]:col-span-full max-[480px]:w-full`}
+          type="button"
+          onClick={onAddNew ?? (() => onNotice?.("Add new request opened"))}
+        >
+          <Plus size={16} />
+          Add new
+        </button>
+      )}
     </div>
   );
 }

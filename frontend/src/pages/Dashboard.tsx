@@ -56,8 +56,7 @@ export function Dashboard({
   };
   const allowed = (candidate: AppView) =>
     candidate === "overview" ||
-    (candidate === "lh-request" &&
-      (activeUser.role === "ops_pic" || activeUser.role === "fte_ops")) ||
+    candidate === "lh-request" ||
     (candidate === "truck-request" && activeUser.role === "fte_mm") ||
     (candidate === "docking" && activeUser.role === "doc_officer") ||
     (candidate === "kpi" && activeUser.role === "fte_ops") ||
@@ -118,9 +117,12 @@ export function Dashboard({
                   preview={preview}
                 />
               )}
-              {view === "lh-request" && (
-                <OutboundRequests user={activeUser} queue={queue} />
-              )}
+              {view === "lh-request" &&
+                (activeUser.role === "fte_mm" ? (
+                  <MidmileRequests user={activeUser} queue={queue} />
+                ) : (
+                  <OutboundRequests user={activeUser} queue={queue} />
+                ))}
               {view === "truck-request" && (
                 <MidmileRequests user={activeUser} queue={queue} />
               )}

@@ -47,7 +47,6 @@ export function AppSidebar({
   onSignOut,
   pendingCount,
 }: Props) {
-  const showOutbound = user.role === "ops_pic" || user.role === "fte_ops";
   const showMidmile = user.role === "fte_mm";
   const showDocking = user.role === "doc_officer";
   const showKpi = user.role === "fte_ops";
@@ -121,37 +120,35 @@ export function AppSidebar({
               <span>Dashboard</span>
             </button>
           </div>
-          {showOutbound && (
-            <div className="nav-section">
-              <p>Outbound</p>
+          <div className="nav-section">
+            <p>Outbound</p>
+            <button
+              className={`nav-group-toggle${visibleGroup === "outbound" ? " is-open" : ""}`}
+              type="button"
+              aria-expanded={visibleGroup === "outbound"}
+              aria-label="Toggle outbound requests"
+              onClick={() => toggleGroup("outbound")}
+            >
+              <Route size={17} />
+              <span>Requests</span>
+              <ChevronRight size={15} className="nav-group-chevron" />
+            </button>
+            {visibleGroup === "outbound" && (
               <button
-                className={`nav-group-toggle${visibleGroup === "outbound" ? " is-open" : ""}`}
+                className={`nav-subitem${activeView === "lh-request" ? " active" : ""}`}
                 type="button"
-                aria-expanded={visibleGroup === "outbound"}
-                aria-label="Toggle outbound requests"
-                onClick={() => toggleGroup("outbound")}
+                onClick={() => navigate("lh-request")}
               >
                 <Route size={17} />
-                <span>Requests</span>
-                <ChevronRight size={15} className="nav-group-chevron" />
+                <span>LH Request</span>
+                {user.role === "fte_ops" && pendingCount > 0 && (
+                  <span className="nav-badge">
+                    {pendingCount > 99 ? "99+" : pendingCount}
+                  </span>
+                )}
               </button>
-              {visibleGroup === "outbound" && (
-                <button
-                  className={`nav-subitem${activeView === "lh-request" ? " active" : ""}`}
-                  type="button"
-                  onClick={() => navigate("lh-request")}
-                >
-                  <Route size={17} />
-                  <span>LH Request</span>
-                  {user.role === "fte_ops" && pendingCount > 0 && (
-                    <span className="nav-badge">
-                      {pendingCount > 99 ? "99+" : pendingCount}
-                    </span>
-                  )}
-                </button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
           {showMidmile && (
             <div className="nav-section">
               <p>Midmile</p>

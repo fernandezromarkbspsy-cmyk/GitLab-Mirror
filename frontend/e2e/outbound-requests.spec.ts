@@ -92,11 +92,14 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-async function openOutboundRequests(page: Page) {
+async function openOutboundRequests(
+  page: Page,
+  regionName = 'Linehaul requests',
+) {
   await page.goto('/outbound/lh-request');
-  await expect(
-    page.getByRole('region', { name: 'Linehaul requests' }),
-  ).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('region', { name: regionName })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByText('North Hub', { exact: true }).first()).toBeVisible();
 }
 
@@ -260,7 +263,7 @@ test('bulk approves more than two selected requests', async ({ page }) => {
 test('alerts FTE Ops to pending requests and acknowledges opened rows', async ({
   page,
 }) => {
-  await page.goto('/outbound/lh-request');
+  await openOutboundRequests(page);
 
   const row = page.getByRole('button', {
     name: 'View details for request request-1',
@@ -296,12 +299,9 @@ test('allows FTE Midmile to access LH requests', async ({ page }) => {
       },
     });
   });
-  await page.goto('/outbound/lh-request');
+  await openOutboundRequests(page, 'Midmile linehaul requests');
 
   await expect(page).toHaveURL(/\/outbound\/lh-request$/);
-  await expect(
-    page.getByRole('region', { name: 'Midmile linehaul requests' }),
-  ).toBeVisible();
   await expect(page.getByText('North Hub', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'LH Request' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Assign' }).first()).toBeVisible();
@@ -315,12 +315,9 @@ test('allows non-processing roles to view LH requests without FTE actions', asyn
   await page.route('**/api/auth/me', async (route) => {
     await route.fulfill({ json: { ...user, role: 'doc_officer' } });
   });
-  await page.goto('/outbound/lh-request');
+  await openOutboundRequests(page);
 
   await expect(page).toHaveURL(/\/outbound\/lh-request$/);
-  await expect(
-    page.getByRole('region', { name: 'Linehaul requests' }),
-  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add new' })).toHaveCount(0);
   await expect(page.getByLabel('Select request request-1')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Assign' })).toHaveCount(0);

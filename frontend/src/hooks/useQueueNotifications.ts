@@ -82,7 +82,7 @@ export function useQueueNotifications(user: User): QueueSnapshot {
     user.role === "fte_ops"
       ? "PENDING"
       : user.role === "fte_mm"
-        ? "APPROVED"
+        ? "PENDING"
         : user.role === "doc_officer"
           ? "FOR_DOCKING"
           : null;

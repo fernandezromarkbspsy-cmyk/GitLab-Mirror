@@ -21,7 +21,7 @@ final class RequestRepository
             $query->where('created_by', $actor->id);
         }
         if ($status = $filters['status'] ?? null) {
-            $query->where('status', $status);
+            $query->where('status', $this->storedStatus($actor, $status));
         }
         if ($search = trim((string) ($filters['search'] ?? ''))) {
             $query->whereRaw("lower(coalesce(plate_number, '')) like ?", ['%'.strtolower($search).'%']);
@@ -37,7 +37,9 @@ final class RequestRepository
         $direction = $filters['direction'] ?? 'desc';
         $query->orderBy($sort, $direction)->orderByDesc('id');
 
-        return $query->paginate(min((int) ($filters['per_page'] ?? 20), 100));
+        return $query
+            ->paginate(min((int) ($filters['per_page'] ?? 20), 100))
+            ->through(fn (object $request): object => $this->forActor($actor, $request));
     }
 
     public function metrics(object $actor, array $filters = []): Collection
@@ -48,7 +50,9 @@ final class RequestRepository
             $query->whereRaw("lower(coalesce(plate_number, '')) like ?", ['%'.strtolower($search).'%']);
         }
 
-        return $query->pluck('total', 'status');
+        return $query
+            ->pluck('total', 'status')
+            ->mapWithKeys(fn (int $total, string $status): array => [$this->displayStatus($actor, $status) => $total]);
     }
 
     public function analytics(object $actor, array $filters = []): array
@@ -110,7 +114,7 @@ final class RequestRepository
             $query->where('created_by', $actor->id);
         }
         if ($status = $filters['status'] ?? null) {
-            $query->where('status', $status);
+            $query->where('status', $this->storedStatus($actor, $status));
         }
         if ($search = trim((string) ($filters['search'] ?? ''))) {
             $query->whereRaw("lower(coalesce(plate_number, '')) like ?", ['%'.strtolower($search).'%']);
@@ -134,7 +138,7 @@ final class RequestRepository
         $request = $query->firstOrFail();
         abort_unless($this->authorizer->canView($actor, $request), 403);
 
-        return $request;
+        return $this->forActor($actor, $request);
     }
 
     public function events(string $id, object $actor): Collection
@@ -167,5 +171,28 @@ final class RequestRepository
             : $businessDate->endOfDay()->utc();
 
         $query->where('request_timestamp', $operator, $bound);
+    }
+
+    private function storedStatus(object $actor, string $status): string
+    {
+        return $actor->role === 'fte_mm' && $status === 'PENDING'
+            ? 'APPROVED'
+            : $status;
+    }
+
+    private function displayStatus(object $actor, string $status): string
+    {
+        return $actor->role === 'fte_mm' && $status === 'APPROVED'
+            ? 'PENDING'
+            : $status;
+    }
+
+    private function forActor(object $actor, object $request): object
+    {
+        if (isset($request->status)) {
+            $request->status = $this->displayStatus($actor, $request->status);
+        }
+
+        return $request;
     }
 }

@@ -84,6 +84,20 @@ final class RequestWorkflowTest extends TestCase
         $this->assertSame('ABC-1234', $result->items()[0]->plate_number);
     }
 
+    public function test_fte_mm_sees_an_approved_handoff_as_pending(): void
+    {
+        $request = $this->insertRequest(['status' => 'APPROVED']);
+        $midmile = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
+        $ops = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops'];
+
+        $midmileRequests = $this->repository->paginate($midmile, ['status' => 'PENDING']);
+        $opsRequests = $this->repository->paginate($ops, ['status' => 'APPROVED']);
+
+        $this->assertSame($request->id, $midmileRequests->items()[0]->id);
+        $this->assertSame('PENDING', $midmileRequests->items()[0]->status);
+        $this->assertSame('APPROVED', $opsRequests->items()[0]->status);
+    }
+
     public function test_analytics_applies_date_filters(): void
     {
         $this->insertRequest(['truck_size' => '4W', 'request_timestamp' => '2026-06-15 08:00:00']);

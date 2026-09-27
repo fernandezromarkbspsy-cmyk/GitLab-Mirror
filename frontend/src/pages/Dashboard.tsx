@@ -122,7 +122,7 @@ export function Dashboard({
                 <OutboundRequests user={activeUser} queue={queue} />
               )}
               {view === "truck-request" && (
-                <MidmileRequests user={activeUser} queue={queue} />
+                <MidmileRequests user={activeUser} />
               )}
               {view === "docking" && <DockingConfirmation user={activeUser} />}
               {view === "kpi" && <Kpi />}

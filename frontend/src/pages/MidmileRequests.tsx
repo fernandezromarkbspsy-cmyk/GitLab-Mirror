@@ -1,27 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
+  ChartNoAxesCombined,
   CheckCircle2,
   CircleCheck,
   Clock3,
   Hash,
   ListChecks,
   MoreHorizontal,
+  RefreshCw,
+  Search,
+  SlidersHorizontal,
+  Table2,
   Tag,
   Truck,
   Users,
   X,
   XCircle,
 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import type { FormEvent, MouseEvent } from "react";
+import { useState } from "react";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
+import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
 import { Modal } from "../components/Modal";
 import { Pagination } from "../components/Pagination";
-import { RequestTable } from "../components/RequestTable";
-import { SkeletonRequestTable } from "../components/Skeleton";
-import { SkeletonTable } from "../components/SkeletonTable";
+import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge } from "../components/StatusBadge";
-import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { useRequestFilters } from "../hooks/useRequestFilters";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
@@ -39,15 +43,9 @@ function displayValue(value?: string | null) {
   return value?.trim() ? value : "-";
 }
 
-export function MidmileRequests({
-  user,
-  queue,
-}: {
-  user: User;
-  queue: QueueSnapshot;
-}) {
+export function MidmileRequests({ user }: { user: User }) {
   const queryClient = useQueryClient();
-  const { filters, appliedFilters, setFilters, changeFilters } =
+  const { filters, appliedFilters, setFilters, changeFilters, updateSearch } =
     useRequestFilters();
   const [selected, setSelected] = useState<{
     request: TruckRequest;
@@ -55,6 +53,10 @@ export function MidmileRequests({
   } | null>(null);
   const [notice, setNotice] = useState("");
   const [openRow, setOpenRow] = useState<string | null>(null);
+  const [view, setView] = useState<"table" | "card">("table");
+  const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [panelPosition, setPanelPosition] = useState({ x: 24, y: 112 });
   const requests = useQuery({
     queryKey: ["requests", "midmile-all", appliedFilters],
     queryFn: () =>
@@ -95,29 +97,6 @@ export function MidmileRequests({
     },
   });
 
-  const actions = (request: TruckRequest) =>
-    request.status === "APPROVED" ? (
-      <>
-        <button
-          className="table-action assign"
-          type="button"
-          disabled={transition.isPending}
-          onClick={() => setSelected({ request, action: "assign-truck" })}
-        >
-          <CheckCircle2 size={15} />
-          Assign
-        </button>
-        <button
-          className="table-action reject"
-          type="button"
-          disabled={transition.isPending}
-          onClick={() => setSelected({ request, action: "reject-mm" })}
-        >
-          <XCircle size={15} />
-          Reject
-        </button>
-      </>
-    ) : null;
   function sortBy(sort: RequestSort) {
     setFilters((value) => ({
       ...value,
@@ -129,6 +108,32 @@ export function MidmileRequests({
   }
   function exportSheet() {
     openRequestsSheet();
+  }
+  function selectRow(row: TruckRequest, event: MouseEvent<HTMLElement>) {
+    const workspace = event.currentTarget.closest<HTMLElement>(
+      ".lh-request-workspace",
+    );
+    const bounds = workspace?.getBoundingClientRect();
+    const scale = window.matchMedia("(min-width: 821px)").matches ? 0.75 : 1;
+    if (bounds) {
+      setPanelPosition({
+        x: Math.max(
+          8,
+          Math.min(
+            (event.clientX - bounds.left + 12) / scale,
+            bounds.width / scale - 328,
+          ),
+        ),
+        y: Math.max(
+          8,
+          Math.min(
+            (event.clientY - bounds.top + 12) / scale,
+            bounds.height / scale - 360,
+          ),
+        ),
+      });
+    }
+    setSelectedRow(row);
   }
 
   return (
@@ -147,43 +152,24 @@ export function MidmileRequests({
           </p>
         )}
 
-        <section className="panel data-panel queue-panel">
-          <div>
-            <div className="section-title">
-              <h2>Pending confirmation</h2>
-              {queue.count > 0 && (
-                <span className="count-badge">{queue.count}</span>
-              )}
-            </div>
-            <p>Approved requests awaiting FTE Midmile confirmation</p>
-          </div>
-          {queue.isPending ? (
-            <div className="table-loading-shell">
-              <div className="table-loading-toolbar">
-                <span className="skeleton-chip" />
-                <span className="skeleton-chip" />
-                <span className="skeleton-chip" />
-              </div>
-              <SkeletonTable columns={4} rows={4} compact />
-            </div>
-          ) : queue.error ? (
-            <p className="state error">{queue.error.message}</p>
-          ) : queue.rows.length ? (
-            <RequestTable rows={queue.rows} actions={actions} />
-          ) : (
-            <div className="lh-empty-state">
-              No approved requests are awaiting confirmation.
-            </div>
-          )}
-        </section>
-
         <LinehaulFilterPanel
           filters={filters}
           onChange={changeFilters}
           onSort={sortBy}
           onExport={exportSheet}
+          showAddNew={false}
           onNotice={setNotice}
         />
+
+        {selectedRow && (
+          <LinehaulRequestDetailsPanel
+            request={selectedRow}
+            position={panelPosition}
+            onPositionChange={setPanelPosition}
+            onClose={() => setSelectedRow(null)}
+            onNotice={setNotice}
+          />
+        )}
 
         <section
           className="lh-table-shell"
@@ -197,137 +183,233 @@ export function MidmileRequests({
                 aria-label="Refresh records"
                 onClick={() => void requests.refetch()}
               >
-                <Clock3 size={16} />
+                <RefreshCw size={16} />
               </button>
               <div className="lh-view-tabs">
-                <button className="selected" type="button">
-                  <BadgeCheck size={15} />
+                <button
+                  type="button"
+                  onClick={() => setNotice("Chart view is coming soon")}
+                >
+                  <ChartNoAxesCombined size={15} />
+                  Chart
+                </button>
+                <button
+                  className={view === "table" ? "selected" : ""}
+                  type="button"
+                  onClick={() => setView("table")}
+                >
+                  <Table2 size={15} />
                   Table
+                </button>
+                <button
+                  className={view === "card" ? "selected" : ""}
+                  type="button"
+                  onClick={() => setView("card")}
+                >
+                  <SlidersHorizontal size={15} />
+                  Card
                 </button>
               </div>
             </div>
+            <label className="lh-search-box">
+              <Search size={17} />
+              <input
+                value={filters.search}
+                onChange={(event) => updateSearch(event.target.value)}
+                placeholder="Search by plate number"
+              />
+              <kbd>Ctrl + F</kbd>
+            </label>
           </div>
-          <div className="lh-records-table">
-            <div className="lh-table-head lh-table-grid">
-              <span>
-                <CircleCheck size={14} />
-                Status
-              </span>
-              <button type="button" onClick={() => sortBy("request_timestamp")}>
-                <Clock3 size={14} />
-                <span>Request Time</span>
-              </button>
-              <button type="button" onClick={() => sortBy("cluster")}>
-                <Hash size={14} />
-                <span>Cluster</span>
-              </button>
-              <span>
-                <BadgeCheck size={14} />
-                Region
-              </span>
-              <button type="button" onClick={() => sortBy("dock_no")}>
-                <Truck size={14} />
-                <span>Dock #</span>
-              </button>
-              <button type="button" onClick={() => sortBy("backlogs")}>
-                <ListChecks size={14} />
-                <span>Backlogs</span>
-              </button>
-              <span>
-                <Truck size={14} />
-                LH Size
-              </span>
-              <span>
-                <Users size={14} />
-                SOC PIC
-              </span>
-              <span>
-                <Tag size={14} />
-                LH Trip #
-              </span>
-              <button type="button" onClick={() => sortBy("plate_number")}>
-                <Hash size={14} />
-                <span>Plate #</span>
-              </button>
-              <span />
-            </div>
-            <div className="lh-table-body">
-              {requests.isPending && <SkeletonRequestTable rows={6} />}
-              {requests.error && (
-                <div className="lh-empty-state">{requests.error.message}</div>
-              )}
-              {!requests.isPending &&
-                !requests.error &&
-                (requests.data?.data ?? []).map((row, index) => (
-                  <div
-                    className="lh-table-row lh-table-grid"
-                    key={row.id}
-                    style={{ "--row-index": index } as React.CSSProperties}
-                  >
-                    <span>
-                      <StatusBadge status={row.status} uppercase />
-                    </span>
-                    <span>{formatDateTime(row.request_timestamp)}</span>
-                    <span title={row.cluster}>{row.cluster}</span>
-                    <span>{row.region}</span>
-                    <span>{row.dock_no}</span>
-                    <span>{row.backlogs.toLocaleString()}</span>
-                    <span>{row.truck_size}</span>
-                    <span>{displayValue(row.ob_fte)}</span>
-                    <span>{displayValue(row.linehaul_trip_no)}</span>
-                    <span>{displayValue(row.plate_number)}</span>
-                    <span className="lh-row-menu-wrap">
-                      <button
-                        className="lh-row-more"
-                        type="button"
-                        aria-label={`Actions for request ${row.id}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setOpenRow(openRow === row.id ? null : row.id);
-                        }}
-                      >
-                        <MoreHorizontal size={17} />
-                      </button>
-                      {openRow === row.id && row.status === "APPROVED" && (
-                        <span className="lh-row-menu">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelected({
-                                request: row,
-                                action: "assign-truck",
-                              });
-                              setOpenRow(null);
-                            }}
-                          >
-                            Assign
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelected({
-                                request: row,
-                                action: "reject-mm",
-                              });
-                              setOpenRow(null);
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              {!requests.isPending &&
-                !requests.error &&
-                (requests.data?.data ?? []).length === 0 && (
-                  <div className="lh-empty-state">
-                    No live requests match the current filters.
-                  </div>
+          {view === "table" ? (
+            <div className="lh-records-table">
+              <div className="lh-table-head lh-table-grid">
+                <span>
+                  <CircleCheck size={14} />
+                  Status
+                </span>
+                <button
+                  type="button"
+                  onClick={() => sortBy("request_timestamp")}
+                >
+                  <Clock3 size={14} />
+                  <span>Request Time</span>
+                </button>
+                <button type="button" onClick={() => sortBy("cluster")}>
+                  <Hash size={14} />
+                  <span>Cluster</span>
+                </button>
+                <span>
+                  <BadgeCheck size={14} />
+                  Region
+                </span>
+                <button type="button" onClick={() => sortBy("dock_no")}>
+                  <Truck size={14} />
+                  <span>Dock #</span>
+                </button>
+                <button type="button" onClick={() => sortBy("backlogs")}>
+                  <ListChecks size={14} />
+                  <span>Backlogs</span>
+                </button>
+                <span>
+                  <Truck size={14} />
+                  LH Size
+                </span>
+                <span>
+                  <Users size={14} />
+                  SOC PIC
+                </span>
+                <span>
+                  <Tag size={14} />
+                  LH Trip #
+                </span>
+                <button type="button" onClick={() => sortBy("plate_number")}>
+                  <Hash size={14} />
+                  <span>Plate #</span>
+                </button>
+                <span />
+              </div>
+              <div className="lh-table-body">
+                {requests.isPending && <SkeletonRequestTable rows={6} />}
+                {requests.error && (
+                  <div className="lh-empty-state">{requests.error.message}</div>
                 )}
+                {!requests.isPending &&
+                  !requests.error &&
+                  (requests.data?.data ?? []).map((row, index) => (
+                    <div
+                      className="lh-table-row lh-table-grid"
+                      key={row.id}
+                      style={{ "--row-index": index } as React.CSSProperties}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={expandedRow === row.id}
+                      aria-label={`View details for request ${row.id}`}
+                      onClick={() =>
+                        setExpandedRow((current) =>
+                          current === row.id ? null : row.id,
+                        )
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setExpandedRow((current) =>
+                            current === row.id ? null : row.id,
+                          );
+                        }
+                      }}
+                    >
+                      <span>
+                        <StatusBadge status={row.status} uppercase />
+                      </span>
+                      <span>{formatDateTime(row.request_timestamp)}</span>
+                      <span title={row.cluster}>{row.cluster}</span>
+                      <span>{row.region}</span>
+                      <span>{row.dock_no}</span>
+                      <span>{row.backlogs.toLocaleString()}</span>
+                      <span>{row.truck_size}</span>
+                      <span>{displayValue(row.ob_fte)}</span>
+                      <span>{displayValue(row.linehaul_trip_no)}</span>
+                      <span>{displayValue(row.plate_number)}</span>
+                      <span className="lh-row-menu-wrap">
+                        <button
+                          className="lh-row-more"
+                          type="button"
+                          aria-label={`Actions for request ${row.id}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setOpenRow(openRow === row.id ? null : row.id);
+                          }}
+                        >
+                          <MoreHorizontal size={17} />
+                        </button>
+                        {openRow === row.id && (
+                          <span className="lh-row-menu">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                selectRow(row, event);
+                                setOpenRow(null);
+                              }}
+                            >
+                              View
+                            </button>
+                            {row.status === "PENDING" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelected({
+                                      request: row,
+                                      action: "assign-truck",
+                                    });
+                                    setOpenRow(null);
+                                  }}
+                                >
+                                  Assign
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setSelected({
+                                      request: row,
+                                      action: "reject-mm",
+                                    });
+                                    setOpenRow(null);
+                                  }}
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                {!requests.isPending &&
+                  !requests.error &&
+                  (requests.data?.data ?? []).length === 0 && (
+                    <div className="lh-empty-state">
+                      No live requests match the current filters.
+                    </div>
+                  )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="lh-card-view">
+              {requests.isPending ? (
+                <SkeletonCardList rows={4} />
+              ) : (
+                (requests.data?.data ?? []).map((row) => (
+                  <article className="lh-record-card" key={row.id}>
+                    <div>
+                      <small>{row.id}</small>
+                      <h3>{row.cluster}</h3>
+                      <p>
+                        {row.region} · Dock {row.dock_no}
+                      </p>
+                    </div>
+                    <div className="lh-card-right">
+                      <strong>{row.truck_size}</strong>
+                      <span>{row.backlogs.toLocaleString()} backlogs</span>
+                      <StatusBadge status={row.status} uppercase />
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={(event) => selectRow(row, event)}
+                      >
+                        View details
+                      </button>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          )}
           <Pagination
             page={requests.data}
             perPage={filters.perPage}

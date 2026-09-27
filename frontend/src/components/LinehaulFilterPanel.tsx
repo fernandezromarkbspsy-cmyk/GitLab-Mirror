@@ -26,6 +26,7 @@ type Props = {
   onExport: () => void;
   onRefresh?: () => void;
   onAddNew?: () => void;
+  showAddNew?: boolean;
   onNotice?: (message: string) => void;
 };
 
@@ -36,6 +37,7 @@ export function LinehaulFilterPanel({
   onSort,
   onExport,
   onAddNew,
+  showAddNew = true,
   onNotice,
 }: Props) {
   const [openMenu, setOpenMenu] = useState<
@@ -171,14 +173,16 @@ export function LinehaulFilterPanel({
           onChange={(event) => set({ search: event.target.value })}
         />
       </div>
-      <button
-        className={`${actionButtonClass} border-soc5-line bg-linehaul-surface px-2 text-soc5-muted hover:border-linehaul-teal/20 hover:bg-[#f5faf9] hover:text-linehaul-teal-strong max-[480px]:w-full`}
-        type="button"
-        aria-label="Open settings"
-        onClick={() => onNotice?.("Table settings opened")}
-      >
-        <Settings2 className="h-4 w-4" aria-hidden="true" />
-      </button>
+      {showAddNew && (
+        <button
+          className={`${actionButtonClass} border-soc5-line bg-linehaul-surface px-2 text-soc5-muted hover:border-linehaul-teal/20 hover:bg-[#f5faf9] hover:text-linehaul-teal-strong max-[480px]:w-full`}
+          type="button"
+          aria-label="Open settings"
+          onClick={() => onNotice?.("Table settings opened")}
+        >
+          <Settings2 className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
       <button
         className={`${actionButtonClass} border-soc5-ink bg-soc5-ink text-white hover:bg-[#4a4a4c] max-[480px]:w-full`}
         type="button"

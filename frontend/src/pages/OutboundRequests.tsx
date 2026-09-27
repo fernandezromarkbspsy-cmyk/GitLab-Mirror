@@ -60,12 +60,15 @@ export function OutboundRequests({
     showToast,
     createRequest,
     updateRequest,
+    approveRequests,
     updateSearch,
     sortBy,
   } = useOutboundRequests();
   const [view, setView] = useState<"table" | "card">("table");
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [panelPosition, setPanelPosition] = useState({ x: 24, y: 112 });
   function selectRow(row: TruckRequest, event: MouseEvent<HTMLElement>) {
     const workspace = event.currentTarget.closest<HTMLElement>(
@@ -94,6 +97,34 @@ export function OutboundRequests({
   }
   function exportRows() {
     openRequestsSheet();
+  }
+  const canApprove = _user.role === "fte_ops";
+  const approvalGrid = canApprove
+    ? "!min-w-[1210px] ![grid-template-columns:116px_148px_145px_105px_88px_92px_90px_110px_105px_112px_99px]"
+    : "";
+  const selectedCount = selectedIds.size;
+  const approvalLabel = selectedCount > 2 ? "Bulk Approved" : "Approved";
+
+  function toggleSelected(id: string) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleExpanded(row: TruckRequest) {
+    setExpandedRow((current) => (current === row.id ? null : row.id));
+    _queue.acknowledge(row.id);
+  }
+
+  function approveSelected() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    approveRequests.mutate(ids, {
+      onSuccess: () => setSelectedIds(new Set()),
+    });
   }
 
   return (
@@ -200,7 +231,7 @@ export function OutboundRequests({
           </div>
           {view === "table" ? (
             <div className="lh-records-table">
-              <div className="lh-table-head lh-table-grid">
+              <div className={`lh-table-head lh-table-grid ${approvalGrid}`}>
                 <span>
                   <CircleCheck size={14} />
                   Status
@@ -249,7 +280,18 @@ export function OutboundRequests({
                   <span>Plate #</span>
                   <SlidersHorizontal size={13} />
                 </button>
-                <span />
+                <span className="justify-center">
+                  {canApprove && selectedCount > 0 && (
+                    <button
+                      type="button"
+                      className="!h-8 whitespace-nowrap rounded-md bg-[#536500] !px-3 text-[11px] font-semibold normal-case tracking-normal text-white transition-colors hover:bg-[#405000] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={approveRequests.isPending}
+                      onClick={approveSelected}
+                    >
+                      {approvalLabel}
+                    </button>
+                  )}
+                </span>
               </div>
               <div className="lh-table-body">
                 {requests.isPending && <SkeletonRequestTable rows={6} />}
@@ -258,63 +300,129 @@ export function OutboundRequests({
                 )}
                 {!requests.isPending &&
                   !requests.error &&
-                  rows.map((row, index) => (
-                    <div
-                      className="lh-table-row lh-table-grid"
-                      key={row.id}
-                      style={{ "--row-index": index } as React.CSSProperties}
-                    >
-                      <span>
-                        <StatusBadge status={row.status} uppercase />
-                      </span>
-                      <span>{formatDateTime(row.request_timestamp)}</span>
-                      <span title={row.cluster}>{row.cluster}</span>
-                      <span>{row.region}</span>
-                      <span>{row.dock_no}</span>
-                      <span>{row.backlogs.toLocaleString()}</span>
-                      <span>{row.truck_size}</span>
-                      <span>{displayValue(row.ob_fte)}</span>
-                      <span>{displayValue(row.linehaul_trip_no)}</span>
-                      <span>{displayValue(row.plate_number)}</span>
-                      <span className="lh-row-menu-wrap">
-                        <button
-                          className="lh-row-more"
-                          type="button"
-                          aria-label={`Actions for request ${row.id}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setOpenRow(openRow === row.id ? null : row.id);
+                  rows.map((row, index) => {
+                    const isExpanded = expandedRow === row.id;
+                    const isAlerting =
+                      row.status === "PENDING" &&
+                      _queue.alerts.some((alert) => alert.id === row.id);
+                    return (
+                      <div className="contents" key={row.id}>
+                        <div
+                          className={`lh-table-row lh-table-grid ${approvalGrid} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
+                          style={
+                            { "--row-index": index } as React.CSSProperties
+                          }
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isExpanded}
+                          aria-label={`View details for request ${row.id}`}
+                          onClick={() => toggleExpanded(row)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              toggleExpanded(row);
+                            }
                           }}
                         >
-                          <MoreHorizontal size={17} />
-                        </button>
-                        {openRow === row.id && (
-                          <span className="lh-row-menu">
+                          <span className="flex items-center gap-2">
+                            {canApprove && row.status === "PENDING" && (
+                              <input
+                                type="checkbox"
+                                className="size-4 shrink-0 cursor-pointer accent-[#536500]"
+                                aria-label={`Select request ${row.id}`}
+                                checked={selectedIds.has(row.id)}
+                                onChange={() => toggleSelected(row.id)}
+                                onClick={(event) => event.stopPropagation()}
+                              />
+                            )}
+                            <StatusBadge status={row.status} uppercase />
+                          </span>
+                          <span>{formatDateTime(row.request_timestamp)}</span>
+                          <span title={row.cluster}>{row.cluster}</span>
+                          <span>{row.region}</span>
+                          <span>{row.dock_no}</span>
+                          <span>{row.backlogs.toLocaleString()}</span>
+                          <span>{row.truck_size}</span>
+                          <span>{displayValue(row.ob_fte)}</span>
+                          <span>{displayValue(row.linehaul_trip_no)}</span>
+                          <span>{displayValue(row.plate_number)}</span>
+                          <span className="lh-row-menu-wrap">
                             <button
+                              className="lh-row-more"
                               type="button"
+                              aria-label={`Actions for request ${row.id}`}
                               onClick={(event) => {
                                 event.stopPropagation();
-                                selectRow(row, event);
-                                setOpenRow(null);
+                                setOpenRow(openRow === row.id ? null : row.id);
                               }}
                             >
-                              View
+                              <MoreHorizontal size={17} />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateRequest.reset();
-                                setEditing(row);
-                                setOpenRow(null);
-                              }}
-                            >
-                              Edit
-                            </button>
+                            {openRow === row.id && (
+                              <span className="lh-row-menu">
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    selectRow(row, event);
+                                    setOpenRow(null);
+                                  }}
+                                >
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateRequest.reset();
+                                    setEditing(row);
+                                    setOpenRow(null);
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                              </span>
+                            )}
                           </span>
+                        </div>
+                        {isExpanded && (
+                          <dl
+                            className={`sticky left-0 col-span-full grid grid-cols-2 gap-x-8 gap-y-4 border-b border-[#dfe8e7] bg-[#fbfcf7] px-6 py-5 text-xs text-[#202b2e] shadow-inner md:grid-cols-4 ${canApprove ? "min-w-[1210px]" : "min-w-[1120px]"}`}
+                            aria-label={`Expanded details for request ${row.id}`}
+                          >
+                            {[
+                              ["Request ID", row.id],
+                              [
+                                "Request time",
+                                formatDateTime(row.request_timestamp),
+                              ],
+                              ["Cluster", row.cluster],
+                              ["Region", row.region],
+                              ["Dock #", row.dock_no],
+                              ["Backlogs", row.backlogs.toLocaleString()],
+                              [
+                                "Backlogs time",
+                                formatDateTime(row.backlogs_timestamp),
+                              ],
+                              ["LH size", row.truck_size],
+                              ["Truck type", row.truck_type],
+                              ["SOC PIC", displayValue(row.ob_fte)],
+                              ["LH trip #", displayValue(row.linehaul_trip_no)],
+                              ["Plate #", displayValue(row.plate_number)],
+                            ].map(([label, value]) => (
+                              <div className="min-w-0" key={label}>
+                                <dt className="mb-1 font-semibold uppercase tracking-[0.04em] text-[#6e7778]">
+                                  {label}
+                                </dt>
+                                <dd className="truncate font-medium">
+                                  {value}
+                                </dd>
+                              </div>
+                            ))}
+                          </dl>
                         )}
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 {!requests.isPending &&
                   !requests.error &&
                   rows.length === 0 && (
@@ -375,4 +483,3 @@ export function OutboundRequests({
     </div>
   );
 }
-

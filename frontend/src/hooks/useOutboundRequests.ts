@@ -8,20 +8,17 @@ import type { Page, RequestSort, TruckRequest } from "../types";
 
 export function useOutboundRequests() {
   const queryClient = useQueryClient();
-  const {
-    filters,
-    appliedFilters,
-    setFilters,
-    changeFilters,
-    updateSearch,
-  } = useRequestFilters();
+  const { filters, appliedFilters, setFilters, changeFilters, updateSearch } =
+    useRequestFilters();
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TruckRequest | null>(null);
   const [toast, setToast] = useState("");
   const requests = useQuery({
     queryKey: ["requests", "outbound-all", appliedFilters],
     queryFn: () =>
-      api<Page<TruckRequest>>(`/requests?${requestQueryString(appliedFilters)}`),
+      api<Page<TruckRequest>>(
+        `/requests?${requestQueryString(appliedFilters)}`,
+      ),
     placeholderData: (previous) => previous,
   });
   const rows = useMemo(() => requests.data?.data ?? [], [requests.data]);
@@ -59,6 +56,33 @@ export function useOutboundRequests() {
       await refreshData("LH request updated.");
     },
   });
+  const approveRequests = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length > 2) {
+        return api<{ data: TruckRequest[] }>("/requests/bulk-approve", {
+          method: "POST",
+          body: JSON.stringify({ ids }),
+        });
+      }
+
+      return Promise.all(
+        ids.map((id) =>
+          api<TruckRequest>(`/requests/${id}/approve`, {
+            method: "POST",
+            body: JSON.stringify({}),
+            headers: buildIdempotencyHeaders("outbound-approve", { id }),
+          }),
+        ),
+      );
+    },
+    onSuccess: async (_, ids) => {
+      await refreshData(
+        ids.length > 2
+          ? `${ids.length} LH requests bulk approved.`
+          : `${ids.length} LH request${ids.length === 1 ? "" : "s"} approved.`,
+      );
+    },
+  });
 
   function sortBy(sort: RequestSort) {
     setFilters((current) => ({
@@ -84,6 +108,7 @@ export function useOutboundRequests() {
     showToast,
     createRequest,
     updateRequest,
+    approveRequests,
     updateSearch,
     sortBy,
   };

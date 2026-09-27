@@ -287,7 +287,7 @@ export function OutboundRequests({
                   {canApprove && selectedCount > 0 && (
                     <button
                       type="button"
-                      className="!h-8 whitespace-nowrap rounded-md bg-[#536500] !px-3 text-[11px] font-semibold normal-case tracking-normal text-white transition-colors hover:bg-[#405000] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="h-8! whitespace-nowrap rounded-md bg-[#536500] px-3! text-[11px] font-semibold normal-case tracking-normal text-white transition-colors hover:bg-[#405000] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={approveRequests.isPending}
                       onClick={approveSelected}
                     >
@@ -311,7 +311,7 @@ export function OutboundRequests({
                     return (
                       <div className="contents" key={row.id}>
                         <div
-                          className={`lh-table-row lh-table-grid ${approvalGrid} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
+                          className={`lh-table-row lh-table-grid ${approvalGrid} ${isAlerting ? "bg-[#f6f9e9]! ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
                           style={
                             { "--row-index": index } as React.CSSProperties
                           }
@@ -388,7 +388,7 @@ export function OutboundRequests({
                         </div>
                         {isExpanded && (
                           <dl
-                            className={`sticky left-0 col-span-full grid grid-cols-2 gap-x-8 gap-y-4 border-b border-[#dfe8e7] bg-[#fbfcf7] px-6 py-5 text-xs text-[#202b2e] shadow-inner md:grid-cols-4 ${canApprove ? "min-w-[1210px]" : "min-w-[1120px]"}`}
+                            className={`sticky left-0 col-span-full grid grid-cols-2 gap-x-8 gap-y-4 border-b border-[#dfe8e7] bg-[#fbfcf7] px-6 py-5 text-xs text-[#202b2e] shadow-inner md:grid-cols-4 ${canApprove ? "min-w-302.5" : "min-w-280"}`}
                             aria-label={`Expanded details for request ${row.id}`}
                           >
                             {[

@@ -13,6 +13,11 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Throwable;
 use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -46,5 +51,37 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
+
+        $exceptions->render(function (Throwable $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            $status = 500;
+            $message = 'An unexpected error occurred.';
+            $errors = null;
+            $headers = [];
+
+            if ($exception instanceof ValidationException) {
+                $status = 422;
+                $message = $exception->getMessage() ?: 'The given data was invalid.';
+                $errors = $exception->errors();
+            } elseif ($exception instanceof HttpExceptionInterface) {
+                $status = $exception->getStatusCode();
+                $message = $exception->getMessage() ?: (Response::$statusTexts[$status] ?? 'Request failed.');
+                $headers = $exception->getHeaders();
+            }
+
+            $payload = [
+                'message' => $message,
+                'request_id' => $request->attributes->get('request_id'),
+            ];
+
+            if ($errors !== null) {
+                $payload['errors'] = $errors;
+            }
+
+            return response()->json($payload, $status, $headers);
+        });
     })
     ->create();

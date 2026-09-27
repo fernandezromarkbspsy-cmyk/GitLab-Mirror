@@ -79,4 +79,30 @@ final class ProductionConfigTest extends TestCase
 
         $this->artisan('system:verify-config', ['--production' => true])->assertExitCode(1);
     }
+
+    public function test_production_config_rejects_a_missing_supabase_ca_bundle(): void
+    {
+        Schema::shouldReceive('hasTable')->with('user_events')->andReturnTrue();
+        Schema::shouldReceive('hasTable')->with('idempotency_keys')->andReturnTrue();
+
+        config()->set([
+            'app.env' => 'production',
+            'app.debug' => false,
+            'app.key' => 'base64:test-key',
+            'app.url' => 'https://api.example.test',
+            'services.supabase.url' => 'https://project.supabase.co',
+            'services.supabase.anon_key' => 'publishable-key',
+            'services.supabase.service_key' => 'service-key',
+            'services.supabase.ca_bundle' => '/missing/prod-ca.crt',
+            'services.admin_emails' => ['admin@example.test'],
+            'database.connections.pgsql.host' => 'db.example.test',
+            'database.connections.pgsql.username' => 'postgres',
+            'database.connections.pgsql.password' => 'password',
+            'database.connections.pgsql.sslmode' => 'require',
+        ]);
+
+        $this->artisan('system:verify-config', ['--production' => true])
+            ->expectsOutput('SUPABASE_CA_BUNDLE must reference a readable file when configured.')
+            ->assertExitCode(1);
+    }
 }

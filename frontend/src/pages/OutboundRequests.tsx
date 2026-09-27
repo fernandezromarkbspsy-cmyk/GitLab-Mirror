@@ -315,17 +315,6 @@ export function OutboundRequests({
                           style={
                             { "--row-index": index } as React.CSSProperties
                           }
-                          role="button"
-                          tabIndex={0}
-                          aria-expanded={isExpanded}
-                          aria-label={`View details for request ${row.id}`}
-                          onClick={() => toggleExpanded(row)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              toggleExpanded(row);
-                            }
-                          }}
                         >
                           <span className="flex items-center gap-2">
                             {canApprove && row.status === "PENDING" && (
@@ -338,7 +327,15 @@ export function OutboundRequests({
                                 onClick={(event) => event.stopPropagation()}
                               />
                             )}
-                            <StatusBadge status={row.status} uppercase />
+                            <button
+                              type="button"
+                              className="lh-row-expand"
+                              aria-expanded={isExpanded}
+                              aria-label={`${isExpanded ? "Hide" : "Show"} details for request ${row.id}`}
+                              onClick={() => toggleExpanded(row)}
+                            >
+                              <StatusBadge status={row.status} uppercase />
+                            </button>
                           </span>
                           <span>{formatDateTime(row.request_timestamp)}</span>
                           <span title={row.cluster}>{row.cluster}</span>

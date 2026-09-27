@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ClipboardList, Clock3, Truck, X } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { ChartHeader } from "../components/dashboard/ChartHeader";
 import { MetricCard } from "../components/dashboard/MetricCard";
 import { Panel } from "../components/dashboard/Panel";
 import { QueuePreview } from "../components/dashboard/QueuePreview";
+import { Modal } from "../components/Modal";
 import { RequestTable } from "../components/RequestTable";
 import { Skeleton } from "../components/Skeleton";
 import { SkeletonTable } from "../components/SkeletonTable";
@@ -105,30 +106,34 @@ export function Overview({
       ),
     enabled: detailStatus !== null,
   });
-  const dispatchPoints =
-    intraday.data?.data ??
-    INTRADAY_HOURS.map((hour) => ({ hour, orderQty: 0 }));
-  const maxDispatch = Math.max(
-    1,
-    ...dispatchPoints.map((point) => point.orderQty),
-  );
-  const peakDispatch = dispatchPoints.reduce(
-    (best, point) => (point.orderQty > best.orderQty ? point : best),
-    { hour: 0, orderQty: 0 },
-  );
-  const chartPoints = dispatchPoints.map((point, index) => ({
-    label: String(point.hour),
-    count: point.orderQty,
-    x:
-      46 +
-      index *
-        (dispatchPoints.length > 1 ? 608 / (dispatchPoints.length - 1) : 0),
-    y: 150 - (point.orderQty / maxDispatch) * 104,
-  }));
-  const linePath = smoothPath(chartPoints);
-  const areaPath = chartPoints.length
-    ? `${linePath} L ${chartPoints[chartPoints.length - 1].x} 160 L ${chartPoints[0].x} 160 Z`
-    : "";
+  const dispatchChart = useMemo(() => {
+    const points =
+      intraday.data?.data ??
+      INTRADAY_HOURS.map((hour) => ({ hour, orderQty: 0 }));
+    const maximum = Math.max(1, ...points.map((point) => point.orderQty));
+    const peak = points.reduce(
+      (best, point) => (point.orderQty > best.orderQty ? point : best),
+      { hour: 0, orderQty: 0 },
+    );
+    const chartPoints = points.map((point, index) => ({
+      label: String(point.hour),
+      count: point.orderQty,
+      x: 46 + index * (points.length > 1 ? 608 / (points.length - 1) : 0),
+      y: 150 - (point.orderQty / maximum) * 104,
+    }));
+    const line = smoothPath(chartPoints);
+
+    return {
+      maximum,
+      peak,
+      chartPoints,
+      line,
+      area: chartPoints.length
+        ? `${line} L ${chartPoints[chartPoints.length - 1].x} 160 L ${chartPoints[0].x} 160 Z`
+        : "",
+      total: points.reduce((sum, point) => sum + point.orderQty, 0),
+    };
+  }, [intraday.data?.data]);
   const sizes = ["4W", "6W", "10W", "6WF"] as const;
   const sizeTotal = sizes.reduce(
     (sum, size) => sum + (analytics.data?.truck_sizes[size] ?? 0),
@@ -164,10 +169,6 @@ export function Overview({
   const completionRate = totalRequests
     ? Math.round((dockedRequests / totalRequests) * 100)
     : 0;
-  const activeSignal = dispatchPoints.reduce(
-    (sum, point) => sum + point.orderQty,
-    0,
-  );
   const cards: Array<{
     label: string;
     status: Status | "ALL";
@@ -183,7 +184,7 @@ export function Overview({
       value: totalRequests,
       icon: <ClipboardList size={22} aria-hidden="true" />,
       chip: "Overall volume",
-      footnote: `${activeSignal} hourly events`,
+      footnote: `${dispatchChart.total} hourly events`,
     },
     {
       label: "Pending Requests",
@@ -216,8 +217,10 @@ export function Overview({
     : intraday.error
       ? "Dispatch feed unavailable."
       : "Live dispatch data. Updates every 15 seconds.";
-  const formatHour = (hour: number) =>
-    `${hour % 12 || 12} ${hour >= 12 ? "PM" : "AM"}`;
+  const formatHour = useCallback(
+    (hour: number) => `${hour % 12 || 12} ${hour >= 12 ? "PM" : "AM"}`,
+    [],
+  );
 
   return (
     <div className="workspace-view dashboard-view dashboard-overview">
@@ -290,7 +293,7 @@ export function Overview({
                   {intraday.isPending ? (
                     <Skeleton width={56} height={24} />
                   ) : (
-                    activeSignal.toLocaleString()
+                    dispatchChart.total.toLocaleString()
                   )}
                 </strong>
               </div>
@@ -301,8 +304,8 @@ export function Overview({
                     <Skeleton width={78} height={24} />
                   ) : (
                     <>
-                      {peakDispatch.orderQty.toLocaleString()}{" "}
-                      <small>{formatHour(peakDispatch.hour)}</small>
+                      {dispatchChart.peak.orderQty.toLocaleString()}{" "}
+                      <small>{formatHour(dispatchChart.peak.hour)}</small>
                     </>
                   )}
                 </strong>
@@ -359,23 +362,27 @@ export function Overview({
                   0
                 </text>
                 <text className="chart-y-label" x="38" y="115">
-                  {Math.round(maxDispatch / 2).toLocaleString()}
+                  {Math.round(dispatchChart.maximum / 2).toLocaleString()}
                 </text>
                 <text className="chart-y-label" x="38" y="67">
-                  {maxDispatch.toLocaleString()}
+                  {dispatchChart.maximum.toLocaleString()}
                 </text>
-                {areaPath && <path className="line-area" d={areaPath} />}
-                <path className="line-stroke" d={linePath} />
-                {chartPoints.map((point, _index) => (
+                {dispatchChart.area && (
+                  <path className="line-area" d={dispatchChart.area} />
+                )}
+                <path className="line-stroke" d={dispatchChart.line} />
+                {dispatchChart.chartPoints.map((point, index) => (
                   <g key={point.label}>
                     <circle cx={point.x} cy={point.y} r="4">
                       <title>
                         {formatHour(Number(point.label))}: {point.count} orders
                       </title>
                     </circle>
-                    <text x={point.x} y="178">
-                      {formatHour(Number(point.label))}
-                    </text>
+                    {index % 3 === 0 && (
+                      <text x={point.x} y="178">
+                        {formatHour(Number(point.label))}
+                      </text>
+                    )}
                   </g>
                 ))}
               </svg>
@@ -509,47 +516,43 @@ export function Overview({
           </div>
         </article>
       </section>
-      {detailStatus !== null && (
-        <div className="dialog-layer" role="presentation">
-          <section
-            className="form-dialog request-detail-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Request details"
+      <Modal
+        open={detailStatus !== null}
+        onClose={() => setDetailStatus(null)}
+        className="form-dialog request-detail-dialog"
+        ariaLabelledBy="request-details-title"
+      >
+        <div className="dialog-head">
+          <div>
+            <h2 id="request-details-title">
+              {cards.find((card) => card.status === detailStatus)?.label}
+            </h2>
+            <p>
+              {from} to {to} - {details.data?.total ?? 0} requests
+            </p>
+          </div>
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="Close"
+            onClick={() => setDetailStatus(null)}
           >
-            <div className="dialog-head">
-              <div>
-                <h2>
-                  {cards.find((card) => card.status === detailStatus)?.label}
-                </h2>
-                <p>
-                  {from} to {to} - {details.data?.total ?? 0} requests
-                </p>
-              </div>
-              <button
-                className="icon-button"
-                type="button"
-                aria-label="Close"
-                onClick={() => setDetailStatus(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            {details.isPending ? (
-              <div className="table-loading-shell">
-                <div className="table-loading-toolbar">
-                  <span className="skeleton-chip" />
-                  <span className="skeleton-chip" />
-                  <span className="skeleton-chip" />
-                </div>
-                <SkeletonTable columns={14} rows={4} compact />
-              </div>
-            ) : (
-              <RequestTable rows={details.data?.data ?? []} />
-            )}
-          </section>
+            <X size={18} />
+          </button>
         </div>
-      )}
+        {details.isPending ? (
+          <div className="table-loading-shell">
+            <div className="table-loading-toolbar">
+              <span className="skeleton-chip" />
+              <span className="skeleton-chip" />
+              <span className="skeleton-chip" />
+            </div>
+            <SkeletonTable columns={14} rows={4} compact />
+          </div>
+        ) : (
+          <RequestTable rows={details.data?.data ?? []} />
+        )}
+      </Modal>
     </div>
   );
 }

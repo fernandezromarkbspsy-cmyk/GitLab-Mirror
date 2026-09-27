@@ -85,7 +85,7 @@ export function SkeletonCardList({ rows = 3 }: { rows?: number }) {
 
 export function SkeletonStatus({ children }: { children?: ReactNode }) {
   return (
-    <div className="skeleton-status" role="status" aria-live="polite">
+    <div className="min-h-px" role="status" aria-live="polite">
       <span className="sr-only">{children ?? "Loading content"}</span>
     </div>
   );

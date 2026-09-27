@@ -141,9 +141,12 @@ function ViewLoading({ view }: { view: AppView }) {
       <div className="workspace-view dashboard-view">
         <section className="overview-metrics" aria-hidden="true">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="metric-card">
-              <span className="metric-card-top">
-                <span className="metric-icon">
+            <div
+              key={index}
+              className="grid min-h-[138px] min-w-0 gap-2 rounded-xl bg-white p-5"
+            >
+              <span className="mb-1.5 flex items-center justify-between">
+                <span className="grid size-8 place-items-center rounded-lg bg-[#f7ffdf] text-[#a2c500]">
                   <Skeleton
                     width={18}
                     height={18}
@@ -153,11 +156,11 @@ function ViewLoading({ view }: { view: AppView }) {
                 </span>
                 <span className="skeleton-chip" />
               </span>
-              <span className="metric-copy">
+              <span className="flex min-h-0 flex-col items-start justify-center gap-1.5">
                 <Skeleton width={88} variant="head" className="mb-2.5" />
                 <Skeleton width={64} height={26} />
               </span>
-              <span className="metric-foot">
+              <span className="mt-2.5 flex items-center justify-between gap-1.5">
                 <Skeleton width={140} />
               </span>
             </div>

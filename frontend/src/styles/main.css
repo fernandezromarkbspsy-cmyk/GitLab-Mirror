@@ -542,7 +542,6 @@ textarea {
 }
 
 .metric-value,
-.metric-card strong,
 .mono-text,
 td.mono-cell {
   font-family: "JetBrains Mono", monospace;

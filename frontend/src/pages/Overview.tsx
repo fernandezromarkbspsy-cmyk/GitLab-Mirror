@@ -510,7 +510,10 @@ export function Overview({
         </article>
       </section>
       {detailStatus !== null && (
-        <div className="dialog-layer" role="presentation">
+        <div
+          className="fixed inset-0 z-60 grid place-items-center bg-[rgb(11_24_25_/_43%)] p-[clamp(16px,4vw,40px)] backdrop-blur-[7px] animate-[dialog-backdrop-in_.2s_ease-out_both] motion-reduce:animate-none max-[640px]:items-end max-[640px]:p-3 max-[480px]:p-2.5"
+          role="presentation"
+        >
           <section
             className="form-dialog request-detail-dialog"
             role="dialog"

@@ -1,6 +1,6 @@
 # Frontend Tailwind Migration Audit
 
-**Audit date:** 2026-09-26  
+**Audit date:** 2026-09-27
 **Scope:** `frontend/` styling architecture only  
 **Migration mode:** Incremental, visual-preserving, and reversible
 
@@ -38,21 +38,68 @@ No dependency or framework replacement is needed.
 
 ## Component migration map
 
-### Already Tailwind-led
+Classification is based on the rendered `className` values and their active selector ownership in `main.css` and `template-migration.css`:
 
-- Login primitives and forms under `components/login/`.
-- `components/ui/scroll-area.tsx`.
-- Portions of `LinehaulFilterPanel`, `RequestTable`, `Skeleton`, `Dashboard`, `DockingConfirmation`, `OutboundRequests`, `Overview`, and `UserManagement`.
+- **Tailwind-led:** presentation is expressed by utilities; a global animation or consumer-supplied class does not make the component hybrid.
+- **Hybrid:** utilities own part of the presentation, but active legacy selectors still own a visible state or nested layout.
+- **Legacy-CSS-led:** the component's own presentation is primarily owned by semantic selectors in an active legacy stylesheet.
 
-These components still intentionally coexist with compatibility classes from the legacy stylesheets.
+### Tailwind-led components
 
-### Legacy-CSS-led
+- `LinehaulFilterPanel.tsx`
+- `Pagination.tsx`
+- `SkeletonTable.tsx`
+- `SkeletonStatus` in `Skeleton.tsx`
+- `StatusBadge.tsx`
+- `dashboard/MetricCard.tsx`
+- `dashboard/Panel.tsx`
+- `ui/scroll-area.tsx`
+- `login/FooterBar.tsx`, `login/LoginBackdrop.tsx`, and `login/UserTypeToggle.tsx`
 
-- Application shell: `AppSidebar`, `AppHeader`, and workspace layout.
-- Dashboard cards, panels, charts, and queues.
-- Request tables, detail panels, dialogs, and printable labels.
-- User-management tables and operational page layouts.
-- Shared loading and error-state presentation.
+### Hybrid components still requiring migration
+
+| Component | Remaining legacy dependency | Impact radius |
+| :--- | :--- | :--- |
+| `Skeleton.tsx` | `SkeletonRequestTable` still composes `lh-table-row` and `lh-table-grid`; the shimmer keyframe remains globally defined. | Request loading states |
+| `Modal.tsx` | The shared overlay is Tailwind-led, but consumer-supplied `form-dialog` and `print-dialog` panels remain legacy-CSS-led. | Shared dialogs across operational pages |
+| `login/AmbientGlows.tsx` | `drift` and `drift-slow` still own animation behavior. | Authentication background |
+| `login/BackroomLoginForm.tsx` | `rise` and `btn-shine` still own entrance and button-shine effects. | Backroom authentication |
+| `login/FteLoginForm.tsx` | `rise` and `btn-shine` still own entrance and button-shine effects. | FTE authentication |
+| `login/LoginCard.tsx` | `login-modal-layer` and `login-modal-card` still control modal visibility and card presentation. | Authentication shell |
+| `login/OtpVerify.tsx` | `rise` still owns entrance animation. | OTP authentication |
+| `login/QrPanel.tsx` | `dot-grid`, `ping-soft`, and `floaty` still own decoration and animation. | QR authentication panel |
+| `login/Reveal.tsx` | `reveal` and `is-in` still control entrance presentation. | Login reveal transitions |
+
+### Legacy-CSS-led shared components not yet migrated
+
+| Component | Active selector families | Primary consumers / impact |
+| :--- | :--- | :--- |
+| `AppHeader.tsx` | `app-topbar`, `topbar-*`, `notification-*`, `profile-*` | Every authenticated view; high impact |
+| `AppSidebar.tsx` | `app-sidebar`, `sidebar-*`, `nav-*` | Every authenticated view and responsive navigation; high impact |
+| `ColumnVisibilityMenu.tsx` | `column-visibility*`, `toolbar-button` | Request-table column controls |
+| `ErrorBoundary.tsx` | `state`, `error` | Application failure fallback |
+| `LinehaulRequestDetailsPanel.tsx` | `lh-request-details-panel`, `lh-details-panel-*` | Midmile request drill-down |
+| `OutboundRequestForms.tsx` | `inline-create-*`, `cluster-*`, `notice`, `secondary-button` | Outbound inline-create workflows |
+| `PrintableTruckLabel.tsx` | `print-*`, `truck-label*`, `label-value`, shared legacy buttons | Midmile print workflow |
+| `RequestFilters.tsx` | `request-controls`, `request-status-tabs`, `request-toolbar`, `filter-field`, `toolbar-button` | Shared request filtering |
+| `RequestTable.tsx` | `request-table*`, `request-column*`, `request-row`, `request-detail-*`, row action selectors | Shared operational tables; high impact |
+| `dashboard/ChartHeader.tsx` | `intraday-head`, `panel-kicker` | Dashboard chart headers |
+| `dashboard/QueuePreview.tsx` | `dashboard-list`, `compact-empty` | Dashboard queue previews |
+
+### Page and application layouts not yet migrated
+
+| Surface | Remaining legacy ownership |
+| :--- | :--- |
+| `App.tsx` / `main.tsx` | Startup, preview, and fatal-error states (`startup-loading*`, `dashboard-preview`, `state`, `error`) |
+| `ChangePassword.tsx` | Authentication page wrapper, eyebrow, and error presentation |
+| `Dashboard.tsx` | `app-shell`, workspace layout, dashboard preview skeletons, panels, charts, and lists |
+| `DockingConfirmation.tsx` | Workspace, panel, loading toolbar, action buttons, and dialog presentation |
+| `MidmileRequests.tsx` | Linehaul workspace, records table, row actions, detail/dialog states, and empty states |
+| `OutboundRequests.tsx` | Linehaul workspace, table/card views, row menus, search, and toast |
+| `Overview.tsx` | Scorecard layout, charts, lists, request-detail dialog, and loading toolbar |
+| `UserManagement.tsx` | Page header, summaries, table, status, actions, loading state, and dialogs |
+
+`Login.tsx` is Tailwind-led for its page-local loading and failure dialog, but it consumes the hybrid `LoginCard` authentication shell. The `ui/skiper-ui/skiper87.tsx` wrapper accepts consumer-owned classes and has no standalone presentation migration to perform.
 
 ## Duplication and conflict findings
 
@@ -76,8 +123,16 @@ These components still intentionally coexist with compatibility classes from the
 - `LinehaulFilterPanel` buttons, search input, date input, menus, and responsive layout are Tailwind-led; its dedicated legacy selectors were removed after repository-wide reference verification.
 - `StatusBadge` is the single Tailwind-led request-status renderer across shared tables, request lists, cards, and details; semantic status tokens preserve the existing success, pending, informational, and danger treatments.
 - `Panel` is Tailwind-led and uses semantic card tokens for its surface, border, radius, shadow, and typography; legacy panel selectors remain because page-owned panel markup still consumes them.
-- The base `Skeleton` shape and its head, subtle, short, pill, and avatar variants are Tailwind-led; list, card-list, and table skeleton layouts remain scheduled separately.
+- The base `Skeleton` shape plus its list, card-list, head, subtle, short, pill, and avatar variants are Tailwind-led; `SkeletonRequestTable` remains hybrid because it uses the linehaul table grid.
+- `SkeletonTable` and `SkeletonStatus` are Tailwind-led. The table layout composes the shared `Skeleton` primitive with semantic card, line, page, radius, and shadow utilities; the obsolete status selector was removed.
+- `MetricCard` and its dashboard loading counterpart are Tailwind-led; obsolete card, icon, copy, chip, footnote, primary, responsive, and typography selectors were removed.
+- The shared modal overlay is Tailwind-led while dialog panel contents remain hybrid until the operational forms and printable label are migrated.
+- `Kpi.tsx` is Tailwind-led for its page layout, metric summary cards, and daily-volume chart.
 - The shared SOC5 and active linehaul color tokens are exposed to Tailwind through aliases; the original custom properties continue to own their values.
+
+## Recommended next migration
+
+Migrate `RequestTable` and its shared table controls next. It is the dependency boundary for the remaining operational table pages and should precede the dialog panels, application shell, and remaining page layouts. Keep sorting, expansion, copy, action, and accessibility contracts unchanged, and remove selectors only after all table consumers are converted.
 
 ## Risks
 

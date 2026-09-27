@@ -285,7 +285,7 @@ test('does not allow FTE Midmile to access LH requests', async ({ page }) => {
   });
   await page.goto('/outbound/lh-request');
 
-  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(
     page.getByRole('region', { name: 'Linehaul requests' }),
   ).toHaveCount(0);

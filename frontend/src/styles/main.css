@@ -311,7 +311,11 @@ body {
 .login-modal-card {
   position: relative;
   width: min(860px, 100%);
-  overflow: hidden;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   border: 1px solid rgb(255 255 255 / 20%);
   border-radius: 18px;
   background: #4D6383;
@@ -322,6 +326,10 @@ body {
   transform: translateY(12px) scale(.67);
   transition: opacity .42s ease, transform .52s cubic-bezier(.22, 1, .36, 1);
   color: var(--color-ink);
+}
+
+.login-modal-card::-webkit-scrollbar {
+  display: none;
 }
 
 /* Keep legacy dashboard selectors from forcing dark text into the auth surface. */
@@ -514,6 +522,7 @@ body {
 
 @media (max-width: 720px) {
   .login-modal-layer { align-items: start; padding: 12px; }
+  .login-modal-card { max-height: calc(100dvh - 24px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

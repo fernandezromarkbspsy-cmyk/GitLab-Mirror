@@ -26,6 +26,7 @@ known_hosts
 .aws/
 deploy/certs/
 tools/google/service-account.json
+tools/google/google-service-account.json
 
 backend/.env
 frontend/.env

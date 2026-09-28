@@ -97,7 +97,6 @@ npm run build
 ## Documentation
 
 - [Setup Guide](docs/setup-guide.md)
-- [AWS Free Tier Hosting Guide](docs/aws-free-tier-hosting.md)
 - [Supabase Auth Setup](docs/supabase-auth-setup.md)
 - [Outbound Data Import](docs/outbound/IMPORT.md)
 - [Product Requirements](docs/prd.md)

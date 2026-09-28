@@ -113,9 +113,9 @@ Remediation: separate notification content from per-user receipts, or fan out on
 
 ### H6 — Historical: production deployment previously omitted scheduled work and migrations
 
-Evidence: `docker-compose.yml:1`, `backend/bootstrap/app.php:18`, `deploy/deploy-production.sh:130`.
+Evidence: `docker-compose.yml:1`, `backend/bootstrap/app.php:18`, and the current Docker deployment configuration.
 
-The current Compose topology includes a dedicated `schedule:work` container, and `deploy/deploy-production.sh` runs `php artisan migrate --force` before rollout. The `idempotency_keys` table remains owned by the Laravel migration; identity, audit, and Edge Function objects are owned by `supabase/migrations/`. This finding is retained as historical context and is remediated in the current branch.
+The current Compose topology includes a dedicated `schedule:work` container, and production rollout applies Laravel migrations before starting the containers. The `idempotency_keys` table remains owned by the Laravel migration; identity, audit, and Edge Function objects are owned by `supabase/migrations/`. This finding is retained as historical context and is remediated in the current branch.
 
 ### H7 — Historical: the production API previously used Laravel's development server
 

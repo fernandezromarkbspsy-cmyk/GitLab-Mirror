@@ -9,7 +9,7 @@ application behavior changes.
 
 The baseline was produced from the Code Review Graph and targeted inspection of
 the frontend, Laravel API, Supabase functions and migrations, Docker Compose,
-CI, and production deployment scripts.
+CI, and deployment configuration.
 
 ## Current Architecture
 
@@ -31,7 +31,6 @@ flowchart TD
     Functions[Supabase Edge Functions]
     Source[Google Apps Script]
     Sentry[Sentry]
-    Secrets[AWS Secrets Manager]
 
     Browser --> Edge
     Edge --> Web
@@ -45,8 +44,6 @@ flowchart TD
     Source -->|secret-protected sync| Functions
     Functions --> Db
     Api --> Sentry
-    Web -. production environment .-> Secrets
-    Api -. production environment .-> Secrets
 ```
 
 ### Runtime components
@@ -228,24 +225,16 @@ Docker Compose runs:
 - `api`: Laravel API with a container health check.
 - `scheduler`: Laravel `schedule:work` using the API image.
 
-Production deployment:
-
-1. Loads root and backend environment files from AWS Secrets Manager.
-2. Verifies required authentication and application variables.
-3. Fetches the selected revision.
-4. Validates Compose configuration and builds images.
-5. Applies Laravel migrations.
-6. Verifies production configuration.
-7. Starts containers and waits for API health.
-8. Checks authentication readiness and scheduler health.
-9. Waits for the public health endpoint.
+Production deployment uses Docker Compose. It validates the Compose
+configuration, builds the application images, applies Laravel migrations,
+verifies production configuration, starts the containers, and checks API and
+scheduler health.
 
 GitLab CI currently validates frontend source/encoding/robots rules, lint,
 accessibility, formatting, unit tests, Playwright tests, and builds. Backend
 jobs run Pint and SQLite tests, with a separate PostgreSQL test job. Edge
 functions run Deno type checks and tests. Deployment configuration validates
-shell syntax, migration ordering, production config verification, and the
-scheduler declaration.
+the Compose file and scheduler declaration.
 
 ## Evidence and Measurement Gaps
 

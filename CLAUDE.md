@@ -14,7 +14,7 @@ Primary architecture:
 - Database/Auth: Supabase PostgreSQL + Supabase Auth
 - Serverless: Supabase Edge Functions
 - Reverse proxy: Nginx
-- Deployment: Docker / EC2 / Cloudflare
+- Deployment: Docker / Cloudflare
 - Testing: Vitest / Playwright / PHPUnit where applicable
 
 ---

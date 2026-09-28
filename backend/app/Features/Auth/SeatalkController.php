@@ -44,37 +44,47 @@ final class SeatalkController
         if ($code === '') return $this->redirectWithError($frontend, 'missing_code');
 
         try {
-            $token = Http::asForm()->acceptJson()
+            $token = Http::asJson()->acceptJson()
                 ->connectTimeout(config('services.seatalk.connect_timeout', 5))
                 ->timeout(config('services.seatalk.timeout', 10))
                 ->post(config('services.seatalk.token_url'), [
                     'app_id' => config('services.seatalk.app_id'),
                     'app_secret' => config('services.seatalk.app_secret'),
-                    'code' => $code,
-                    'grant_type' => 'authorization_code',
-                    'redirect_uri' => config('services.seatalk.redirect_uri'),
                 ]);
-            abort_unless($token->successful() && $token->json('access_token'), 422, 'SeaTalk authorization failed.');
+            abort_unless(
+                $token->successful()
+                    && (int) $token->json('code') === 0
+                    && $token->json('app_access_token'),
+                422,
+                'SeaTalk app authorization failed.'
+            );
 
-            $identity = Http::withToken($token->json('access_token'))
+            $identity = Http::withToken($token->json('app_access_token'))
                 ->acceptJson()
                 ->connectTimeout(config('services.seatalk.connect_timeout', 5))
                 ->timeout(config('services.seatalk.timeout', 10))
-                ->get(config('services.seatalk.user_url'));
-            abort_unless($identity->successful(), 422, 'SeaTalk identity lookup failed.');
+                ->get(config('services.seatalk.user_url'), ['code' => $code]);
+            abort_unless(
+                $identity->successful()
+                    && (int) $identity->json('code') === 0
+                    && is_array($identity->json('employee')),
+                422,
+                'SeaTalk identity lookup failed.'
+            );
 
-            $payload = $identity->json('data') ?: $identity->json();
-            $employeeCode = trim((string) data_get($payload, 'employee_code'));
-            abort_unless($employeeCode !== '', 403, 'SeaTalk account is missing an employee code.');
+            $employee = $identity->json('employee');
+            $email = strtolower(trim((string) data_get($employee, 'email')));
+            abort_unless(filter_var($email, FILTER_VALIDATE_EMAIL), 403, 'SeaTalk account is missing a valid email.');
 
-            $profile = DB::table('profiles')->where('seatalk_employee_code', $employeeCode)->where('is_active', true)->first([
+            $profile = DB::table('profiles')->whereRaw('lower(email) = ?', [$email])->where('is_active', true)->first([
                 'id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_reset_at', 'password_changed_at', 'created_at',
             ]);
             abort_unless($profile, 403, 'SeaTalk account is not provisioned for SOC 5 Outbound.');
 
             $request->session()->regenerate();
             $request->session()->put('seatalk_profile_id', $profile->id);
-            $request->session()->put('seatalk_employee_code', $employeeCode);
+            $request->session()->put('seatalk_email', $email);
+            $request->session()->put('seatalk_employee_code', data_get($employee, 'employee_code'));
 
             return redirect()->to($frontend.'/?seatalk=success');
         } catch (Throwable) {
@@ -84,7 +94,7 @@ final class SeatalkController
 
     public function logout(Request $request): JsonResponse
     {
-        $request->session()->forget(['seatalk_profile_id', 'seatalk_employee_code']);
+        $request->session()->forget(['seatalk_profile_id', 'seatalk_email', 'seatalk_employee_code']);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         return response()->json(['ok' => true]);

@@ -1,6 +1,6 @@
 # SOC5-Outbound — Technical Specification Document
 
-> **Implementation note (2026-09-20):** This document contains historical design material and is not authoritative where it conflicts with the source. The current backend is Laravel 12 using `AuthenticateSupabase` with Supabase Auth bearer validation, query-builder repositories/services, and Supabase-managed SQL migrations. Protected writes go through Laravel; browser reads use Supabase RLS where explicitly supported. Deployment runs PHP-FPM and NGINX under Supervisor, with a separate Laravel `schedule:work` container; `deploy/deploy-production.sh` applies Laravel migrations before rollout. See `backend/routes/api.php`, `backend/bootstrap/app.php`, `supabase/migrations/`, `docker-compose.yml`, and `deploy/deploy-production.sh` for the executable contract. References below to Sanctum, Eloquent models, Laravel Form Requests, or Laravel-managed schema are legacy material pending rewrite.
+> **Implementation note (2026-09-20):** This document contains historical design material and is not authoritative where it conflicts with the source. The current backend is Laravel 12 using `AuthenticateSupabase` with Supabase Auth bearer validation, query-builder repositories/services, and Supabase-managed SQL migrations. Protected writes go through Laravel; browser reads use Supabase RLS where explicitly supported. Deployment runs PHP-FPM and NGINX under Supervisor, with a separate Laravel `schedule:work` container; Docker Compose applies Laravel migrations before rollout. See `backend/routes/api.php`, `backend/bootstrap/app.php`, `supabase/migrations/`, and `docker-compose.yml` for the executable contract. References below to Sanctum, Eloquent models, Laravel Form Requests, or Laravel-managed schema are legacy material pending rewrite.
 > **Document Version**: 1.0
 > **Date**: 2026-08-31
 > **Status**: Living Document
@@ -1211,7 +1211,7 @@ Post-deploy commands:
 ### 18.4 Supabase
 
 - Managed cloud instance on Supabase Cloud (no self-hosted infrastructure)
-- `deploy/deploy-production.sh` runs `php artisan migrate --force` before the application rollout. Supabase SQL migrations run separately through the Supabase migration process and own the identity, audit, and Edge Function database objects; they are not executed by the Laravel command.
+- Docker Compose runs `php artisan migrate --force` before the application rollout. Supabase SQL migrations run separately through the Supabase migration process and own the identity, audit, and Edge Function database objects; they are not executed by the Laravel command.
 - Realtime enabled per-table via Supabase dashboard configuration
 - Backups: daily automated via Supabase Cloud
 - Connection pooling: via Supabase Pooler (PgBouncer)

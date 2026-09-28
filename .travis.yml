@@ -113,5 +113,5 @@ jobs:
       language: minimal
       dist: jammy
       script:
-        - bash -n deploy/deploy-production.sh
+        - grep -q '^services:' docker-compose.yml
         - grep -q 'scheduler' docker-compose.yml

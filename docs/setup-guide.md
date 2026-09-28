@@ -3,9 +3,6 @@
 This guide covers local development on the current restricted Windows machine.
 It does not require administrator privileges.
 
-For the AWS Free Tier production deployment walkthrough, use
-[`docs/aws-free-tier-hosting.md`](aws-free-tier-hosting.md).
-
 ## 1. Requirements
 
 - PHP 8.4.1 or newer (required by the committed Composer lock file)

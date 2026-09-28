@@ -3,17 +3,26 @@ import { useEffect, useRef, useState } from "react";
 import trucksImage from "../../assets/trucks.jpg";
 import { Reveal } from "./Reveal";
 
+declare global {
+  interface Window {
+    SEATALK_LOGIN?: { init: () => void };
+  }
+}
+
+let seaTalkSdkPromise: Promise<void> | null = null;
+
 interface QrPanelProps {
   enabled?: boolean;
 }
 
 export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
   const widgetRef = useRef<HTMLDivElement>(null);
+  const sdkContainerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
 
   async function renderSeaTalkLogin() {
-    const container = widgetRef.current;
+    const container = sdkContainerRef.current;
     if (!container) return;
     setStatus("loading");
     setError("");
@@ -35,21 +44,27 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
       if (!response.ok || !config.app_id || !config.state) {
         throw new Error(config.message || "SeaTalk login is not configured.");
       }
+      const appInfo = document.createElement("div");
+      appInfo.id = "seatalk_login_app_info";
+      appInfo.dataset.redirect_uri = config.redirect_uri || "";
+      appInfo.dataset.appid = config.app_id;
+      appInfo.dataset.response_type = config.response_type || "code";
+      appInfo.dataset.state = config.state;
+
+      const loginButton = document.createElement("div");
+      loginButton.id = "seatalk_login_button";
+      loginButton.dataset.size = "large";
+      loginButton.dataset.logo_size = "22";
+      loginButton.dataset.copywriting = "Continue with SeaTalk";
+      loginButton.dataset.theme = "light";
+      loginButton.dataset.align = "center";
+      container.append(appInfo, loginButton);
+
       await loadSeaTalkSdk(config.sdk_url);
-      if (!window.SeaTalkLogin?.init) {
-        throw new Error("The SeaTalk login widget could not load.");
+      window.SEATALK_LOGIN?.init();
+      if (!loginButton.childElementCount) {
+        throw new Error("Unable to initialize the SeaTalk login button.");
       }
-      window.SeaTalkLogin.init({
-        container,
-        app_id: config.app_id,
-        redirect_uri: config.redirect_uri,
-        response_type: config.response_type || "code",
-        state: config.state,
-        onError: (message?: string) => {
-          setStatus("error");
-          setError(message || "SeaTalk login was cancelled or could not start.");
-        },
-      });
       setStatus("ready");
     } catch (cause) {
       setStatus("error");
@@ -103,7 +118,8 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
 
       <Reveal delay={180} className="mt-6">
         <div className="rounded-2xl border border-line bg-white/[0.03] p-4 text-center">
-          <div ref={widgetRef} className="mx-auto flex min-h-[176px] items-center justify-center rounded-xl bg-white p-3" aria-label="SeaTalk QR login">
+          <div ref={widgetRef} className="mx-auto flex min-h-[176px] items-center justify-center rounded-xl bg-white p-3" aria-label="SeaTalk login">
+            <div ref={sdkContainerRef} />
             {status === "loading" && <Loader2 className="h-6 w-6 animate-spin text-accent" />}
           </div>
           {status === "error" && (
@@ -114,7 +130,7 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
               </button>
             </div>
           )}
-          {status !== "error" && <p className="mt-3 text-[12px] leading-relaxed text-muted">Scan the QR code with SeaTalk to continue.</p>}
+          {status !== "error" && <p className="mt-3 text-[12px] leading-relaxed text-muted">Continue with SeaTalk to sign in.</p>}
         </div>
       </Reveal>
 
@@ -141,14 +157,30 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
 }
 
 function loadSeaTalkSdk(url?: string): Promise<void> {
-  if (window.SeaTalkLogin) return Promise.resolve();
+  if (window.SEATALK_LOGIN) return Promise.resolve();
   if (!url) return Promise.reject(new Error("SeaTalk SDK URL is not configured."));
-  return new Promise((resolve, reject) => {
+  if (seaTalkSdkPromise) return seaTalkSdkPromise;
+
+  seaTalkSdkPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = url;
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Unable to load the SeaTalk login widget."));
+    script.dataset.seatalkSdk = "true";
+    script.onload = () => {
+      if (!window.SEATALK_LOGIN) {
+        script.remove();
+        seaTalkSdkPromise = null;
+        reject(new Error("The SeaTalk login SDK did not initialize."));
+        return;
+      }
+      resolve();
+    };
+    script.onerror = () => {
+      script.remove();
+      seaTalkSdkPromise = null;
+      reject(new Error("Unable to load the SeaTalk login widget."));
+    };
     document.head.appendChild(script);
   });
+  return seaTalkSdkPromise;
 }

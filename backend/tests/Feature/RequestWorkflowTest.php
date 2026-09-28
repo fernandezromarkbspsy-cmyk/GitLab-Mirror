@@ -252,6 +252,10 @@ final class RequestWorkflowTest extends TestCase
 
     private function createSchema(): void
     {
+        Schema::create('profiles', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('name')->nullable();
+        });
         Schema::create('requests', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->dateTime('request_timestamp');

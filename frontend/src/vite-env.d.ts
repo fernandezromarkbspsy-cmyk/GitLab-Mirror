@@ -9,3 +9,16 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+interface Window {
+  SeaTalkLogin?: {
+    init(options: {
+      container: HTMLElement;
+      app_id: string;
+      redirect_uri?: string;
+      response_type: string;
+      state: string;
+      onError?: (message?: string) => void;
+    }): void;
+  };
+}

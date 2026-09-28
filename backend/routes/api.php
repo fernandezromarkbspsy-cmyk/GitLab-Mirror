@@ -1,6 +1,7 @@
 <?php
 
 use App\Features\Auth\BackroomController;
+use App\Features\Auth\SeatalkController;
 use App\Features\Dispatch\DispatchController;
 use App\Features\Kpi\KpiController;
 use App\Features\Notifications\NotificationController;
@@ -21,10 +22,15 @@ Route::get('/auth/status', function () {
     return response()->json(['configured' => true]);
 });
 
+Route::middleware([\Illuminate\Session\Middleware\StartSession::class])->group(function (): void {
+    Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
+    Route::post('/auth/seatalk/logout', [SeatalkController::class, 'logout']);
+});
+
 Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
 Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
-Route::middleware(['throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
+Route::middleware([\Illuminate\Session\Middleware\StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
     Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
     Route::get('/users', [UserController::class, 'index']);

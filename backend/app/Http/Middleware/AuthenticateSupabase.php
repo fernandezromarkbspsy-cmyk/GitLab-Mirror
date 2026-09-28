@@ -17,6 +17,17 @@ final class AuthenticateSupabase
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if ($request->session()->has('seatalk_profile_id')) {
+            $profile = DB::table('profiles')->where('id', $request->session()->get('seatalk_profile_id'))
+                ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_reset_at', 'password_changed_at', 'created_at']);
+            abort_unless($profile, 401, 'Invalid or expired SeaTalk session.');
+            $profile->is_admin = in_array(strtolower((string) $profile->email), array_map('strtolower', config('services.admin_emails', [])), true);
+            $profile->original_role = $profile->role;
+            $request->attributes->set('actor', $profile);
+            $request->attributes->set('supabase_user_updated_at', null);
+            return $next($request);
+        }
+
         $token = $request->bearerToken();
         abort_unless($token, 401, 'Authentication required.');
 

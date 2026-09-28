@@ -38,7 +38,11 @@ export async function api<T = unknown>(
     if (session?.access_token)
       headers.set("Authorization", `Bearer ${session.access_token}`);
     if (viewRole) headers.set("X-View-Role", viewRole);
-    response = await fetch(`${base}${path}`, { ...init, headers });
+    response = await fetch(`${base}${path}`, {
+      ...init,
+      headers,
+      credentials: init.credentials ?? "same-origin",
+    });
   } catch {
     throw new ApiError(
       "Network error. Check your connection and try again.",

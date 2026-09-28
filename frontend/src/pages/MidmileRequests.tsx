@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   ChartNoAxesCombined,
+  ChevronDown,
   CircleCheck,
   Clock3,
   Hash,
@@ -39,6 +40,20 @@ function formatDateTime(value?: string | null) {
 }
 function displayValue(value?: string | null) {
   return value?.trim() ? value : "-";
+}
+function formatDetailDateTime(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+function formatCluster(value: string) {
+  return value
+    .split(",")
+    .map((cluster) => cluster.trim())
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export function MidmileRequests({ user }: { user: User }) {
@@ -277,13 +292,13 @@ export function MidmileRequests({ user }: { user: User }) {
                   (requests.data?.data ?? []).map((row, index) => (
                     <Fragment key={row.id}>
                     <div
-                      className="lh-table-row lh-table-grid"
+                      className={`lh-table-row lh-table-grid ${expandedRow === row.id ? "is-expanded" : ""}`}
                       key={row.id}
                       style={{ "--row-index": index } as React.CSSProperties}
                       role="button"
                       tabIndex={0}
                       aria-expanded={expandedRow === row.id}
-                      aria-label={`View details for request ${row.id}`}
+                      aria-label={`${expandedRow === row.id ? "Collapse" : "Expand"} details for request ${row.id}`}
                       onClick={() =>
                         setExpandedRow((current) =>
                           current === row.id ? null : row.id,
@@ -298,7 +313,11 @@ export function MidmileRequests({ user }: { user: User }) {
                         }
                       }}
                     >
-                      <span>
+                      <span className="flex items-center gap-2">
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={`size-3.5 shrink-0 text-[#718071] transition-transform ${expandedRow === row.id ? "rotate-180 text-[#536500]" : ""}`}
+                        />
                         <StatusBadge status={row.status} uppercase />
                       </span>
                       <span>{formatDateTime(row.request_timestamp)}</span>
@@ -370,25 +389,25 @@ export function MidmileRequests({ user }: { user: User }) {
                     </div>
                     {expandedRow === row.id && (
                       <dl
-                        className="col-span-full grid min-w-[1120px] grid-cols-2 gap-3 border-b border-[#dfe8e7] bg-[#f7faf4] px-6 py-5 text-xs text-[#202b2e] shadow-inner md:grid-cols-4"
+                        className="col-span-full grid min-w-[1120px] grid-cols-2 gap-x-6 gap-y-2 border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e] md:grid-cols-4"
                         aria-label={`Expanded details for request ${row.id}`}
                       >
                         {[
-                          ["Cluster", row.cluster],
-                          ["Request time", formatDateTime(row.request_timestamp)],
+                          ["Cluster", formatCluster(row.cluster)],
+                          ["Request time", formatDetailDateTime(row.request_timestamp)],
                           ["Region", row.region],
                           ["Dock #", row.dock_no],
                           ["Backlogs", row.backlogs.toLocaleString()],
-                          ["Backlogs time", formatDateTime(row.backlogs_timestamp)],
+                          ["Backlogs time", formatDetailDateTime(row.backlogs_timestamp)],
                           ["LH size", row.truck_size],
                           ["Truck type", row.truck_type],
                           ["SOC PIC · FTE Ops", displayValue(row.ob_fte_name ?? row.ob_fte)],
                           ["LH trip #", displayValue(row.linehaul_trip_no)],
                           ["Plate #", displayValue(row.plate_number)],
                         ].map(([label, value]) => (
-                          <div className="min-w-0 rounded-lg border border-[#e5ebe1] bg-white/75 p-3 shadow-sm" key={label}>
+                          <div className={`min-w-0 border-b border-[#e9eeea] pb-2 ${label === "Cluster" ? "md:col-span-2" : ""}`} key={label}>
                             <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">{label}</dt>
-                            <dd className={`truncate ${label === "Cluster" ? "text-base font-bold text-[#26352d]" : "font-medium text-[#33423a]"}`}>{value}</dd>
+                            <dd className={`break-words ${label === "Cluster" ? "text-sm font-bold leading-5 text-[#26352d]" : "text-xs font-medium leading-4 text-[#33423a]"}`}>{value}</dd>
                           </div>
                         ))}
                       </dl>

@@ -570,6 +570,20 @@
   box-shadow: inset 3px 0 0 var(--soc5-lime-deep), 0 0 0 2px rgb(83 101 0 / 25%);
 }
 
+.lh-request-page .lh-table-row.is-expanded {
+  border-bottom-color: transparent;
+  background: #fbfcf7;
+  box-shadow: inset 3px 0 0 #a2c500;
+}
+
+.lh-request-page .lh-table-row.is-expanded:hover {
+  background: #fbfcf7;
+}
+
+.lh-request-page .lh-table-row.is-expanded:focus-visible {
+  box-shadow: inset 3px 0 0 #a2c500, 0 0 0 2px rgb(83 101 0 / 25%);
+}
+
 .lh-request-page .lh-status {
   display: inline-flex;
   min-height: 22px;

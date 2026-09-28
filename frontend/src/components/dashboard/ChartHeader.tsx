@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 type ChartHeaderProps = {
-  kicker: string;
+  kicker?: string;
   title: string;
-  description: string;
+  description: ReactNode;
   controls: ReactNode;
 };
 
@@ -16,7 +16,7 @@ export function ChartHeader({
   return (
     <div className="intraday-head">
       <div>
-        <p className="panel-kicker">{kicker}</p>
+        {kicker ? <p className="panel-kicker">{kicker}</p> : null}
         <h2>{title}</h2>
         <p>{description}</p>
       </div>

@@ -3,7 +3,6 @@ import {
   ChevronRight,
   LayoutDashboard,
   LogOut,
-  PanelLeftClose,
   PanelLeftOpen,
   Route,
   ShipWheel,
@@ -98,15 +97,6 @@ export function AppSidebar({
               Outbound operations
             </small>
           </div>
-          <button
-            className="sidebar-close"
-            type="button"
-            title="Close navigation"
-            aria-label="Close navigation"
-            onClick={() => onOpenChange(false)}
-          >
-            <PanelLeftClose size={17} strokeWidth={2.2} aria-hidden="true" />
-          </button>
         </div>
 
         <nav aria-label="Primary navigation" className="sidebar-nav">

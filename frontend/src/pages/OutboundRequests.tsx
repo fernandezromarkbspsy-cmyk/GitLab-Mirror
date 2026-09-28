@@ -1,6 +1,7 @@
 import {
   BadgeCheck,
   ChartNoAxesCombined,
+  ChevronDown,
   CircleCheck,
   Clock3,
   Hash,
@@ -38,6 +39,20 @@ function formatDateTime(value?: string | null) {
 }
 function displayValue(value?: string | null) {
   return value?.trim() ? value : "-";
+}
+function formatDetailDateTime(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+function formatCluster(value: string) {
+  return value
+    .split(",")
+    .map((cluster) => cluster.trim())
+    .filter(Boolean)
+    .join(" · ");
 }
 export function OutboundRequests({
   user: _user,
@@ -308,14 +323,14 @@ export function OutboundRequests({
                     return (
                       <div className="contents" key={row.id}>
                         <div
-                          className={`lh-table-row lh-table-grid ${approvalGrid} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
+                          className={`lh-table-row lh-table-grid ${approvalGrid} ${isExpanded ? "is-expanded" : ""} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
                           style={
                             { "--row-index": index } as React.CSSProperties
                           }
                           role="button"
                           tabIndex={0}
                           aria-expanded={isExpanded}
-                          aria-label={`View details for request ${row.id}`}
+                          aria-label={`${isExpanded ? "Collapse" : "Expand"} details for request ${row.id}`}
                           onClick={() => toggleExpanded(row)}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -325,6 +340,10 @@ export function OutboundRequests({
                           }}
                         >
                           <span className="flex items-center gap-2">
+                            <ChevronDown
+                              aria-hidden="true"
+                              className={`size-3.5 shrink-0 text-[#718071] transition-transform ${isExpanded ? "rotate-180 text-[#536500]" : ""}`}
+                            />
                             {canApprove && row.status === "PENDING" && (
                               <input
                                 type="checkbox"
@@ -386,21 +405,21 @@ export function OutboundRequests({
                         </div>
                         {isExpanded && (
                           <dl
-                            className={`sticky left-0 col-span-full grid grid-cols-2 gap-x-8 gap-y-4 border-b border-[#dfe8e7] bg-[#fbfcf7] px-6 py-5 text-xs text-[#202b2e] shadow-inner md:grid-cols-4 ${canApprove ? "min-w-[1210px]" : "min-w-[1120px]"}`}
+                            className={`sticky left-0 col-span-full grid grid-cols-2 gap-x-6 gap-y-2 border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e] md:grid-cols-4 ${canApprove ? "min-w-[1210px]" : "min-w-[1120px]"}`}
                             aria-label={`Expanded details for request ${row.id}`}
                           >
                             {[
-                              ["Cluster", row.cluster],
+                              ["Cluster", formatCluster(row.cluster)],
                               [
                                 "Request time",
-                                formatDateTime(row.request_timestamp),
+                                formatDetailDateTime(row.request_timestamp),
                               ],
                               ["Region", row.region],
                               ["Dock #", row.dock_no],
                               ["Backlogs", row.backlogs.toLocaleString()],
                               [
                                 "Backlogs time",
-                                formatDateTime(row.backlogs_timestamp),
+                                formatDetailDateTime(row.backlogs_timestamp),
                               ],
                               ["LH size", row.truck_size],
                               ["Truck type", row.truck_type],
@@ -408,11 +427,11 @@ export function OutboundRequests({
                               ["LH trip #", displayValue(row.linehaul_trip_no)],
                               ["Plate #", displayValue(row.plate_number)],
                             ].map(([label, value]) => (
-                              <div className="min-w-0 rounded-lg border border-[#e5ebe1] bg-white/75 p-3 shadow-sm" key={label}>
+                              <div className={`min-w-0 border-b border-[#e9eeea] pb-2 ${label === "Cluster" ? "md:col-span-2" : ""}`} key={label}>
                                 <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">
                                   {label}
                                 </dt>
-                                <dd className={`truncate ${label === "Cluster" ? "text-base font-bold text-[#26352d]" : "font-medium text-[#33423a]"}`}>
+                                <dd className={`break-words ${label === "Cluster" ? "text-sm font-bold leading-5 text-[#26352d]" : "text-xs font-medium leading-4 text-[#33423a]"}`}>
                                   {value}
                                 </dd>
                               </div>

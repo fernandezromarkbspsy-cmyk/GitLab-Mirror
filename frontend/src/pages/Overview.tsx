@@ -1,6 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, ClipboardList, Clock3, Truck, X } from "lucide-react";
-import { type ReactNode, useCallback, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  Clock3,
+  Truck,
+  X,
+} from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { ChartHeader } from "../components/dashboard/ChartHeader";
 import { MetricCard } from "../components/dashboard/MetricCard";
 import { Panel } from "../components/dashboard/Panel";
@@ -25,17 +32,18 @@ const INTRADAY_HOURS = [
   6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2,
   3, 4, 5,
 ] as const;
-const CHART_RANGES = ["1D", "1W", "1M"] as const;
-type ChartRange = (typeof CHART_RANGES)[number];
+type IntradayChartPoint = {
+  label: string;
+  hour: number;
+  count: number;
+  x: number;
+  y: number;
+};
 
-function getOperationalDate(now = new Date()) {
-  const operationalDate = new Date(now);
-  if (operationalDate.getHours() < 6)
-    operationalDate.setDate(operationalDate.getDate() - 1);
-
-  const year = operationalDate.getFullYear();
-  const month = String(operationalDate.getMonth() + 1).padStart(2, "0");
-  const day = String(operationalDate.getDate()).padStart(2, "0");
+function getTodayDate(now = new Date()) {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -59,12 +67,11 @@ export function Overview({
 }) {
   const from = useUiStore((state) => state.dateFrom);
   const to = useUiStore((state) => state.dateTo);
-  const intradayDate =
-    from === to && /^\d{4}-\d{2}-\d{2}$/.test(from)
-      ? from
-      : getOperationalDate();
   const [detailStatus, setDetailStatus] = useState<Status | "ALL" | null>(null);
-  const [chartRange, setChartRange] = useState<ChartRange>("1D");
+  const [intradayDate, setIntradayDate] = useState(() => getTodayDate());
+  const [activeIntradayPoint, setActiveIntradayPoint] =
+    useState<IntradayChartPoint | null>(null);
+  const [refreshPulse, setRefreshPulse] = useState(false);
   const range = `date_from=${from}&date_to=${to}`;
   const requests = useQuery({
     queryKey: ["requests", "dashboard"],
@@ -98,6 +105,12 @@ export function Overview({
     staleTime: 10_000,
     enabled: !preview,
   });
+  useEffect(() => {
+    if (!intraday.dataUpdatedAt) return;
+    setRefreshPulse(true);
+    const timeout = window.setTimeout(() => setRefreshPulse(false), 1400);
+    return () => window.clearTimeout(timeout);
+  }, [intraday.dataUpdatedAt]);
   const details = useQuery({
     queryKey: ["request-details", detailStatus, from, to],
     queryFn: () =>
@@ -115,8 +128,10 @@ export function Overview({
       (best, point) => (point.orderQty > best.orderQty ? point : best),
       { hour: 0, orderQty: 0 },
     );
-    const chartPoints = points.map((point, index) => ({
+    const total = points.reduce((sum, point) => sum + point.orderQty, 0);
+    const chartPoints: IntradayChartPoint[] = points.map((point, index) => ({
       label: String(point.hour),
+      hour: point.hour,
       count: point.orderQty,
       x: 46 + index * (points.length > 1 ? 608 / (points.length - 1) : 0),
       y: 150 - (point.orderQty / maximum) * 104,
@@ -131,7 +146,7 @@ export function Overview({
       area: chartPoints.length
         ? `${line} L ${chartPoints[chartPoints.length - 1].x} 160 L ${chartPoints[0].x} 160 Z`
         : "",
-      total: points.reduce((sum, point) => sum + point.orderQty, 0),
+      total,
     };
   }, [intraday.data?.data]);
   const sizes = ["4W", "6W", "10W", "6WF"] as const;
@@ -184,7 +199,7 @@ export function Overview({
       value: totalRequests,
       icon: <ClipboardList size={22} aria-hidden="true" />,
       chip: "Overall volume",
-      footnote: `${dispatchChart.total} hourly events`,
+      footnote: `Intraday chart: ${dispatchChart.total.toLocaleString()} dispatches on ${intradayDate}`,
     },
     {
       label: "Pending Requests",
@@ -259,134 +274,51 @@ export function Overview({
         <section className="intraday-shell" aria-label="Intraday dispatch card">
           <article className="intraday-card">
             <ChartHeader
-              kicker="Intraday Card"
-              title="Hourly dispatch volume"
-              description={`Live operational feed · ${intradayDate}`}
+              title="Hourly Dispatch Volume"
+              description={
+                <>
+                  <span className="intraday-meta-dot" aria-hidden="true" />
+                  <span>Live operational feed</span>
+                  <span aria-hidden="true">·</span>
+                  <time dateTime={intradayDate}>{intradayDate}</time>
+                </>
+              }
               controls={
-                <fieldset
-                  className="intraday-filters"
-                  aria-label="Chart time ranges"
-                >
-                  {CHART_RANGES.map((range) => (
-                    <button
-                      key={range}
-                      type="button"
-                      disabled={range !== "1D"}
-                      aria-pressed={chartRange === range}
-                      title={
-                        range === "1D"
-                          ? "Intraday view"
-                          : "This feed currently supports intraday data only"
-                      }
-                      onClick={() => setChartRange(range)}
-                    >
-                      {range}
-                    </button>
-                  ))}
-                </fieldset>
+                <IntradayDateSelector
+                  value={intradayDate}
+                  onChange={setIntradayDate}
+                />
               }
             />
             <div className="intraday-summary">
-              <div>
-                <span>Total dispatched</span>
-                <strong>
-                  {intraday.isPending ? (
-                    <Skeleton width={56} height={24} />
-                  ) : (
-                    dispatchChart.total.toLocaleString()
-                  )}
-                </strong>
-              </div>
-              <div>
-                <span>Peak hour</span>
-                <strong>
-                  {intraday.isPending ? (
-                    <Skeleton width={78} height={24} />
-                  ) : (
-                    <>
-                      {dispatchChart.peak.orderQty.toLocaleString()}{" "}
-                      <small>{formatHour(dispatchChart.peak.hour)}</small>
-                    </>
-                  )}
-                </strong>
-              </div>
-              <span
-                className={`intraday-live-status${intraday.error ? " is-error" : ""}`}
-              >
-                <i />
-                {intradayStatus}
-              </span>
+              <IntradayKpi
+                label="Total dispatched"
+                loading={intraday.isPending}
+                value={dispatchChart.total.toLocaleString()}
+              />
+              <IntradayKpi
+                label="Peak hour"
+                loading={intraday.isPending}
+                value={dispatchChart.peak.orderQty.toLocaleString()}
+                suffix={formatHour(dispatchChart.peak.hour)}
+                accent
+              />
+              <IntradayLiveStatus
+                error={Boolean(intraday.error)}
+                refreshing={intraday.isFetching && !intraday.isPending}
+                refreshed={refreshPulse}
+                text={intradayStatus}
+              />
             </div>
-            <div className="line-chart top-dispatch-line-chart">
-              <svg
-                viewBox="0 0 700 190"
-                role="img"
-                aria-label="Intraday dispatch order quantity by hour"
-              >
-                <defs>
-                  <linearGradient id="lineAreaTop" x1="0" x2="0" y1="0" y2="1">
-                    <stop
-                      offset="0%"
-                      stopColor="var(--dispatch-accent)"
-                      stopOpacity=".20"
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="var(--dispatch-accent)"
-                      stopOpacity="0"
-                    />
-                  </linearGradient>
-                </defs>
-                <line
-                  className="chart-grid-line"
-                  x1="46"
-                  y1="160"
-                  x2="654"
-                  y2="160"
-                />
-                <line
-                  className="chart-grid-line"
-                  x1="46"
-                  y1="112"
-                  x2="654"
-                  y2="112"
-                />
-                <line
-                  className="chart-grid-line"
-                  x1="46"
-                  y1="64"
-                  x2="654"
-                  y2="64"
-                />
-                <text className="chart-y-label" x="38" y="163">
-                  0
-                </text>
-                <text className="chart-y-label" x="38" y="115">
-                  {Math.round(dispatchChart.maximum / 2).toLocaleString()}
-                </text>
-                <text className="chart-y-label" x="38" y="67">
-                  {dispatchChart.maximum.toLocaleString()}
-                </text>
-                {dispatchChart.area && (
-                  <path className="line-area" d={dispatchChart.area} />
-                )}
-                <path className="line-stroke" d={dispatchChart.line} />
-                {dispatchChart.chartPoints.map((point, index) => (
-                  <g key={point.label}>
-                    <circle cx={point.x} cy={point.y} r="4">
-                      <title>
-                        {formatHour(Number(point.label))}: {point.count} orders
-                      </title>
-                    </circle>
-                    {index % 3 === 0 && (
-                      <text x={point.x} y="178">
-                        {formatHour(Number(point.label))}
-                      </text>
-                    )}
-                  </g>
-                ))}
-              </svg>
-            </div>
+            <IntradayLineChart
+              activePoint={activeIntradayPoint}
+              area={dispatchChart.area}
+              formatHour={formatHour}
+              line={dispatchChart.line}
+              maximum={dispatchChart.maximum}
+              points={dispatchChart.chartPoints}
+              onActivePointChange={setActiveIntradayPoint}
+            />
           </article>
         </section>
       </section>
@@ -553,6 +485,204 @@ export function Overview({
           <RequestTable rows={details.data?.data ?? []} />
         )}
       </Modal>
+    </div>
+  );
+}
+
+function IntradayDateSelector({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <fieldset className="intraday-filters" aria-label="Intraday dispatch date">
+      <label className="sr-only" htmlFor="intraday-date-filter">
+        Intraday dispatch date
+      </label>
+      <span className="intraday-date-icon" aria-hidden="true">
+        <CalendarDays size={16} strokeWidth={2.1} />
+      </span>
+      <input
+        id="intraday-date-filter"
+        type="date"
+        value={value}
+        onChange={(event) => {
+          if (event.target.value) onChange(event.target.value);
+        }}
+      />
+    </fieldset>
+  );
+}
+
+function IntradayKpi({
+  label,
+  loading,
+  value,
+  suffix,
+  accent = false,
+}: {
+  label: string;
+  loading: boolean;
+  value: string;
+  suffix?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className={`intraday-kpi${accent ? " intraday-kpi--accent" : ""}`}>
+      <span>{label}</span>
+      <strong>
+        {loading ? (
+          <Skeleton width={118} height={36} />
+        ) : (
+          <>
+            {value}
+            {suffix ? <small>{suffix}</small> : null}
+          </>
+        )}
+      </strong>
+    </div>
+  );
+}
+
+function IntradayLiveStatus({
+  error,
+  refreshing,
+  refreshed,
+  text,
+}: {
+  error: boolean;
+  refreshing: boolean;
+  refreshed: boolean;
+  text: string;
+}) {
+  return (
+    <span
+      className={`intraday-live-status${error ? " is-error" : ""}${refreshing ? " is-refreshing" : ""}${refreshed ? " is-refreshed" : ""}`}
+      aria-live="polite"
+    >
+      <i aria-hidden="true" />
+      <span>{text}</span>
+      <b>{refreshing ? "Refreshing" : refreshed ? "Updated" : "Live"}</b>
+    </span>
+  );
+}
+
+function IntradayLineChart({
+  activePoint,
+  area,
+  formatHour,
+  line,
+  maximum,
+  points,
+  onActivePointChange,
+}: {
+  activePoint: IntradayChartPoint | null;
+  area: string;
+  formatHour: (hour: number) => string;
+  line: string;
+  maximum: number;
+  points: IntradayChartPoint[];
+  onActivePointChange: (point: IntradayChartPoint | null) => void;
+}) {
+  const tooltipX = activePoint
+    ? activePoint.x > 540
+      ? activePoint.x - 130
+      : activePoint.x + 14
+    : 0;
+  const tooltipY = activePoint ? Math.max(18, activePoint.y - 58) : 0;
+
+  return (
+    <div className="line-chart top-dispatch-line-chart">
+      <svg
+        viewBox="0 0 700 200"
+        role="group"
+        aria-label="Intraday dispatch volume over a 24-hour period"
+      >
+        <desc>
+          Line chart showing dispatch order volume from 6 AM through 5 AM.
+        </desc>
+        <defs>
+          <linearGradient id="lineAreaTop" x1="0" x2="0" y1="0" y2="1">
+            <stop
+              offset="0%"
+              stopColor="var(--dispatch-accent)"
+              stopOpacity=".16"
+            />
+            <stop
+              offset="100%"
+              stopColor="var(--dispatch-accent)"
+              stopOpacity="0"
+            />
+          </linearGradient>
+        </defs>
+        {[160, 112, 64].map((y) => (
+          <line
+            key={y}
+            className="chart-grid-line"
+            x1="46"
+            y1={y}
+            x2="654"
+            y2={y}
+          />
+        ))}
+        <text className="chart-y-label" x="38" y="163">
+          0
+        </text>
+        <text className="chart-y-label" x="38" y="115">
+          {Math.round(maximum / 2).toLocaleString()}
+        </text>
+        <text className="chart-y-label" x="38" y="67">
+          {maximum.toLocaleString()}
+        </text>
+        {area && <path className="line-area" d={area} />}
+        <path className="line-stroke" d={line} />
+        {points.map((point, index) => {
+          const active = activePoint?.hour === point.hour;
+          const timeLabel = formatHour(point.hour);
+          return (
+            <g
+              key={point.label}
+              role="button"
+              tabIndex={0}
+              aria-label={`${timeLabel}: ${point.count.toLocaleString()} dispatched orders`}
+              className={active ? "is-active" : undefined}
+              onBlur={() => onActivePointChange(null)}
+              onFocus={() => onActivePointChange(point)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onActivePointChange(point);
+                }
+              }}
+              onClick={() => onActivePointChange(point)}
+              onMouseEnter={() => onActivePointChange(point)}
+              onMouseLeave={() => onActivePointChange(null)}
+            >
+              <circle cx={point.x} cy={point.y} r="4.2" />
+              {index % 3 === 0 && (
+                <text className="chart-x-label" x={point.x} y="184">
+                  {timeLabel}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {activePoint ? (
+          <g className="chart-hover-state" aria-hidden="true">
+            <line x1={activePoint.x} y1="44" x2={activePoint.x} y2="160" />
+            <circle cx={activePoint.x} cy={activePoint.y} r="5.2" />
+            <rect x={tooltipX} y={tooltipY} width="118" height="44" rx="10" />
+            <text x={tooltipX + 12} y={tooltipY + 18}>
+              {formatHour(activePoint.hour)}
+            </text>
+            <text x={tooltipX + 12} y={tooltipY + 34}>
+              {activePoint.count.toLocaleString()} orders
+            </text>
+          </g>
+        ) : null}
+      </svg>
     </div>
   );
 }

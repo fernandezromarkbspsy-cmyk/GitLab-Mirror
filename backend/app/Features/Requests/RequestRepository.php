@@ -17,7 +17,9 @@ final class RequestRepository
     public function paginate(object $actor, array $filters): LengthAwarePaginator
     {
         $query = DB::table('requests')
-            ->leftJoin('profiles as soc_pic', 'soc_pic.id', '=', 'requests.ob_fte')
+            ->leftJoin('profiles as soc_pic', function ($join): void {
+                $join->on(DB::raw('CAST(soc_pic.id AS TEXT)'), '=', 'requests.ob_fte');
+            })
             ->leftJoin('profiles as creator', 'creator.id', '=', 'requests.created_by')
             ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, self::COLUMNS), [
                 'soc_pic.name as ob_fte_name',
@@ -141,7 +143,9 @@ final class RequestRepository
     public function findVisible(string $id, object $actor): object
     {
         $query = DB::table('requests')
-            ->leftJoin('profiles as soc_pic', 'soc_pic.id', '=', 'requests.ob_fte')
+            ->leftJoin('profiles as soc_pic', function ($join): void {
+                $join->on(DB::raw('CAST(soc_pic.id AS TEXT)'), '=', 'requests.ob_fte');
+            })
             ->leftJoin('profiles as creator', 'creator.id', '=', 'requests.created_by')
             ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, self::COLUMNS), [
                 'soc_pic.name as ob_fte_name',

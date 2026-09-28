@@ -11,16 +11,14 @@ This document lists concrete findings from a schema/RLS/index/Edge-Function revi
 
 ## P0 — Security
 
-### 1. `sync-clusters` and `sync-intraday` Edge Functions are writable by anon-key holders
-- `sync-clusters/index.ts` uses a service-role client but only checks HTTP method + payload shape — no caller-role check. `config.toml` sets `verify_jwt = true`, which accepts **any** valid Supabase JWT, including the public anon key. Anyone with the anon key (meant to be embedded in frontend code) can upsert arbitrary rows into `public.clusters`, bypassing the DB-level write restriction described in the `001_initial_schema.sql` RLS comments.
-- `sync-intraday/index.ts` relies on a shared secret header (`x-sync-secret`) instead of `verify_jwt`, but:
-  - `supabase/config.toml` has **no `[functions.sync-intraday]` block**, so it inherits the platform default `verify_jwt = true` — a caller without a Supabase JWT gets rejected before the function's own secret check even runs (an easy-to-miss deploy gap).
-  - The secret check (`if (expectedSecret && ...)`) is **fail-open**: if `INTRADAY_SYNC_SECRET` is unset/empty in an environment, the check is skipped entirely and the endpoint accepts unauthenticated writes via the embedded service-role client.
+### 1. Shared sync secret grants write access to both Edge Functions
+- Both functions use a service-role client and explicitly set `verify_jwt = false` so Google Apps Script requests reach their handlers. Each handler requires the `x-sync-source` header and an `x-sync-secret` value matching the server-side `SYNC_SECRET`; missing server configuration fails closed.
+- The same secret authorizes writes to both `public.clusters` and `public.intraday_dispatch`. A compromise therefore affects both sync paths; store it only in Supabase Secrets and the two Apps Script projects, and rotate all copies together.
 
 **Recommendation:**
-- Add an explicit `[functions.sync-intraday]` section to `config.toml` and decide deliberately whether `verify_jwt` should be true/false there.
-- In both functions, add an explicit caller-role/service check inside the handler (don't rely solely on `verify_jwt`), and make the shared-secret check fail-closed (reject if the env var is missing, not just if it mismatches).
-- Treat "service-role key lives only server-side" as necessary but not sufficient — the function's own authorization logic is the actual gate once verify_jwt only proves *authentication*, not *authorization* (see [CLAUDE.md](../CLAUDE.md) §9).
+- Keep the shared secret out of script source, frontend code, and logs; rotate it in Supabase and both Apps Script projects together.
+- If independent revocation becomes important, restore separate per-function secrets to reduce the impact of a compromised integration.
+- Keep the service-role key server-side; the shared-secret check is the authorization gate for these integrations.
 
 ### 2. `intraday_dispatch` RLS policy is `using (true)` for all authenticated users
 - Every other table in the schema gates SELECT through `current_role()` or row ownership. `intraday_dispatch`'s policy (`010_intraday_dispatch.sql`) has no such predicate — any authenticated user, regardless of role, can read all dispatch volume data.

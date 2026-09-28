@@ -14,16 +14,24 @@ The sheet does not contain a separate `hub_name` column, so the sync function de
 
 ## Apps Script
 
-Store the cluster sync secret in Apps Script **Script Properties** as `CLUSTER_SYNC_SECRET`.
+Set these values in Apps Script **Script Properties**. Use the same `SYNC_SECRET` value as the intraday sync project and Supabase function secret.
+
+- `SPREADSHEET_ID`: the source spreadsheet ID.
+- `SHEET_NAME`: `cluster`.
+- `SYNC_URL`: the complete deployed Edge Function URL, ending in `/functions/v1/sync-clusters`.
+- `SYNC_SECRET`: the shared secret configured in Supabase.
 
 ```javascript
-const SUPABASE_URL = 'https://jbbqdthptwnlhetwhfng.supabase.co';
-const SHEET_NAME = 'cluster';
 const SOURCE_RANGE = 'A1:E1000';
 
 function syncClusters() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  if (!sheet) throw new Error(`Sheet not found: ${SHEET_NAME}`);
+  const properties = PropertiesService.getScriptProperties();
+  const spreadsheetId = requiredProperty(properties, 'SPREADSHEET_ID');
+  const sheetName = requiredProperty(properties, 'SHEET_NAME');
+  const syncUrl = requiredProperty(properties, 'SYNC_URL');
+  const secret = requiredProperty(properties, 'SYNC_SECRET');
+  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName(sheetName);
+  if (!sheet) throw new Error(`Sheet not found: ${sheetName}`);
 
   const values = sheet.getRange(SOURCE_RANGE).getValues();
   const headers = values.shift().map(String);
@@ -51,14 +59,8 @@ function syncClusters() {
         : (row[4] === '' ? null : String(row[4])),
     }));
 
-  const secret = PropertiesService
-    .getScriptProperties()
-    .getProperty('CLUSTER_SYNC_SECRET');
-
-  if (!secret) throw new Error('Missing Script Property: CLUSTER_SYNC_SECRET');
-
   const response = UrlFetchApp.fetch(
-    `${SUPABASE_URL}/functions/v1/sync-clusters`,
+    syncUrl,
     {
       method: 'post',
       contentType: 'application/json',
@@ -81,6 +83,12 @@ function syncClusters() {
   console.log(body);
   return JSON.parse(body);
 }
+
+function requiredProperty(properties, name) {
+  const value = properties.getProperty(name);
+  if (!value) throw new Error(`Missing Script Property: ${name}`);
+  return value;
+}
 ```
 
-Run `syncClusters()` manually first, then add a time-driven trigger if automatic synchronization is required.
+Set `SYNC_SECRET` to the same value in both Apps Script projects and in Supabase. Run `syncClusters()` manually first, then add a time-driven trigger if automatic synchronization is required.

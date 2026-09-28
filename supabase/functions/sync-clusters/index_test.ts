@@ -8,7 +8,7 @@ const headers = {
 };
 
 Deno.test("rejects invalid cluster rows with a stable validation response", async () => {
-  Deno.env.set("CLUSTER_SYNC_SECRET", "test-secret");
+  Deno.env.set("SYNC_SECRET", "test-secret");
   const response = await handleRequest(new Request("http://localhost", {
     method: "POST",
     headers,
@@ -24,7 +24,7 @@ Deno.test("rejects invalid cluster rows with a stable validation response", asyn
 });
 
 Deno.test("rejects a missing shared secret configuration", async () => {
-  Deno.env.delete("CLUSTER_SYNC_SECRET");
+  Deno.env.delete("SYNC_SECRET");
   const response = await handleRequest(new Request("http://localhost", {
     method: "POST",
     headers,
@@ -35,7 +35,7 @@ Deno.test("rejects a missing shared secret configuration", async () => {
 });
 
 Deno.test("rejects oversized request bodies", async () => {
-  Deno.env.set("CLUSTER_SYNC_SECRET", "test-secret");
+  Deno.env.set("SYNC_SECRET", "test-secret");
   const response = await handleRequest(new Request("http://localhost", {
     method: "POST",
     headers,

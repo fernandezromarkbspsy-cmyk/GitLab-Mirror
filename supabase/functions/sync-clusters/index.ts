@@ -63,7 +63,7 @@ export async function handleRequest(req: Request): Promise<Response> {
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
     const syncSource = (req.headers.get("x-sync-source") ?? "").trim().toLowerCase();
     if (!ALLOWED_SYNC_SOURCES.has(syncSource)) return json({ error: "Forbidden: unknown sync source" }, 403);
-    const expectedSecret = Deno.env.get("CLUSTER_SYNC_SECRET")?.trim();
+    const expectedSecret = Deno.env.get("SYNC_SECRET")?.trim();
     if (!expectedSecret) return json({ error: "Server misconfigured" }, 500);
     if ((req.headers.get("x-sync-secret") ?? "").trim() !== expectedSecret) return json({ error: "Unauthorized" }, 401);
 

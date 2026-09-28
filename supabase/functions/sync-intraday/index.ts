@@ -85,7 +85,7 @@ export async function handleRequest(req: Request): Promise<Response> {
       return json({ error: "Forbidden: unknown sync source" }, 403);
     }
 
-    const expectedSecret = Deno.env.get('INTRADAY_SYNC_SECRET')?.trim();
+    const expectedSecret = Deno.env.get('SYNC_SECRET')?.trim();
     if (!expectedSecret) {
       return json({ error: "Server misconfigured" }, 500);
     }

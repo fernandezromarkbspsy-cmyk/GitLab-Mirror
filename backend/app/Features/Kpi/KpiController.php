@@ -44,7 +44,15 @@ final class KpiController
         $dateExpression = DB::connection()->getDriverName() === 'pgsql'
             ? "(request_timestamp AT TIME ZONE '".str_replace("'", "''", $timezone)."')::date"
             : 'date(request_timestamp)';
-        $rows = DB::table('requests')->whereBetween('request_timestamp', [$from, $to])
+        $fromBinding = DB::connection()->getDriverName() === 'pgsql'
+            ? $from->format('Y-m-d H:i:sP')
+            : $from;
+
+        $toBinding = DB::connection()->getDriverName() === 'pgsql'
+            ? $to->format('Y-m-d H:i:sP')
+            : $to;
+
+        $rows = DB::table('requests')->whereBetween('request_timestamp', [$fromBinding, $toBinding])
             ->selectRaw("{$dateExpression} as date, count(*) as total")
             ->selectRaw("sum(case when status = 'CONFIRMED' then 1 else 0 end) as confirmed")
             ->groupByRaw($dateExpression)->orderBy('date')->get();

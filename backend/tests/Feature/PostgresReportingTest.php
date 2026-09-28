@@ -5,10 +5,8 @@ namespace Tests\Feature;
 use App\Features\Kpi\KpiController;
 use App\Features\Requests\RequestAuthorizer;
 use App\Features\Requests\RequestRepository;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use PDO;
 use Tests\TestCase;
 
@@ -24,40 +22,45 @@ final class PostgresReportingTest extends TestCase
 
         config()->set('app.business_timezone', 'Asia/Manila');
         config()->set('database.default', 'pgsql');
+        $pgsqlHost = strtolower((string) config('database.connections.pgsql.host'));
+        if (! in_array($pgsqlHost, ['127.0.0.1', 'localhost', '::1', 'postgres'], true)) {
+            $this->markTestSkipped('PostgreSQL integration tests require a local or CI test database host.');
+        }
+
         DB::purge('pgsql');
         DB::reconnect('pgsql');
-        Schema::dropIfExists('requests');
-        Schema::create('requests', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->timestampTz('request_timestamp');
-            $table->string('cluster');
-            $table->string('region');
-            $table->string('dock_no');
-            $table->integer('backlogs');
-            $table->timestampTz('backlogs_timestamp')->nullable();
-            $table->string('ob_fte')->nullable();
-            $table->string('truck_size');
-            $table->string('truck_type');
-            $table->string('plate_number')->nullable();
-            $table->timestampTz('provide_time')->nullable();
-            $table->string('linehaul_trip_no')->nullable();
-            $table->timestampTz('docked_time')->nullable();
-            $table->string('status');
-            $table->text('rejection_remarks')->nullable();
-            $table->string('driver_id')->nullable();
-            $table->uuid('created_by');
-            $table->timestampTz('approved_at')->nullable();
-            $table->timestampTz('rejected_at')->nullable();
-            $table->timestampTz('confirmed_at')->nullable();
-            $table->timestampTz('created_at')->nullable();
-            $table->timestampTz('updated_at')->nullable();
-        });
+        DB::statement('CREATE TEMPORARY TABLE profiles (id UUID PRIMARY KEY, name TEXT)');
+        DB::statement('CREATE TEMPORARY TABLE requests (
+            id UUID PRIMARY KEY,
+            request_timestamp TIMESTAMPTZ NOT NULL,
+            cluster TEXT NOT NULL,
+            region TEXT NOT NULL,
+            dock_no TEXT NOT NULL,
+            backlogs INTEGER NOT NULL,
+            backlogs_timestamp TIMESTAMPTZ NULL,
+            ob_fte TEXT NULL,
+            truck_size TEXT NOT NULL,
+            truck_type TEXT NOT NULL,
+            plate_number TEXT NULL,
+            provide_time TIMESTAMPTZ NULL,
+            linehaul_trip_no TEXT NULL,
+            docked_time TIMESTAMPTZ NULL,
+            status TEXT NOT NULL,
+            rejection_remarks TEXT NULL,
+            driver_id TEXT NULL,
+            created_by UUID NOT NULL,
+            approved_at TIMESTAMPTZ NULL,
+            rejected_at TIMESTAMPTZ NULL,
+            confirmed_at TIMESTAMPTZ NULL,
+            created_at TIMESTAMPTZ NULL,
+            updated_at TIMESTAMPTZ NULL
+        )');
     }
 
     protected function tearDown(): void
     {
         if (getenv('POSTGRES_TESTS') === '1' && in_array('pgsql', PDO::getAvailableDrivers(), true)) {
-            Schema::dropIfExists('requests');
+            DB::purge('pgsql');
         }
 
         parent::tearDown();

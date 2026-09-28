@@ -8,7 +8,7 @@ const headers = {
 };
 
 Deno.test("rejects a missing shared secret configuration", async () => {
-  Deno.env.delete("INTRADAY_SYNC_SECRET");
+  Deno.env.delete("SYNC_SECRET");
   const response = await handleRequest(new Request("http://localhost", {
     method: "POST",
     headers,
@@ -19,7 +19,7 @@ Deno.test("rejects a missing shared secret configuration", async () => {
 });
 
 Deno.test("reports invalid intraday rows without exposing provider errors", async () => {
-  Deno.env.set("INTRADAY_SYNC_SECRET", "test-secret");
+  Deno.env.set("SYNC_SECRET", "test-secret");
   const response = await handleRequest(new Request("http://localhost", {
     method: "POST",
     headers,
@@ -35,7 +35,7 @@ Deno.test("reports invalid intraday rows without exposing provider errors", asyn
 });
 
 Deno.test("rejects oversized request bodies", async () => {
-  Deno.env.set("INTRADAY_SYNC_SECRET", "test-secret");
+  Deno.env.set("SYNC_SECRET", "test-secret");
   const response = await handleRequest(new Request("http://localhost", {
     method: "POST",
     headers,

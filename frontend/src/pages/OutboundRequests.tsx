@@ -390,12 +390,11 @@ export function OutboundRequests({
                             aria-label={`Expanded details for request ${row.id}`}
                           >
                             {[
-                              ["Request ID", row.id],
+                              ["Cluster", row.cluster],
                               [
                                 "Request time",
                                 formatDateTime(row.request_timestamp),
                               ],
-                              ["Cluster", row.cluster],
                               ["Region", row.region],
                               ["Dock #", row.dock_no],
                               ["Backlogs", row.backlogs.toLocaleString()],
@@ -405,15 +404,15 @@ export function OutboundRequests({
                               ],
                               ["LH size", row.truck_size],
                               ["Truck type", row.truck_type],
-                              ["SOC PIC", displayValue(row.ob_fte)],
+                              ["SOC PIC · FTE Ops", displayValue(row.ob_fte_name ?? row.ob_fte)],
                               ["LH trip #", displayValue(row.linehaul_trip_no)],
                               ["Plate #", displayValue(row.plate_number)],
                             ].map(([label, value]) => (
-                              <div className="min-w-0" key={label}>
-                                <dt className="mb-1 font-semibold uppercase tracking-[0.04em] text-[#6e7778]">
+                              <div className="min-w-0 rounded-lg border border-[#e5ebe1] bg-white/75 p-3 shadow-sm" key={label}>
+                                <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">
                                   {label}
                                 </dt>
-                                <dd className="truncate font-medium">
+                                <dd className={`truncate ${label === "Cluster" ? "text-base font-bold text-[#26352d]" : "font-medium text-[#33423a]"}`}>
                                   {value}
                                 </dd>
                               </div>

@@ -16,7 +16,13 @@ final class RequestRepository
 
     public function paginate(object $actor, array $filters): LengthAwarePaginator
     {
-        $query = DB::table('requests')->select(self::COLUMNS);
+        $query = DB::table('requests')
+            ->leftJoin('profiles as soc_pic', 'soc_pic.id', '=', 'requests.ob_fte')
+            ->leftJoin('profiles as creator', 'creator.id', '=', 'requests.created_by')
+            ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, self::COLUMNS), [
+                'soc_pic.name as ob_fte_name',
+                'creator.name as created_by_name',
+            ]));
         if ($actor->role === 'ops_pic' && ! ($actor->is_admin ?? false)) {
             $query->where('created_by', $actor->id);
         }
@@ -35,7 +41,7 @@ final class RequestRepository
 
         $sort = $filters['sort'] ?? 'created_at';
         $direction = $filters['direction'] ?? 'desc';
-        $query->orderBy($sort, $direction)->orderByDesc('id');
+        $query->orderBy('requests.'.$sort, $direction)->orderByDesc('requests.id');
 
         return $query
             ->paginate(min((int) ($filters['per_page'] ?? 20), 100))
@@ -134,7 +140,14 @@ final class RequestRepository
 
     public function findVisible(string $id, object $actor): object
     {
-        $query = DB::table('requests')->select(self::COLUMNS)->where('id', $id);
+        $query = DB::table('requests')
+            ->leftJoin('profiles as soc_pic', 'soc_pic.id', '=', 'requests.ob_fte')
+            ->leftJoin('profiles as creator', 'creator.id', '=', 'requests.created_by')
+            ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, self::COLUMNS), [
+                'soc_pic.name as ob_fte_name',
+                'creator.name as created_by_name',
+            ]))
+            ->where('requests.id', $id);
         $request = $query->firstOrFail();
         abort_unless($this->authorizer->canView($actor, $request), 403);
 

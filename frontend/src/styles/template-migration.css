@@ -2288,11 +2288,16 @@ body:has(.app-sidebar) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   padding: 14px;
-  background: #fafbfa;
+  background: #f7faf4;
 }
 
 .request-detail-grid > div {
   min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #e5ebe1;
+  border-radius: 9px;
+  background: rgb(255 255 255 / 75%);
+  box-shadow: 0 2px 6px rgb(43 61 47 / 5%);
 }
 
 .request-detail-grid span,
@@ -2305,12 +2310,22 @@ body:has(.app-sidebar) {
 .request-detail-grid span {
   color: #8b8f93;
   font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .request-detail-grid strong {
   color: #36393c;
   font-size: 11px;
+  font-weight: 600;
   white-space: nowrap;
+}
+
+.request-detail-grid > div:first-child strong {
+  color: #26352d;
+  font-size: 16px;
+  font-weight: 800;
 }
 
 .data-panel {

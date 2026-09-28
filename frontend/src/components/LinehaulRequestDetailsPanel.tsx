@@ -167,7 +167,7 @@ export function LinehaulRequestDetailsPanel({
           />
           <div>
             <span className="lh-details-panel-eyebrow">Linehaul request</span>
-            <strong>{request.id}</strong>
+            <strong>{request.cluster}</strong>
           </div>
         </div>
         <div className="lh-details-panel-actions">
@@ -192,7 +192,7 @@ export function LinehaulRequestDetailsPanel({
           {request.cluster.charAt(0)}
         </div>
         <div className="lh-details-panel-summary-copy">
-          <strong>{request.cluster}</strong>
+          <strong className="text-base font-bold">{request.cluster}</strong>
           <span>{request.region}</span>
         </div>
         <StatusBadge status={request.status} className="self-start" uppercase />
@@ -222,17 +222,17 @@ export function LinehaulRequestDetailsPanel({
           <dl className="lh-details-panel-fields">
             <div>
               <dt>
-                <CalendarDays size={14} />
-                Request time
-              </dt>
-              <dd>{formatDateTime(request.request_timestamp)}</dd>
-            </div>
-            <div>
-              <dt>
                 <Hash size={14} />
                 Cluster
               </dt>
               <dd>{valueOf(request.cluster)}</dd>
+            </div>
+            <div>
+              <dt>
+                <CalendarDays size={14} />
+                Request time
+              </dt>
+              <dd>{formatDateTime(request.request_timestamp)}</dd>
             </div>
             <div>
               <dt>
@@ -265,9 +265,9 @@ export function LinehaulRequestDetailsPanel({
             <div>
               <dt>
                 <UserRound size={14} />
-                SOC PIC
+                SOC PIC · FTE Ops
               </dt>
-              <dd>{valueOf(request.ob_fte)}</dd>
+              <dd>{valueOf(request.ob_fte_name ?? request.ob_fte)}</dd>
             </div>
             <div>
               <dt>

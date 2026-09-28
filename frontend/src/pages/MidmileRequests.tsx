@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import type { FormEvent, MouseEvent } from "react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
 import { Modal } from "../components/Modal";
@@ -275,6 +275,7 @@ export function MidmileRequests({ user }: { user: User }) {
                 {!requests.isPending &&
                   !requests.error &&
                   (requests.data?.data ?? []).map((row, index) => (
+                    <Fragment key={row.id}>
                     <div
                       className="lh-table-row lh-table-grid"
                       key={row.id}
@@ -367,6 +368,32 @@ export function MidmileRequests({ user }: { user: User }) {
                         )}
                       </span>
                     </div>
+                    {expandedRow === row.id && (
+                      <dl
+                        className="col-span-full grid min-w-[1120px] grid-cols-2 gap-3 border-b border-[#dfe8e7] bg-[#f7faf4] px-6 py-5 text-xs text-[#202b2e] shadow-inner md:grid-cols-4"
+                        aria-label={`Expanded details for request ${row.id}`}
+                      >
+                        {[
+                          ["Cluster", row.cluster],
+                          ["Request time", formatDateTime(row.request_timestamp)],
+                          ["Region", row.region],
+                          ["Dock #", row.dock_no],
+                          ["Backlogs", row.backlogs.toLocaleString()],
+                          ["Backlogs time", formatDateTime(row.backlogs_timestamp)],
+                          ["LH size", row.truck_size],
+                          ["Truck type", row.truck_type],
+                          ["SOC PIC · FTE Ops", displayValue(row.ob_fte_name ?? row.ob_fte)],
+                          ["LH trip #", displayValue(row.linehaul_trip_no)],
+                          ["Plate #", displayValue(row.plate_number)],
+                        ].map(([label, value]) => (
+                          <div className="min-w-0 rounded-lg border border-[#e5ebe1] bg-white/75 p-3 shadow-sm" key={label}>
+                            <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">{label}</dt>
+                            <dd className={`truncate ${label === "Cluster" ? "text-base font-bold text-[#26352d]" : "font-medium text-[#33423a]"}`}>{value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
+                    </Fragment>
                   ))}
                 {!requests.isPending &&
                   !requests.error &&

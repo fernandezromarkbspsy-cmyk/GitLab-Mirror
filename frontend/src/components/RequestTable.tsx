@@ -78,7 +78,7 @@ const columns: Column[] = [
     key: "ob_fte",
     label: "Ops FTE",
     icon: UserRound,
-    render: (request) => empty(request.ob_fte),
+    render: (request) => empty(request.ob_fte_name ?? request.ob_fte),
   },
   {
     key: "linehaul_trip_no",
@@ -97,7 +97,7 @@ const columns: Column[] = [
     key: "mm_fte",
     label: "FTE MM",
     icon: UserRound,
-    render: (request) => empty(request.created_by),
+    render: (request) => empty(request.created_by_name ?? request.created_by),
   },
   {
     key: "truck_size",
@@ -127,7 +127,7 @@ const columns: Column[] = [
     key: "doc_officer",
     label: "DOC Officer",
     icon: UserRound,
-    render: (request) => empty(request.created_by),
+    render: (request) => empty(request.created_by_name ?? request.created_by),
   },
 ];
 
@@ -325,11 +325,11 @@ function TripCopyCell({ request }: { request: TruckRequest }) {
 
 function RequestDetails({ request }: { request: TruckRequest }) {
   const fields: Array<[string, ReactNode]> = [
-    ["Request ID", request.id],
-    ["Created By", request.created_by],
+    ["Cluster", request.cluster],
+    ["Created By", request.created_by_name ?? request.created_by],
     ["Created At", formatDateTime(request.created_at)],
     ["Updated At", formatDateTime(request.updated_at)],
-    ["Driver ID", empty(request.driver_id)],
+    ["Driver", empty(request.driver_id)],
     ["Rejection Remarks", empty(request.rejection_remarks)],
   ];
 

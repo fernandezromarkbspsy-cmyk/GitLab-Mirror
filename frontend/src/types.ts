@@ -29,6 +29,7 @@ export interface TruckRequest {
   backlogs: number;
   backlogs_timestamp?: string | null;
   ob_fte?: string | null;
+  ob_fte_name?: string | null;
   truck_size: string;
   truck_type: string;
   plate_number?: string | null;
@@ -39,6 +40,7 @@ export interface TruckRequest {
   rejection_remarks?: string | null;
   driver_id?: string | null;
   created_by: string;
+  created_by_name?: string | null;
   created_at: string;
   updated_at?: string;
 }

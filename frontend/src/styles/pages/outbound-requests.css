@@ -886,6 +886,16 @@
   font-size: 12px;
 }
 
+.lh-request-page .lh-drawer-backdrop {
+  z-index: 100000;
+}
+
+.lh-request-page .lh-details-drawer {
+  z-index: 100001;
+  top: 76px;
+  height: calc(100dvh - 76px);
+}
+
 .lh-table-footer {
   display: flex;
   min-width: 0;

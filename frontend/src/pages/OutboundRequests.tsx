@@ -15,6 +15,7 @@ import {
   Tag,
   Truck,
   Users,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -87,6 +88,7 @@ export function OutboundRequests({
   const [view, setView] = useState<"table" | "card">("table");
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [printRequest, setPrintRequest] = useState<TruckRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<TruckRequest | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [rejecting, setRejecting] = useState<TruckRequest | null>(null);
@@ -417,6 +419,16 @@ export function OutboundRequests({
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
+                                    setSelectedRequest(row);
+                                    setOpenRow(null);
+                                  }}
+                                >
+                                  View
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
                                     setPrintRequest(row);
                                     setOpenRow(null);
                                   }}
@@ -518,6 +530,14 @@ export function OutboundRequests({
                       <button
                         type="button"
                         className="text-button"
+                        aria-label="View details"
+                        onClick={() => setSelectedRequest(row)}
+                      >
+                        View details
+                      </button>
+                      <button
+                        type="button"
+                        className="text-button"
                         onClick={() => setPrintRequest(row)}
                       >
                         <Printer size={14} />
@@ -541,6 +561,53 @@ export function OutboundRequests({
           />
         </section>
       </section>
+      {selectedRequest && (
+        <>
+          <button
+            type="button"
+            className="lh-drawer-backdrop"
+            aria-label="Dismiss request details"
+            onClick={() => setSelectedRequest(null)}
+          />
+          <section
+            className="lh-details-drawer"
+            aria-label={`Details for request ${selectedRequest.id}`}
+          >
+            <div className="lh-drawer-header">
+              <div>
+                <span className="lh-drawer-eyebrow">Request details</span>
+                <h2>{selectedRequest.id}</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Close request details"
+                onClick={() => setSelectedRequest(null)}
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="lh-drawer-profile">
+              <div className="lh-drawer-avatar" aria-hidden="true">
+                {selectedRequest.cluster.slice(0, 1).toUpperCase()}
+              </div>
+              <div>
+                <strong>{selectedRequest.cluster}</strong>
+                <span>{selectedRequest.region} · Dock {selectedRequest.dock_no}</span>
+              </div>
+              <StatusBadge status={selectedRequest.status} uppercase />
+            </div>
+            <dl className="lh-drawer-fields">
+              <div><dt>Request time</dt><dd>{formatDetailDateTime(selectedRequest.request_timestamp)}</dd></div>
+              <div><dt>Backlogs</dt><dd>{selectedRequest.backlogs.toLocaleString()}</dd></div>
+              <div><dt>LH size</dt><dd>{selectedRequest.truck_size}</dd></div>
+              <div><dt>Truck type</dt><dd>{selectedRequest.truck_type}</dd></div>
+              <div><dt>SOC PIC</dt><dd>{displayValue(selectedRequest.ob_fte_name ?? selectedRequest.ob_fte)}</dd></div>
+              <div><dt>LH trip #</dt><dd>{displayValue(selectedRequest.linehaul_trip_no)}</dd></div>
+              <div><dt>Plate #</dt><dd>{displayValue(selectedRequest.plate_number)}</dd></div>
+            </dl>
+          </section>
+        </>
+      )}
       {rejecting && (
         <Modal
           open

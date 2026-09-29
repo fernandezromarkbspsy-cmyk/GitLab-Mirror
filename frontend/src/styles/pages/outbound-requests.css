@@ -1435,6 +1435,16 @@
   cursor: pointer;
 }
 
+.lh-request-page .lh-table-row.is-selected {
+  background: #eef9f5;
+  box-shadow: inset 3px 0 0 #0b7f78;
+}
+
+.lh-request-page .lh-table-row.is-selected:hover,
+.lh-request-page .lh-table-row.is-selected:focus-visible {
+  background: #e3f5ef;
+}
+
 .request-selection-count {
   min-height: 30px;
   border: 1px solid #b9d9d4;

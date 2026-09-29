@@ -381,7 +381,7 @@ export function OutboundRequests({
                     return (
                       <div className="contents" key={row.id}>
                         <div
-                          className={`lh-table-row lh-table-grid ${isExpanded ? "is-expanded" : ""} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
+                          className={`lh-table-row lh-table-grid ${isExpanded ? "is-expanded" : ""} ${selectedIds.has(row.id) ? "is-selected" : ""} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
                           style={
                             { "--row-index": index } as React.CSSProperties
                           }
@@ -406,7 +406,7 @@ export function OutboundRequests({
                               {canApprove && row.status === "PENDING" && (
                                 <input
                                   type="checkbox"
-                                  className="size-4 shrink-0 cursor-pointer accent-[#536500]"
+                                  className="request-row-checkbox"
                                   aria-label={`Select request ${row.id}`}
                                   checked={selectedIds.has(row.id)}
                                   onChange={() => toggleSelected(row.id)}

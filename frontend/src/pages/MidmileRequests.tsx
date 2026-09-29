@@ -351,18 +351,18 @@ export function MidmileRequests({ user }: { user: User }) {
                 </span>
               </div>
               <div className="lh-table-body">
-                {requests.isFetching && (
+                {requests.isPending && (
                   <SkeletonRequestTable rows={6} columns={visibleColumns.length + 1} />
                 )}
                 {requests.error && (
                   <div className="lh-empty-state">{requests.error.message}</div>
                 )}
-                {!requests.isFetching &&
+                {!requests.isPending &&
                   !requests.error &&
                   (requests.data?.data ?? []).map((row, index) => (
                     <Fragment key={row.id}>
                     <div
-                      className={`lh-table-row lh-table-grid ${expandedRow === row.id ? "is-expanded" : ""}`}
+                      className={`lh-table-row lh-table-grid ${expandedRow === row.id ? "is-expanded" : ""} ${selectedIds.has(row.id) ? "is-selected" : ""}`}
                       key={row.id}
                       style={{ "--row-index": index } as React.CSSProperties}
                       role="button"
@@ -510,7 +510,7 @@ export function MidmileRequests({ user }: { user: User }) {
                     )}
                     </Fragment>
                   ))}
-                {!requests.isFetching &&
+                {!requests.isPending &&
                   !requests.error &&
                   (requests.data?.data ?? []).length === 0 && (
                     <div className="lh-empty-state">
@@ -521,7 +521,7 @@ export function MidmileRequests({ user }: { user: User }) {
             </div>
           ) : (
             <div className="lh-card-view">
-              {requests.isFetching ? (
+              {requests.isPending ? (
                 <SkeletonCardList rows={4} />
               ) : (
                 (requests.data?.data ?? []).map((row) => (

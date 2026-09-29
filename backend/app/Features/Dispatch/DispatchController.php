@@ -11,9 +11,9 @@ final class DispatchController
     public function intraday(Request $request): JsonResponse
     {
         abort_unless(
-            in_array($request->attributes->get('actor')->role, ['fte_ops', 'fte_mm'], true),
+            in_array($request->attributes->get('actor')->role, ['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'], true),
             403,
-            'Only FTE users can view intraday dispatch data.',
+            'Only authenticated operational users can view intraday dispatch data.',
         );
 
         $date = $request->validate(['date' => ['required', 'date_format:Y-m-d']])['date'];

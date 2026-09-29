@@ -49,7 +49,7 @@ export function AppSidebar({
   const showOutbound = user.role === "ops_pic" || user.role === "fte_ops";
   const showMidmile = user.role === "fte_mm";
   const showDocking = user.role === "doc_officer";
-  const showKpi = user.role === "fte_ops";
+  const showKpi = true;
   const showUsers = user.role === "fte_ops" || user.role === "fte_mm";
   const [expanded, setExpanded] = useState<MenuGroup | null>(() =>
     groupForView(activeView),

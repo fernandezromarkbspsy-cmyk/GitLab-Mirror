@@ -60,7 +60,7 @@ export function Dashboard({
       (activeUser.role === "ops_pic" || activeUser.role === "fte_ops")) ||
     (candidate === "truck-request" && activeUser.role === "fte_mm") ||
     (candidate === "docking" && activeUser.role === "doc_officer") ||
-    (candidate === "kpi" && activeUser.role === "fte_ops") ||
+    candidate === "kpi" ||
     (candidate === "users" &&
       (activeUser.role === "fte_ops" || activeUser.role === "fte_mm"));
   const requestedView = getAppView(location.pathname);

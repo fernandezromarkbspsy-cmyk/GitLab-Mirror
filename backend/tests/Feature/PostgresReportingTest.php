@@ -104,6 +104,21 @@ final class PostgresReportingTest extends TestCase
         $this->assertSame(1, (int) $response['data'][0]['total']);
     }
 
+    public function test_all_roles_can_view_kpi_reporting(): void
+    {
+        foreach (['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'] as $role) {
+            $request = Request::create('/api/kpi/daily', 'GET', [
+                'date_from' => '2026-09-19',
+                'date_to' => '2026-09-19',
+            ]);
+            $request->attributes->set('actor', (object) ['role' => $role]);
+
+            $response = (new KpiController)->daily($request);
+
+            $this->assertSame(200, $response->getStatusCode(), "KPI access denied for {$role}.");
+        }
+    }
+
     public function test_request_date_filter_keeps_timestamp_predicate_indexable(): void
     {
         $queries = [];

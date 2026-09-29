@@ -62,6 +62,10 @@ final class KpiController
 
     private function authorize(Request $request): void
     {
-        abort_unless($request->attributes->get('actor')->role === 'fte_ops', 403, 'Only FTE Ops can view KPI data.');
+        abort_unless(
+            in_array($request->attributes->get('actor')->role, ['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'], true),
+            403,
+            'Only authenticated operational users can view KPI data.',
+        );
     }
 }

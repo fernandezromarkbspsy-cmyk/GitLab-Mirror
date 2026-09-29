@@ -72,6 +72,7 @@ export function MidmileRequests({ user }: { user: User }) {
   const [view, setView] = useState<"table" | "card">("table");
   const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
     linehaulColumnOptions.map(({ key }) => key),
   );
@@ -189,6 +190,10 @@ export function MidmileRequests({ user }: { user: User }) {
           filters={filters}
           onChange={changeFilters}
           onSort={sortBy}
+          onExport={exportSheet}
+          showAddNew={false}
+          showCreateNew={false}
+          onNotice={setNotice}
         />
 
         {selectedRow && (
@@ -270,7 +275,7 @@ export function MidmileRequests({ user }: { user: User }) {
               >
               <div className="lh-table-head lh-table-grid">
                 {hasColumn("status") && (
-                  <span>
+                  <span className="flex items-center gap-2">
                     <CircleCheck size={14} />
                     Status
                   </span>
@@ -332,7 +337,18 @@ export function MidmileRequests({ user }: { user: User }) {
                     <span>Plate #</span>
                   </button>
                 )}
-                <span />
+                <span className="justify-center">
+                  {selectedIds.size > 0 && (
+                    <button
+                      className="request-selection-count"
+                      type="button"
+                      onClick={() => setSelectedIds(new Set())}
+                      aria-label="Clear selected Midmile requests"
+                    >
+                      {selectedIds.size} selected · Clear
+                    </button>
+                  )}
+                </span>
               </div>
               <div className="lh-table-body">
                 {requests.isFetching && (
@@ -369,6 +385,16 @@ export function MidmileRequests({ user }: { user: User }) {
                     >
                       {hasColumn("status") && (
                         <span className="flex items-center gap-2">
+                        {row.status === "PENDING" && (
+                          <input
+                            type="checkbox"
+                            className="request-row-checkbox"
+                            aria-label={`Select request ${row.id}`}
+                            checked={selectedIds.has(row.id)}
+                            onChange={() => toggleSelected(row.id)}
+                            onClick={(event) => event.stopPropagation()}
+                          />
+                        )}
                         <ChevronDown
                           aria-hidden="true"
                           className={`size-3.5 shrink-0 text-[#718071] transition-transform ${expandedRow === row.id ? "rotate-180 text-[#536500]" : ""}`}

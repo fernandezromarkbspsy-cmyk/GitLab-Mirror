@@ -2,6 +2,10 @@ import {
   ArrowUpDown,
   ChevronDown,
   Filter,
+  Download,
+  Plus,
+  Search,
+  Settings2,
 } from "lucide-react";
 import { useState } from "react";
 import type { RequestFilters, RequestSort } from "../types";
@@ -11,14 +15,18 @@ const menuButtonClass =
   "flex min-h-9 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-soc5-line bg-soc5-panel px-2.5 py-1.5 text-sm text-[#536264] transition-[color,border-color,background-color,box-shadow,transform] duration-200 hover:border-linehaul-teal/20 hover:bg-[#f5faf9] hover:text-linehaul-teal-strong hover:shadow-[var(--lh-2026-shadow-sm)] active:translate-y-px max-[480px]:w-full max-[480px]:justify-center";
 const popoverClass =
   "absolute top-[calc(100%+8px)] left-0 z-20 grid min-w-[190px] gap-2.5 rounded-[10px] border border-[#dce9e8] bg-linehaul-surface p-3 shadow-[0_12px_28px_#1f4b4d1f] animate-[lh-popover-in_.18s_ease_both] max-[480px]:right-0 max-[480px]:left-auto";
+const actionButtonClass =
+  "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border px-4 py-1.5 text-sm font-medium transition-[color,border-color,background-color,box-shadow,transform] duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60";
 type Props = {
   filters: RequestFilters;
+  exporting?: boolean;
   onChange: (next: RequestFilters) => void;
   onSort: (sort: RequestSort) => void;
   onExport: () => void;
   onRefresh?: () => void;
   onAddNew?: () => void;
   showAddNew?: boolean;
+  showCreateNew?: boolean;
   onNotice?: (message: string) => void;
 };
 
@@ -28,7 +36,9 @@ export function LinehaulFilterPanel({
   onSort,
   onExport,
   onAddNew,
+  exporting = false,
   showAddNew = true,
+  showCreateNew = true,
   onNotice,
 }: Props) {
   const [openMenu, setOpenMenu] = useState<
@@ -183,14 +193,14 @@ export function LinehaulFilterPanel({
         <Download size={16} />
         {exporting ? "Exporting" : "Export"}
       </button>
-      <button
+      {showCreateNew && <button
         className={`${actionButtonClass} border-[#2563eb] bg-[#2563eb] text-white hover:bg-blue-700 max-[480px]:col-span-full max-[480px]:w-full`}
         type="button"
         onClick={onAddNew ?? (() => onNotice?.("Add new request opened"))}
       >
         <Plus size={16} />
         Add new
-      </button>
+      </button>}
     </div>
   );
 }

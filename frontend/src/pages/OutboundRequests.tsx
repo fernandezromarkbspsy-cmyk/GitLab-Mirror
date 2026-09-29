@@ -90,6 +90,7 @@ export function OutboundRequests({
   const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [rejecting, setRejecting] = useState<TruckRequest | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
     linehaulColumnOptions.map(({ key }) => key),
   );
@@ -124,6 +125,7 @@ export function OutboundRequests({
     openRequestsSheet();
   }
   const canApprove = _user.role === "fte_ops";
+  const canEdit = _user.role === "fte_ops";
   const selectedCount = selectedIds.size;
   const approvalLabel = selectedCount > 2 ? "Bulk Approved" : "Approved";
 
@@ -156,6 +158,13 @@ export function OutboundRequests({
           filters={filters}
           onChange={changeFilters}
           onSort={sortBy}
+          onExport={exportRows}
+          onAddNew={() => {
+            createRequest.reset();
+            setCreating(true);
+          }}
+          onNotice={showToast}
+          showCreateNew={_user.role === "ops_pic" || canApprove}
         />
         {editing && (
           <div className="lh-table-create-row">

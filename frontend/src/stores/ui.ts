@@ -1,10 +1,8 @@
 import { create } from "zustand";
+import { formatLocalDate } from "../lib/date";
 import type { Role } from "../types";
 
-const today = () => {
-  const value = new Date();
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
-};
+const today = () => formatLocalDate();
 interface UiState {
   sidebarOpen: boolean;
   soundEnabled: boolean;

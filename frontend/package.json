@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:source && tsc -p tsconfig.app.json --noEmit && vite build --configLoader native",
+    "build": "npm run check:source && tsc -p tsconfig.app.json --noEmit && vite build",
     "check:encoding": "node scripts/check-visible-text-encoding.mjs",
     "check:source": "node scripts/check-source-artifacts.mjs",
     "check:robots": "node scripts/check-robots.mjs",
@@ -18,7 +18,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@joint/core": "^4.3.3",
     "@sentry/react": "^10.74.0",
     "@supabase/supabase-js": "^2.112.4",
     "@tanstack/react-query": "^5.102.8",
@@ -28,7 +27,6 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3",
-    "supabase": "^2.117.0",
     "tailwind-merge": "3.6.0",
     "zustand": "^5.0.15"
   },

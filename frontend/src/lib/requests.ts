@@ -1,6 +1,6 @@
 import type { RequestFilters } from "../types";
 
-export const REQUESTS_SHEET_URL =
+const REQUESTS_SHEET_URL =
   "https://docs.google.com/spreadsheets/d/1Po3LyyOAJ8Q-EbX_807RSxrA_grwmsdlsPPP4FFFBig/edit?gid=0#gid=0";
 
 export function openRequestsSheet() {
@@ -44,8 +44,7 @@ export function buildRequestPayload(data: FormData): RequestPayload {
     backlogs: Number(data.get("backlogs")),
     backlogs_timestamp: data.get("backlogs_timestamp"),
     truck_size: data.get("truck_size"),
-    truck_type:
-      data.get("truck_type") === "DRYLEASE" ? "DRYLEASE" : "WETLEASE",
+    truck_type: data.get("truck_type") === "DRYLEASE" ? "DRYLEASE" : "WETLEASE",
   };
 }
 

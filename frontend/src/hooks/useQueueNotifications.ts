@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
+import { getNewQueueIds } from "../lib/queueNotifications";
 import type { Page, Status, TruckRequest, User } from "../types";
 
 let notificationAudioContext: AudioContext | null = null;
@@ -121,17 +122,19 @@ export function useQueueNotifications(user: User): QueueSnapshot {
   }, [status]);
 
   useEffect(() => {
+    knownIds.current = null;
+    setAcknowledged(new Set());
+  }, [status]);
+
+  useEffect(() => {
     if (!query.data) return;
     const current = new Set(query.data.data.map((request) => request.id));
     if (knownIds.current === null) {
       knownIds.current = current;
-      if (current.size) playNotificationSound(current.size);
       return;
     }
-    const newCount = query.data.data.filter(
-      (request) => !knownIds.current?.has(request.id),
-    ).length;
-    knownIds.current = new Set([...knownIds.current, ...current]);
+    const newCount = getNewQueueIds(knownIds.current, current).length;
+    knownIds.current = current;
     if (newCount) playNotificationSound(newCount);
   }, [query.data]);
 

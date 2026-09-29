@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 
 type SkeletonProps = {
   width?: number | string;
@@ -38,33 +38,9 @@ export function Skeleton({
   );
 }
 
-export function SkeletonList({ rows = 4 }: { rows?: number }) {
-  return (
-    <div className="grid gap-0" role="status" aria-label="Loading list">
-      {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
-        <div
-          className="flex min-h-[62px] items-center gap-3 border-b border-soc5-line py-2.5"
-          key={index}
-        >
-          <Skeleton variant="avatar" width={34} height={34} radius="50%" />
-          <span className="grid flex-1 gap-[7px]">
-            <Skeleton width={`${58 + (index % 3) * 10}%`} />
-            <Skeleton width={`${38 + (index % 2) * 14}%`} variant="subtle" />
-          </span>
-          <Skeleton width={56} variant="short" className="shrink-0 basis-14" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function SkeletonCardList({ rows = 3 }: { rows?: number }) {
   return (
-    <div
-      className="grid gap-3"
-      role="status"
-      aria-label="Loading cards"
-    >
+    <div className="grid gap-3" role="status" aria-label="Loading cards">
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
         <article
           className="grid min-h-[138px] gap-2.5 rounded-card border border-card-line bg-card-surface p-4"
@@ -79,14 +55,6 @@ export function SkeletonCardList({ rows = 3 }: { rows?: number }) {
           </div>
         </article>
       ))}
-    </div>
-  );
-}
-
-export function SkeletonStatus({ children }: { children?: ReactNode }) {
-  return (
-    <div className="min-h-px" role="status" aria-live="polite">
-      <span className="sr-only">{children ?? "Loading content"}</span>
     </div>
   );
 }
@@ -108,9 +76,13 @@ export function SkeletonRequestTable({
       aria-label="Loading requests"
     >
       {Array.from({ length: Math.max(1, rows) }).map((_, rowIndex) => (
-        <div className="lh-table-row lh-table-grid lh-skeleton-row" key={rowIndex}>
+        <div
+          className="lh-table-row lh-table-grid lh-skeleton-row"
+          key={rowIndex}
+        >
           {Array.from({ length: columnCount }).map((_, columnIndex) => {
-            const width = columnWidths[(rowIndex + columnIndex) % columnWidths.length];
+            const width =
+              columnWidths[(rowIndex + columnIndex) % columnWidths.length];
             const isActionsColumn = columnIndex === columnCount - 1;
 
             return (

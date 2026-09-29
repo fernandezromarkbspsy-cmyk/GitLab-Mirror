@@ -20,7 +20,11 @@ function stableSerialize(value: JsonLike): string {
   return JSON.stringify(normalizeValue(value));
 }
 
-export function generateIdempotencyKey(scope: string, value: JsonLike): string {
+export function generateIdempotencyKey(
+  scope: string,
+  value: JsonLike,
+  operationId: string = crypto.randomUUID(),
+): string {
   const serialized = stableSerialize(value);
   let hash = 2166136261;
 
@@ -29,16 +33,15 @@ export function generateIdempotencyKey(scope: string, value: JsonLike): string {
     hash = Math.imul(hash, 16777619);
   }
 
-  return `${scope}:${(hash >>> 0).toString(16)}`;
+  return `${scope}:${(hash >>> 0).toString(16)}:${operationId}`;
 }
 
 export function buildIdempotencyHeaders(
   scope: string,
   value: JsonLike,
+  operationId?: string,
 ): Record<string, string> {
   return {
-    "Idempotency-Key": generateIdempotencyKey(scope, value),
+    "Idempotency-Key": generateIdempotencyKey(scope, value, operationId),
   };
 }
-
-export const idempotencyHeaders = buildIdempotencyHeaders;

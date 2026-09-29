@@ -46,7 +46,10 @@ export function AppSidebar({
   onSignOut,
   pendingCount,
 }: Props) {
-  const showOutbound = user.role === "ops_pic" || user.role === "fte_ops";
+  const showOutbound =
+    user.role === "ops_pic" ||
+    user.role === "fte_ops" ||
+    user.role === "doc_officer";
   const showMidmile = user.role === "fte_mm";
   const showDocking = user.role === "doc_officer";
   const showKpi = true;

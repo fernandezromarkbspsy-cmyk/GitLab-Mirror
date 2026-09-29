@@ -28,6 +28,7 @@ import {
   InlineEditRow,
 } from "../components/OutboundRequestForms";
 import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
+import { Modal } from "../components/Modal";
 import { Pagination } from "../components/Pagination";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge } from "../components/StatusBadge";
@@ -81,6 +82,7 @@ export function OutboundRequests({
     createRequest,
     updateRequest,
     approveRequests,
+    rejectRequest,
     sortBy,
   } = useOutboundRequests();
   const [view, setView] = useState<"table" | "card">("table");
@@ -344,7 +346,7 @@ export function OutboundRequests({
                   {canApprove && selectedCount > 0 && (
                     <button
                       type="button"
-                      className="!h-8 whitespace-nowrap rounded-md bg-[#536500] !px-3 text-[11px] font-semibold normal-case tracking-normal text-white transition-colors hover:bg-[#405000] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="request-action-button request-action-approve !h-8 whitespace-nowrap !px-3"
                       disabled={approveRequests.isPending}
                       onClick={approveSelected}
                     >
@@ -450,7 +452,19 @@ export function OutboundRequests({
                                 >
                                   View
                                 </button>
-                                <button
+                                {canApprove && row.status === "PENDING" && (
+                                  <button
+                                    className="request-action-button request-action-reject"
+                                    type="button"
+                                    onClick={() => {
+                                      setRejecting(row);
+                                      setOpenRow(null);
+                                    }}
+                                  >
+                                    Reject
+                                  </button>
+                                )}
+                                {canEdit && <button
                                   type="button"
                                   onClick={() => {
                                     updateRequest.reset();
@@ -459,7 +473,7 @@ export function OutboundRequests({
                                   }}
                                 >
                                   Edit
-                                </button>
+                                </button>}
                               </span>
                             )}
                           </span>
@@ -554,6 +568,62 @@ export function OutboundRequests({
           />
         </section>
       </section>
+      {rejecting && (
+        <Modal
+          open
+          onClose={() => setRejecting(null)}
+          className="form-dialog compact"
+          role="dialog"
+          ariaLabelledBy="outbound-reject-title"
+        >
+          <div className="dialog-head">
+            <div>
+              <p className="eyebrow">FTE Ops action</p>
+              <h2 id="outbound-reject-title">Reject request</h2>
+              <p>{rejecting.id}</p>
+            </div>
+          </div>
+          <form
+            className="stack-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              rejectRequest.mutate(
+                {
+                  id: rejecting.id,
+                  rejection_remarks: String(data.get("rejection_remarks") ?? ""),
+                },
+                { onSuccess: () => setRejecting(null) },
+              );
+            }}
+          >
+            <label>
+              Rejection remarks
+              <textarea name="rejection_remarks" required rows={4} />
+            </label>
+            {rejectRequest.error && (
+              <p className="notice error">{rejectRequest.error.message}</p>
+            )}
+            <div className="dialog-actions">
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={() => setRejecting(null)}
+                disabled={rejectRequest.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="request-action-button request-action-reject"
+                type="submit"
+                disabled={rejectRequest.isPending}
+              >
+                {rejectRequest.isPending ? "Rejecting…" : "Reject request"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
       {toast && (
         <div className="lh-toast" role="status">
           {toast}

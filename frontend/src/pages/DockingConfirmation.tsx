@@ -22,6 +22,10 @@ export function DockingConfirmation({ user }: { user: User }) {
         "/requests?per_page=100&sort=created_at&direction=desc",
       ),
     enabled: user.role === "doc_officer" || user.role === "ops_pic",
+    staleTime: 30_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
   const action = useMutation({
     mutationFn: ({

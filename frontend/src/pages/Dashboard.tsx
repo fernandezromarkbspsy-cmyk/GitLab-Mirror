@@ -57,7 +57,9 @@ export function Dashboard({
   const allowed = (candidate: AppView) =>
     candidate === "overview" ||
     (candidate === "lh-request" &&
-      (activeUser.role === "ops_pic" || activeUser.role === "fte_ops")) ||
+      (activeUser.role === "ops_pic" ||
+        activeUser.role === "fte_ops" ||
+        activeUser.role === "doc_officer")) ||
     (candidate === "truck-request" && activeUser.role === "fte_mm") ||
     (candidate === "docking" && activeUser.role === "doc_officer") ||
     candidate === "kpi" ||

@@ -20,6 +20,10 @@ export function useOutboundRequests() {
         `/requests?${requestQueryString(appliedFilters)}`,
       ),
     placeholderData: (previous) => previous,
+    staleTime: 30_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
   const rows = useMemo(() => requests.data?.data ?? [], [requests.data]);
 
@@ -83,6 +87,17 @@ export function useOutboundRequests() {
       );
     },
   });
+  const rejectRequest = useMutation({
+    mutationFn: ({ id, rejection_remarks }: { id: string; rejection_remarks: string }) =>
+      api<TruckRequest>(`/requests/${id}/reject-ops`, {
+        method: "POST",
+        body: JSON.stringify({ rejection_remarks }),
+        headers: buildIdempotencyHeaders("outbound-reject", { id, rejection_remarks }),
+      }),
+    onSuccess: async () => {
+      await refreshData("LH request rejected.");
+    },
+  });
 
   function sortBy(sort: RequestSort) {
     setFilters((current) => ({
@@ -109,6 +124,7 @@ export function useOutboundRequests() {
     createRequest,
     updateRequest,
     approveRequests,
+    rejectRequest,
     updateSearch,
     sortBy,
   };

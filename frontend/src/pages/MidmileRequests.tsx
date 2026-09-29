@@ -84,8 +84,21 @@ export function MidmileRequests({ user }: { user: User }) {
         `/requests?${requestQueryString(appliedFilters)}`,
       ),
     placeholderData: (previous) => previous,
+    staleTime: 30_000,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled: user.role === "fte_mm",
   });
+
+  function toggleSelected(id: string) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const transition = useMutation({
     mutationFn: ({
       request,
@@ -411,6 +424,7 @@ export function MidmileRequests({ user }: { user: User }) {
                             {row.status === "PENDING" && (
                               <>
                                 <button
+                                  className="request-action-button request-action-assign"
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
@@ -424,6 +438,7 @@ export function MidmileRequests({ user }: { user: User }) {
                                   Assign
                                 </button>
                                 <button
+                                  className="request-action-button request-action-reject"
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();

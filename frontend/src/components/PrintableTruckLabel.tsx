@@ -11,7 +11,7 @@ const templateSrc: Record<TemplateKind, string> = {
   triload: "/printable_templates/triload_lh.jpg",
 };
 
-function clusters(request: TruckRequest) {
+function requestedLoads(request: TruckRequest) {
   return request.cluster
     .split(",")
     .map((value) => value.trim())
@@ -79,10 +79,12 @@ function loadSlots(kind: TemplateKind, values: string[]) {
     return [{ className: "load-single", value: values[0] ?? "" }];
   if (kind === "coload")
     return [
+      // The source order is 1st load, 2nd load; the template boxes run right to left.
       { className: "load-left", value: values[1] ?? "" },
       { className: "load-right", value: values[0] ?? "" },
     ];
   return [
+    // The source order is 1st, 2nd, 3rd; the template boxes run right to left.
     { className: "load-third", value: values[2] ?? "" },
     { className: "load-second", value: values[1] ?? "" },
     { className: "load-first", value: values[0] ?? "" },
@@ -96,7 +98,7 @@ export function PrintableTruckLabel({
   request: TruckRequest;
   onClose: () => void;
 }) {
-  const clusterValues = clusters(request);
+  const clusterValues = requestedLoads(request);
   const kind = templateKind(clusterValues.length);
 
   return createPortal(

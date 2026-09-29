@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ShipWheel, X } from "lucide-react";
+import { CheckCircle2, Printer, ShipWheel, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { Modal } from "../components/Modal";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
@@ -56,28 +56,40 @@ export function DockingConfirmation({ user }: { user: User }) {
     (request) =>
       request.status === "FOR_DOCKING" || request.status === "DOCKED",
   );
-  const actions = (request: TruckRequest) =>
-    request.status === "DOCKED" && user.role === "doc_officer" ? (
+  const actions = (request: TruckRequest) => (
+    <>
       <button
         type="button"
-        className="table-action approve"
-        disabled={action.isPending}
-        onClick={() => action.mutate({ request, action: "confirm" })}
+        className="table-action"
+        onClick={() => setPrintable(request)}
       >
-        <CheckCircle2 size={15} />
-        Confirm
+        <Printer size={15} />
+        Print
       </button>
-    ) : request.status === "FOR_DOCKING" ? (
-      <button
-        type="button"
-        className="table-action assign"
-        disabled={action.isPending}
-        onClick={() => setSelected(request)}
-      >
-        <ShipWheel size={15} />
-        Dock truck
-      </button>
-    ) : null;
+      {request.status === "DOCKED" && user.role === "doc_officer" && (
+        <button
+          type="button"
+          className="table-action approve"
+          disabled={action.isPending}
+          onClick={() => action.mutate({ request, action: "confirm" })}
+        >
+          <CheckCircle2 size={15} />
+          Confirm
+        </button>
+      )}
+      {request.status === "FOR_DOCKING" && (
+        <button
+          type="button"
+          className="table-action assign"
+          disabled={action.isPending}
+          onClick={() => setSelected(request)}
+        >
+          <ShipWheel size={15} />
+          Dock truck
+        </button>
+      )}
+    </>
+  );
 
   return (
     <div className="workspace-view">

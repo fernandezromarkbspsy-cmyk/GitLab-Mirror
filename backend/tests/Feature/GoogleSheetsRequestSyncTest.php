@@ -49,6 +49,7 @@ final class GoogleSheetsRequestSyncTest extends TestCase
             $table->timestamp('provide_time')->nullable();
             $table->string('linehaul_trip_no')->nullable();
             $table->timestamp('docked_time')->nullable();
+            $table->string('status')->default('PENDING');
             $table->uuid('created_by');
         });
         Schema::create('request_events', function (Blueprint $table): void {
@@ -70,6 +71,7 @@ final class GoogleSheetsRequestSyncTest extends TestCase
             'backlogs' => 10,
             'truck_size' => '6W',
             'truck_type' => 'WETLEASE',
+            'status' => 'CANCELLED',
             'created_by' => 'creator-id',
         ]);
     }
@@ -94,6 +96,27 @@ final class GoogleSheetsRequestSyncTest extends TestCase
         $values = Mockery::mock(SpreadsheetsValues::class);
         $values->shouldReceive('update')->once()->ordered();
         $values->shouldReceive('batchClear')->once()->ordered();
+        $sheets = Mockery::mock(Sheets::class);
+        $sheets->spreadsheets_values = $values;
+        $sync = new GoogleSheetsRequestSync(fn (): Sheets => $sheets);
+
+        $this->assertSame(1, $sync->sync());
+    }
+
+    public function test_sync_includes_the_current_status_for_every_request(): void
+    {
+        $values = Mockery::mock(SpreadsheetsValues::class);
+        $values->shouldReceive('update')
+            ->once()
+            ->withArgs(function (string $spreadsheetId, string $range, object $body): bool {
+                $rows = $body->getValues();
+
+                return $spreadsheetId === 'test-sheet'
+                    && $range === "'Sheet1'!A1:S2"
+                    && $rows[0][18] === 'Status'
+                    && $rows[1][18] === 'CANCELLED';
+            });
+        $values->shouldReceive('batchClear')->once();
         $sheets = Mockery::mock(Sheets::class);
         $sheets->spreadsheets_values = $values;
         $sync = new GoogleSheetsRequestSync(fn (): Sheets => $sheets);

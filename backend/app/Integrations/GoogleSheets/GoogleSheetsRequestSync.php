@@ -31,6 +31,7 @@ class GoogleSheetsRequestSync
         'Docked Time',
         'Doc Officer',
         'OPS/PIC',
+        'Status',
     ];
 
     public function __construct(private readonly ?Closure $sheetsFactory = null) {}
@@ -43,6 +44,7 @@ class GoogleSheetsRequestSync
                 'r.id', 'r.request_timestamp', 'r.cluster', 'r.region', 'r.dock_no',
                 'r.backlogs', 'r.backlogs_timestamp', 'r.truck_size', 'r.truck_type',
                 'r.plate_number', 'r.provide_time', 'r.linehaul_trip_no', 'r.docked_time',
+                'r.status',
                 'creator.name as ops_pic',
             ])
             ->orderBy('r.request_timestamp')
@@ -54,7 +56,6 @@ class GoogleSheetsRequestSync
 
         $events = DB::table('request_events as e')
             ->leftJoin('profiles as actor', 'actor.id', '=', 'e.actor_id')
-            ->whereIn('e.event_type', ['REQUEST_CREATED', 'REQUEST_APPROVED', 'TRUCK_ASSIGNED', 'REQUEST_CONFIRMED'])
             ->select(['e.request_id', 'e.event_type', 'e.created_at', 'e.metadata', 'actor.name as actor_name'])
             ->orderBy('e.created_at')
             ->get()
@@ -88,6 +89,7 @@ class GoogleSheetsRequestSync
                 $request->docked_time,
                 $confirmed?->actor_name,
                 $request->ops_pic,
+                $request->status,
             ];
         }
 
@@ -96,7 +98,7 @@ class GoogleSheetsRequestSync
         $body = new ValueRange(['values' => $values]);
         $sheets->spreadsheets_values->update(
             $spreadsheetId,
-            $this->range('A1:R'.max(1, count($values))),
+            $this->range('A1:S'.max(1, count($values))),
             $body,
             ['valueInputOption' => 'RAW'],
         );
@@ -108,8 +110,8 @@ class GoogleSheetsRequestSync
         $sheets->spreadsheets_values->batchClear(
             $spreadsheetId,
             new BatchClearValuesRequest(['ranges' => [
-                $this->range('S1:Z'),
-                $this->range("A{$firstStaleRow}:R"),
+                $this->range('T1:Z'),
+                $this->range("A{$firstStaleRow}:S"),
             ]]),
         );
 

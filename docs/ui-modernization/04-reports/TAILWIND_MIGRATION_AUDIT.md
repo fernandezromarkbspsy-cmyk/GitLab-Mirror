@@ -78,7 +78,6 @@ Classification is based on the rendered `className` values and their active sele
 | `AppSidebar.tsx` | `app-sidebar`, `sidebar-*`, `nav-*` | Every authenticated view and responsive navigation; high impact |
 | `ColumnVisibilityMenu.tsx` | `column-visibility*`, `toolbar-button` | Request-table column controls |
 | `ErrorBoundary.tsx` | `state`, `error` | Application failure fallback |
-| `LinehaulRequestDetailsPanel.tsx` | `lh-request-details-panel`, `lh-details-panel-*` | Midmile request drill-down |
 | `OutboundRequestForms.tsx` | `inline-create-*`, `cluster-*`, `notice`, `secondary-button` | Outbound inline-create workflows |
 | `PrintableTruckLabel.tsx` | `print-*`, `truck-label*`, `label-value`, shared legacy buttons | Midmile print workflow |
 | `RequestFilters.tsx` | `request-controls`, `request-status-tabs`, `request-toolbar`, `filter-field`, `toolbar-button` | Shared request filtering |

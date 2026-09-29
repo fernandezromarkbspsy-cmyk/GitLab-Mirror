@@ -167,7 +167,7 @@ export function LinehaulFilterPanel({
         />
         <input
           aria-label="Search"
-          placeholder="Search requests"
+          placeholder="Search by plate number"
           className="min-h-9 w-full rounded-[9px] border border-linehaul-line bg-linehaul-surface py-1.5 pr-3 pl-9 text-sm placeholder:text-gray-400 focus:border-linehaul-teal/30 focus:outline-none focus:ring-[3px] focus:ring-linehaul-teal/10"
           type="text"
           value={filters.search}

@@ -38,10 +38,14 @@ final class SeatalkController
         if ($state === '' || $expected === '' || $expiresAt < now()->timestamp || ! hash_equals($expected, $state)) {
             return $this->redirectWithError($frontend, 'invalid_state');
         }
-        if ($request->filled('error')) return $this->redirectWithError($frontend, 'cancelled');
+        if ($request->filled('error')) {
+            return $this->redirectWithError($frontend, 'cancelled');
+        }
 
         $code = (string) $request->query('code', '');
-        if ($code === '') return $this->redirectWithError($frontend, 'missing_code');
+        if ($code === '') {
+            return $this->redirectWithError($frontend, 'missing_code');
+        }
 
         try {
             $token = Http::asJson()->acceptJson()
@@ -97,6 +101,7 @@ final class SeatalkController
         $request->session()->forget(['seatalk_profile_id', 'seatalk_email', 'seatalk_employee_code']);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return response()->json(['ok' => true]);
     }
 

@@ -3,12 +3,12 @@ import {
   ChevronDown,
   CircleCheck,
   Clock3,
-  Download,
   Hash,
   LayoutGrid,
   ListChecks,
   MoreHorizontal,
   Plus,
+  Printer,
   RefreshCw,
   SlidersHorizontal,
   Table2,
@@ -16,7 +16,6 @@ import {
   Truck,
   Users,
 } from "lucide-react";
-import type { MouseEvent } from "react";
 import { useState } from "react";
 import {
   ColumnVisibilityMenu,
@@ -27,9 +26,9 @@ import {
   InlineCreateRow,
   InlineEditRow,
 } from "../components/OutboundRequestForms";
-import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
 import { Modal } from "../components/Modal";
 import { Pagination } from "../components/Pagination";
+import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge } from "../components/StatusBadge";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
@@ -87,40 +86,14 @@ export function OutboundRequests({
   } = useOutboundRequests();
   const [view, setView] = useState<"table" | "card">("table");
   const [openRow, setOpenRow] = useState<string | null>(null);
-  const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
+  const [printRequest, setPrintRequest] = useState<TruckRequest | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [rejecting, setRejecting] = useState<TruckRequest | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
     linehaulColumnOptions.map(({ key }) => key),
   );
-  const [panelPosition, setPanelPosition] = useState({ x: 24, y: 112 });
   const hasColumn = (key: string) => visibleColumns.includes(key);
-  function selectRow(row: TruckRequest, event: MouseEvent<HTMLElement>) {
-    const workspace = event.currentTarget.closest<HTMLElement>(
-      ".lh-request-workspace",
-    );
-    const bounds = workspace?.getBoundingClientRect();
-    const scale = window.matchMedia("(min-width: 821px)").matches ? 0.75 : 1;
-    if (bounds)
-      setPanelPosition({
-        x: Math.max(
-          8,
-          Math.min(
-            (event.clientX - bounds.left + 12) / scale,
-            bounds.width / scale - 328,
-          ),
-        ),
-        y: Math.max(
-          8,
-          Math.min(
-            (event.clientY - bounds.top + 12) / scale,
-            bounds.height / scale - 360,
-          ),
-        ),
-      });
-    setSelectedRow(row);
-  }
   function exportRows() {
     openRequestsSheet();
   }
@@ -195,13 +168,10 @@ export function OutboundRequests({
             />
           </div>
         )}
-        {selectedRow && (
-          <LinehaulRequestDetailsPanel
-            request={selectedRow}
-            position={panelPosition}
-            onPositionChange={setPanelPosition}
-            onClose={() => setSelectedRow(null)}
-            onNotice={showToast}
+        {printRequest && (
+          <PrintableTruckLabel
+            request={printRequest}
+            onClose={() => setPrintRequest(null)}
           />
         )}
         <section
@@ -227,8 +197,8 @@ export function OutboundRequests({
                 <button
                   className="lh-toolbar-icon"
                   type="button"
-                  aria-label="Table view"
-                  title="Table view"
+                  aria-label="Table"
+                  title="Table"
                   aria-pressed={view === "table"}
                   onClick={() => setView("table")}
                 >
@@ -237,8 +207,8 @@ export function OutboundRequests({
                 <button
                   className="lh-toolbar-icon"
                   type="button"
-                  aria-label="Card view"
-                  title="Card view"
+                  aria-label="Card"
+                  title="Card"
                   aria-pressed={view === "card"}
                   onClick={() => setView("card")}
                 >
@@ -254,14 +224,6 @@ export function OutboundRequests({
                   iconOnly
                 />
               )}
-              <button
-                className="lh-table-action"
-                type="button"
-                onClick={() => void exportRows()}
-              >
-                <Download size={15} aria-hidden="true" />
-                Export
-              </button>
               <button
                 className="lh-table-action is-primary"
                 type="button"
@@ -388,7 +350,7 @@ export function OutboundRequests({
                           role="button"
                           tabIndex={0}
                           aria-expanded={isExpanded}
-                          aria-label={`${isExpanded ? "Collapse" : "Expand"} details for request ${row.id}`}
+                          aria-label={`View details for request ${row.id}`}
                           onClick={() => toggleExpanded(row)}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
@@ -455,11 +417,12 @@ export function OutboundRequests({
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
-                                    selectRow(row, event);
+                                    setPrintRequest(row);
                                     setOpenRow(null);
                                   }}
                                 >
-                                  View
+                                  <Printer size={14} />
+                                  Print
                                 </button>
                                 {canApprove && row.status === "PENDING" && (
                                   <button
@@ -555,9 +518,10 @@ export function OutboundRequests({
                       <button
                         type="button"
                         className="text-button"
-                        onClick={(event) => selectRow(row, event)}
+                        onClick={() => setPrintRequest(row)}
                       >
-                        View details
+                        <Printer size={14} />
+                        Print label
                       </button>
                     </div>
                   </article>

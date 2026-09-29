@@ -25,6 +25,7 @@ final class AuthenticateSupabase
             $profile->original_role = $profile->role;
             $request->attributes->set('actor', $profile);
             $request->attributes->set('supabase_user_updated_at', null);
+
             return $next($request);
         }
 

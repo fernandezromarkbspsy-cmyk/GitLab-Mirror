@@ -9,6 +9,7 @@ use App\Features\Requests\RequestController;
 use App\Features\Users\AccessRequestController;
 use App\Features\Users\UserController;
 use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -22,7 +23,7 @@ Route::get('/auth/status', function () {
     return response()->json(['configured' => true]);
 });
 
-Route::middleware([\Illuminate\Session\Middleware\StartSession::class])->group(function (): void {
+Route::middleware([StartSession::class])->group(function (): void {
     Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
     Route::post('/auth/seatalk/logout', [SeatalkController::class, 'logout']);
 });
@@ -30,7 +31,7 @@ Route::middleware([\Illuminate\Session\Middleware\StartSession::class])->group(f
 Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
 Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
-Route::middleware([\Illuminate\Session\Middleware\StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
+Route::middleware([StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
     Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
     Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
     Route::get('/users', [UserController::class, 'index']);

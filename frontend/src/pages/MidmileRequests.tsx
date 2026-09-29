@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   ListChecks,
   MoreHorizontal,
+  Printer,
   RefreshCw,
   Table2,
   Tag,
@@ -16,16 +17,16 @@ import {
   Users,
   X,
 } from "lucide-react";
-import type { FormEvent, MouseEvent } from "react";
+import type { FormEvent } from "react";
 import { Fragment, useState } from "react";
 import {
   ColumnVisibilityMenu,
   linehaulColumnOptions,
 } from "../components/ColumnVisibilityMenu";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
-import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
 import { Modal } from "../components/Modal";
 import { Pagination } from "../components/Pagination";
+import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge } from "../components/StatusBadge";
 import { useRequestFilters } from "../hooks/useRequestFilters";
@@ -70,13 +71,12 @@ export function MidmileRequests({ user }: { user: User }) {
   const [notice, setNotice] = useState("");
   const [openRow, setOpenRow] = useState<string | null>(null);
   const [view, setView] = useState<"table" | "card">("table");
-  const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
+  const [printRequest, setPrintRequest] = useState<TruckRequest | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
     linehaulColumnOptions.map(({ key }) => key),
   );
-  const [panelPosition, setPanelPosition] = useState({ x: 24, y: 112 });
   const hasColumn = (key: string) => visibleColumns.includes(key);
   const requests = useQuery({
     queryKey: ["requests", "midmile-all", appliedFilters],
@@ -94,12 +94,13 @@ export function MidmileRequests({ user }: { user: User }) {
 
   function toggleSelected(id: string) {
     setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+      if (current.has(id)) return new Set();
+      return new Set([id]);
     });
   }
+  const selectedRequest = (requests.data?.data ?? []).find((row) =>
+    selectedIds.has(row.id),
+  );
   const transition = useMutation({
     mutationFn: ({
       request,
@@ -143,33 +144,6 @@ export function MidmileRequests({ user }: { user: User }) {
   function exportSheet() {
     openRequestsSheet();
   }
-  function selectRow(row: TruckRequest, event: MouseEvent<HTMLElement>) {
-    const workspace = event.currentTarget.closest<HTMLElement>(
-      ".lh-request-workspace",
-    );
-    const bounds = workspace?.getBoundingClientRect();
-    const scale = window.matchMedia("(min-width: 821px)").matches ? 0.75 : 1;
-    if (bounds) {
-      setPanelPosition({
-        x: Math.max(
-          8,
-          Math.min(
-            (event.clientX - bounds.left + 12) / scale,
-            bounds.width / scale - 328,
-          ),
-        ),
-        y: Math.max(
-          8,
-          Math.min(
-            (event.clientY - bounds.top + 12) / scale,
-            bounds.height / scale - 360,
-          ),
-        ),
-      });
-    }
-    setSelectedRow(row);
-  }
-
   return (
     <div
       className={`workspace-view lh-request-page${selected ? " lh-drawer-open" : ""}`}
@@ -196,13 +170,10 @@ export function MidmileRequests({ user }: { user: User }) {
           onNotice={setNotice}
         />
 
-        {selectedRow && (
-          <LinehaulRequestDetailsPanel
-            request={selectedRow}
-            position={panelPosition}
-            onPositionChange={setPanelPosition}
-            onClose={() => setSelectedRow(null)}
-            onNotice={setNotice}
+        {printRequest && (
+          <PrintableTruckLabel
+            request={printRequest}
+            onClose={() => setPrintRequest(null)}
           />
         )}
 
@@ -225,6 +196,35 @@ export function MidmileRequests({ user }: { user: User }) {
               </button>
             </div>
             <div className="lh-table-toolbar-actions">
+              {selectedRequest && (
+                <div className="lh-request-toolbar-actions" aria-label="Selected request actions">
+                  <span className="lh-request-toolbar-label">Selected request</span>
+                  <button
+                    className="request-action-button request-action-assign"
+                    type="button"
+                    onClick={() =>
+                      setSelected({
+                        request: selectedRequest,
+                        action: "assign-truck",
+                      })
+                    }
+                  >
+                    Assign
+                  </button>
+                  <button
+                    className="request-action-button request-action-reject"
+                    type="button"
+                    onClick={() =>
+                      setSelected({
+                        request: selectedRequest,
+                        action: "reject-mm",
+                      })
+                    }
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
               <div className="lh-view-toggle" role="group" aria-label="Request view">
                 <button
                   className="lh-toolbar-icon"
@@ -337,18 +337,7 @@ export function MidmileRequests({ user }: { user: User }) {
                     <span>Plate #</span>
                   </button>
                 )}
-                <span className="justify-center">
-                  {selectedIds.size > 0 && (
-                    <button
-                      className="request-selection-count"
-                      type="button"
-                      onClick={() => setSelectedIds(new Set())}
-                      aria-label="Clear selected Midmile requests"
-                    >
-                      {selectedIds.size} selected · Clear
-                    </button>
-                  )}
-                </span>
+                <span />
               </div>
               <div className="lh-table-body">
                 {requests.isPending && (
@@ -441,11 +430,12 @@ export function MidmileRequests({ user }: { user: User }) {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                selectRow(row, event);
+                                setPrintRequest(row);
                                 setOpenRow(null);
                               }}
                             >
-                              View
+                              <Printer size={14} />
+                              Print
                             </button>
                             {row.status === "PENDING" && (
                               <>
@@ -540,9 +530,10 @@ export function MidmileRequests({ user }: { user: User }) {
                       <button
                         type="button"
                         className="text-button"
-                        onClick={(event) => selectRow(row, event)}
+                        onClick={() => setPrintRequest(row)}
                       >
-                        View details
+                        <Printer size={14} />
+                        Print label
                       </button>
                     </div>
                   </article>

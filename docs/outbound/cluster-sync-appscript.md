@@ -12,6 +12,12 @@ Columns:
 
 The sheet does not contain a separate `hub_name` column, so the sync function derives `hub_name` from `cluster_name`. `cluster_name` is the unique upsert identity used by `sync-clusters`.
 
+After the cluster rows are upserted, the database trigger
+`sync_cluster_backlogs_to_requests` propagates `backlogs` and `backlogs_ts` to
+matching `public.requests` rows using `requests.cluster = cluster_name`. It
+updates only those two backlog fields; request status and workflow fields are
+preserved.
+
 ## Apps Script
 
 Set these values in Apps Script **Script Properties**. Use the same `SYNC_SECRET` value as the intraday sync project and Supabase function secret.

@@ -1,16 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
-  ChartNoAxesCombined,
   ChevronDown,
   CircleCheck,
   Clock3,
+  Download,
   Hash,
+  LayoutGrid,
   ListChecks,
   MoreHorizontal,
   RefreshCw,
-  Search,
-  SlidersHorizontal,
   Table2,
   Tag,
   Truck,
@@ -19,6 +18,10 @@ import {
 } from "lucide-react";
 import type { FormEvent, MouseEvent } from "react";
 import { Fragment, useState } from "react";
+import {
+  ColumnVisibilityMenu,
+  linehaulColumnOptions,
+} from "../components/ColumnVisibilityMenu";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import { LinehaulRequestDetailsPanel } from "../components/LinehaulRequestDetailsPanel";
 import { Modal } from "../components/Modal";
@@ -58,7 +61,7 @@ function formatCluster(value: string) {
 
 export function MidmileRequests({ user }: { user: User }) {
   const queryClient = useQueryClient();
-  const { filters, appliedFilters, setFilters, changeFilters, updateSearch } =
+  const { filters, appliedFilters, setFilters, changeFilters } =
     useRequestFilters();
   const [selected, setSelected] = useState<{
     request: TruckRequest;
@@ -69,7 +72,11 @@ export function MidmileRequests({ user }: { user: User }) {
   const [view, setView] = useState<"table" | "card">("table");
   const [selectedRow, setSelectedRow] = useState<TruckRequest | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
+    linehaulColumnOptions.map(({ key }) => key),
+  );
   const [panelPosition, setPanelPosition] = useState({ x: 24, y: 112 });
+  const hasColumn = (key: string) => visibleColumns.includes(key);
   const requests = useQuery({
     queryKey: ["requests", "midmile-all", appliedFilters],
     queryFn: () =>
@@ -169,9 +176,6 @@ export function MidmileRequests({ user }: { user: User }) {
           filters={filters}
           onChange={changeFilters}
           onSort={sortBy}
-          onExport={exportSheet}
-          showAddNew={false}
-          onNotice={setNotice}
         />
 
         {selectedRow && (
@@ -191,103 +195,140 @@ export function MidmileRequests({ user }: { user: User }) {
           <div className="lh-table-toolbar">
             <div className="lh-view-controls">
               <button
-                className="lh-toolbar-icon"
+                className={`lh-toolbar-icon lh-refresh-button${requests.isFetching ? " is-refreshing" : ""}`}
                 type="button"
-                aria-label="Refresh records"
+                aria-label={requests.isFetching ? "Refreshing records" : "Refresh records"}
+                title={requests.isFetching ? "Refreshing records" : "Refresh records"}
+                aria-busy={requests.isFetching}
+                disabled={requests.isFetching}
                 onClick={() => void requests.refetch()}
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={16} aria-hidden="true" />
               </button>
-              <div className="lh-view-tabs">
+            </div>
+            <div className="lh-table-toolbar-actions">
+              <div className="lh-view-toggle" role="group" aria-label="Request view">
                 <button
+                  className="lh-toolbar-icon"
                   type="button"
-                  onClick={() => setNotice("Chart view is coming soon")}
-                >
-                  <ChartNoAxesCombined size={15} />
-                  Chart
-                </button>
-                <button
-                  className={view === "table" ? "selected" : ""}
-                  type="button"
+                  aria-label="Table view"
+                  title="Table view"
+                  aria-pressed={view === "table"}
                   onClick={() => setView("table")}
                 >
-                  <Table2 size={15} />
-                  Table
+                  <Table2 size={16} aria-hidden="true" />
                 </button>
                 <button
-                  className={view === "card" ? "selected" : ""}
+                  className="lh-toolbar-icon"
                   type="button"
+                  aria-label="Card view"
+                  title="Card view"
+                  aria-pressed={view === "card"}
                   onClick={() => setView("card")}
                 >
-                  <SlidersHorizontal size={15} />
-                  Card
+                  <LayoutGrid size={16} aria-hidden="true" />
                 </button>
               </div>
+              {view === "table" && (
+                <ColumnVisibilityMenu
+                  label="Choose visible columns"
+                  options={linehaulColumnOptions}
+                  visible={visibleColumns}
+                  onChange={setVisibleColumns}
+                  iconOnly
+                />
+              )}
+              <button
+                className="lh-table-action"
+                type="button"
+                onClick={exportSheet}
+              >
+                <Download size={15} aria-hidden="true" />
+                Export
+              </button>
             </div>
-            <label className="lh-search-box">
-              <Search size={17} />
-              <input
-                value={filters.search}
-                onChange={(event) => updateSearch(event.target.value)}
-                placeholder="Search by plate number"
-              />
-              <kbd>Ctrl + F</kbd>
-            </label>
           </div>
           {view === "table" ? (
-            <div className="lh-records-table">
+              <div
+                className="lh-records-table"
+                style={{
+                  gridTemplateColumns: `repeat(${visibleColumns.length + 1}, minmax(max-content, 1fr))`,
+                }}
+              >
               <div className="lh-table-head lh-table-grid">
-                <span>
-                  <CircleCheck size={14} />
-                  Status
-                </span>
-                <button
-                  type="button"
-                  onClick={() => sortBy("request_timestamp")}
-                >
-                  <Clock3 size={14} />
-                  <span>Request Time</span>
-                </button>
-                <button type="button" onClick={() => sortBy("cluster")}>
-                  <Hash size={14} />
-                  <span>Cluster</span>
-                </button>
-                <span>
-                  <BadgeCheck size={14} />
-                  Region
-                </span>
-                <button type="button" onClick={() => sortBy("dock_no")}>
-                  <Truck size={14} />
-                  <span>Dock #</span>
-                </button>
-                <button type="button" onClick={() => sortBy("backlogs")}>
-                  <ListChecks size={14} />
-                  <span>Backlogs</span>
-                </button>
-                <span>
-                  <Truck size={14} />
-                  LH Size
-                </span>
-                <span>
-                  <Users size={14} />
-                  SOC PIC
-                </span>
-                <span>
-                  <Tag size={14} />
-                  LH Trip #
-                </span>
-                <button type="button" onClick={() => sortBy("plate_number")}>
-                  <Hash size={14} />
-                  <span>Plate #</span>
-                </button>
+                {hasColumn("status") && (
+                  <span>
+                    <CircleCheck size={14} />
+                    Status
+                  </span>
+                )}
+                {hasColumn("requestTime") && (
+                  <button
+                    type="button"
+                    onClick={() => sortBy("request_timestamp")}
+                  >
+                    <Clock3 size={14} />
+                    <span>Request Time</span>
+                  </button>
+                )}
+                {hasColumn("cluster") && (
+                  <button type="button" onClick={() => sortBy("cluster")}>
+                    <Hash size={14} />
+                    <span>Cluster</span>
+                  </button>
+                )}
+                {hasColumn("region") && (
+                  <span>
+                    <BadgeCheck size={14} />
+                    Region
+                  </span>
+                )}
+                {hasColumn("dock") && (
+                  <button type="button" onClick={() => sortBy("dock_no")}>
+                    <Truck size={14} />
+                    <span>Dock #</span>
+                  </button>
+                )}
+                {hasColumn("backlogs") && (
+                  <button type="button" onClick={() => sortBy("backlogs")}>
+                    <ListChecks size={14} />
+                    <span>Backlogs</span>
+                  </button>
+                )}
+                {hasColumn("truckSize") && (
+                  <span>
+                    <Truck size={14} />
+                    LH Size
+                  </span>
+                )}
+                {hasColumn("socPic") && (
+                  <span>
+                    <Users size={14} />
+                    SOC PIC
+                  </span>
+                )}
+                {hasColumn("tripNumber") && (
+                  <span>
+                    <Tag size={14} />
+                    LH Trip #
+                  </span>
+                )}
+                {hasColumn("plateNumber") && (
+                  <button type="button" onClick={() => sortBy("plate_number")}>
+                    <Hash size={14} />
+                    <span>Plate #</span>
+                  </button>
+                )}
                 <span />
               </div>
               <div className="lh-table-body">
-                {requests.isPending && <SkeletonRequestTable rows={6} />}
+                {requests.isFetching && (
+                  <SkeletonRequestTable rows={6} columns={visibleColumns.length + 1} />
+                )}
                 {requests.error && (
                   <div className="lh-empty-state">{requests.error.message}</div>
                 )}
-                {!requests.isPending &&
+                {!requests.isFetching &&
                   !requests.error &&
                   (requests.data?.data ?? []).map((row, index) => (
                     <Fragment key={row.id}>
@@ -313,22 +354,36 @@ export function MidmileRequests({ user }: { user: User }) {
                         }
                       }}
                     >
-                      <span className="flex items-center gap-2">
+                      {hasColumn("status") && (
+                        <span className="flex items-center gap-2">
                         <ChevronDown
                           aria-hidden="true"
                           className={`size-3.5 shrink-0 text-[#718071] transition-transform ${expandedRow === row.id ? "rotate-180 text-[#536500]" : ""}`}
                         />
                         <StatusBadge status={row.status} uppercase />
-                      </span>
-                      <span>{formatDateTime(row.request_timestamp)}</span>
-                      <span title={row.cluster}>{row.cluster}</span>
-                      <span>{row.region}</span>
-                      <span>{row.dock_no}</span>
-                      <span>{row.backlogs.toLocaleString()}</span>
-                      <span>{row.truck_size}</span>
-                      <span>{displayValue(row.ob_fte)}</span>
-                      <span>{displayValue(row.linehaul_trip_no)}</span>
-                      <span>{displayValue(row.plate_number)}</span>
+                        </span>
+                      )}
+                      {hasColumn("requestTime") && (
+                        <span>{formatDateTime(row.request_timestamp)}</span>
+                      )}
+                      {hasColumn("cluster") && (
+                        <span title={row.cluster}>{row.cluster}</span>
+                      )}
+                      {hasColumn("region") && <span>{row.region}</span>}
+                      {hasColumn("dock") && <span>{row.dock_no}</span>}
+                      {hasColumn("backlogs") && (
+                        <span>{row.backlogs.toLocaleString()}</span>
+                      )}
+                      {hasColumn("truckSize") && <span>{row.truck_size}</span>}
+                      {hasColumn("socPic") && (
+                        <span>{displayValue(row.ob_fte)}</span>
+                      )}
+                      {hasColumn("tripNumber") && (
+                        <span>{displayValue(row.linehaul_trip_no)}</span>
+                      )}
+                      {hasColumn("plateNumber") && (
+                        <span>{displayValue(row.plate_number)}</span>
+                      )}
                       <span className="lh-row-menu-wrap">
                         <button
                           className="lh-row-more"
@@ -414,7 +469,7 @@ export function MidmileRequests({ user }: { user: User }) {
                     )}
                     </Fragment>
                   ))}
-                {!requests.isPending &&
+                {!requests.isFetching &&
                   !requests.error &&
                   (requests.data?.data ?? []).length === 0 && (
                     <div className="lh-empty-state">
@@ -425,7 +480,7 @@ export function MidmileRequests({ user }: { user: User }) {
             </div>
           ) : (
             <div className="lh-card-view">
-              {requests.isPending ? (
+              {requests.isFetching ? (
                 <SkeletonCardList rows={4} />
               ) : (
                 (requests.data?.data ?? []).map((row) => (

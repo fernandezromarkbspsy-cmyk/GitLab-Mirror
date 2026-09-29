@@ -91,26 +91,43 @@ export function SkeletonStatus({ children }: { children?: ReactNode }) {
   );
 }
 
-export function SkeletonRequestTable({ rows = 5 }: { rows?: number }) {
+export function SkeletonRequestTable({
+  rows = 5,
+  columns = 11,
+}: {
+  rows?: number;
+  columns?: number;
+}) {
+  const columnCount = Math.max(1, columns);
+  const columnWidths = [72, 82, 58, 64, 48, 76, 55];
+
   return (
     <div
-      className="grid [&_.lh-table-row]:pointer-events-none [&_.lh-table-row>span]:self-center"
+      className="lh-table-skeleton [&_.lh-table-row]:pointer-events-none [&_.lh-table-row>span]:self-center"
       role="status"
       aria-label="Loading requests"
     >
       {Array.from({ length: Math.max(1, rows) }).map((_, rowIndex) => (
-        <div className="lh-table-row lh-table-grid" key={rowIndex}>
-          <Skeleton width={76} variant="pill" />
-          <Skeleton width="74%" />
-          <Skeleton width="68%" />
-          <Skeleton width="62%" />
-          <Skeleton width={44} />
-          <Skeleton width={38} />
-          <Skeleton width={50} />
-          <Skeleton width="62%" />
-          <Skeleton width="58%" />
-          <Skeleton width="66%" />
-          <Skeleton width={22} variant="short" />
+        <div className="lh-table-row lh-table-grid lh-skeleton-row" key={rowIndex}>
+          {Array.from({ length: columnCount }).map((_, columnIndex) => {
+            const width = columnWidths[(rowIndex + columnIndex) % columnWidths.length];
+            const isActionsColumn = columnIndex === columnCount - 1;
+
+            return (
+              <span className="lh-skeleton-cell" key={columnIndex}>
+                {isActionsColumn ? (
+                  <Skeleton width={20} height={20} radius={5} />
+                ) : columnIndex === 0 ? (
+                  <>
+                    <Skeleton width={13} height={13} radius="50%" />
+                    <Skeleton width={`${width}%`} height={18} variant="pill" />
+                  </>
+                ) : (
+                  <Skeleton width={`${width}%`} height={10} />
+                )}
+              </span>
+            );
+          })}
         </div>
       ))}
     </div>

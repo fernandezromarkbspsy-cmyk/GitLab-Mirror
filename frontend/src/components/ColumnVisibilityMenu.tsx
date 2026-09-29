@@ -1,23 +1,39 @@
-import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Columns3 } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 
 type Option = { key: string; label: string };
 
+export const linehaulColumnOptions: Option[] = [
+  { key: "status", label: "Status" },
+  { key: "requestTime", label: "Request Time" },
+  { key: "cluster", label: "Cluster" },
+  { key: "region", label: "Region" },
+  { key: "dock", label: "Dock #" },
+  { key: "backlogs", label: "Backlogs" },
+  { key: "truckSize", label: "LH Size" },
+  { key: "socPic", label: "SOC PIC" },
+  { key: "tripNumber", label: "LH Trip #" },
+  { key: "plateNumber", label: "Plate #" },
+];
+
 type Props = {
-  label?: string;
-  options: Option[];
+  label: string;
+  options: readonly Option[];
   visible: string[];
   onChange: (next: string[]) => void;
+  iconOnly?: boolean;
 };
 
 export function ColumnVisibilityMenu({
-  label = "Columns",
+  label,
   options,
   visible,
   onChange,
+  iconOnly = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -39,25 +55,35 @@ export function ColumnVisibilityMenu({
     const next = visible.includes(key)
       ? visible.filter((value) => value !== key)
       : [...visible, key];
-    onChange(next.length ? next : visible);
+    onChange(next);
   }
 
   return (
     <div ref={rootRef} className="column-visibility">
       <button
-        className="toolbar-button column-visibility-button"
+        className={`column-visibility-button${iconOnly ? " lh-toolbar-icon" : ""}`}
         type="button"
+        aria-label={label}
+        aria-controls={open ? menuId : undefined}
         aria-expanded={open}
+        aria-haspopup="true"
+        title={label}
         onClick={() => setOpen((value) => !value)}
       >
-        {label}
-        <ChevronDown size={15} />
+        <Columns3 size={17} aria-hidden="true" />
+        {!iconOnly && (
+          <>
+            <span>{label}</span>
+            <ChevronDown size={15} aria-hidden="true" />
+          </>
+        )}
       </button>
       {open && (
         <div
+          id={menuId}
           className="column-visibility-menu"
-          role="menu"
-          aria-label={`${label} menu`}
+          role="group"
+          aria-label={label}
         >
           {options.map((option) => (
             <label key={option.key} className="column-visibility-option">

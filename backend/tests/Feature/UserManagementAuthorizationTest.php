@@ -85,6 +85,34 @@ final class UserManagementAuthorizationTest extends TestCase
         }
     }
 
+    public function test_fte_user_can_create_a_doc_officer_profile(): void
+    {
+        $authUserId = (string) Str::uuid();
+        Schema::create('user_events', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('user_id');
+            $table->uuid('actor_id');
+            $table->string('event_type');
+            $table->text('metadata')->nullable();
+            $table->timestamps();
+        });
+        Http::fake([
+            'https://test-project.supabase.co/auth/v1/admin/users' => Http::response(['id' => $authUserId]),
+        ]);
+
+        $request = Request::create('/api/users', 'POST', [
+            'name' => 'Doc Officer',
+            'ops_id' => 'ops999',
+            'role' => 'doc_officer',
+        ]);
+        $request->attributes->set('actor', (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops']);
+
+        $response = (new UserController)->store($request);
+
+        $this->assertSame(201, $response->getStatusCode());
+        $this->assertSame('doc_officer', DB::table('profiles')->where('id', $authUserId)->value('role'));
+    }
+
     private function request(string $role): Request
     {
         $request = Request::create('/api/users/'.$this->targetId.'/disable', 'PATCH');

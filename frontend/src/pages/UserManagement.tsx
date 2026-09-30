@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   Copy,
+  KeyRound,
   Plus,
   RotateCcw,
   Search,
@@ -64,7 +65,7 @@ export function UserManagement() {
     queryFn: () => api<{ data: ManagedUser[] }>("/users"),
   });
   const create = useMutation({
-    mutationFn: (body: { name: string; ops_id: string }) =>
+    mutationFn: (body: { name: string; ops_id: string; role: "ops_pic" | "doc_officer" }) =>
       api<{ name: string; initial_password: string }>("/users", {
         method: "POST",
         body: JSON.stringify(body),
@@ -130,24 +131,6 @@ export function UserManagement() {
 
   return (
     <div className="workspace-view user-management-view">
-      <header className="users-page-header">
-        <div>
-          <p className="users-page-kicker">Access control</p>
-          <h1>User management</h1>
-          <p>
-            Manage operations access, roles, and account status from one place.
-          </p>
-        </div>
-        <button
-          className="users-primary-action"
-          type="button"
-          onClick={() => setCreating(true)}
-        >
-          <Plus size={17} />
-          Add Ops PIC
-        </button>
-      </header>
-
       <section className="users-summary" aria-label="User account summary">
         <div className="users-summary-card">
           <span className="users-summary-icon">
@@ -193,15 +176,25 @@ export function UserManagement() {
                 : "All provisioned accounts"}
             </p>
           </div>
-          <label className="users-search">
-            <Search size={16} />
-            <span className="sr-only">Search users</span>
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search name, email, or role"
-            />
-          </label>
+          <div className="users-toolbar-actions">
+            <label className="users-search">
+              <Search size={16} />
+              <span className="sr-only">Search users</span>
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search name, email, or role"
+              />
+            </label>
+            <button
+              className="users-primary-action"
+              type="button"
+              onClick={() => setCreating(true)}
+            >
+              <Plus size={17} />
+              Add Ops PIC
+            </button>
+          </div>
         </div>
         {users.isPending ? (
           <UserTableLoading />
@@ -339,25 +332,36 @@ export function UserManagement() {
         open={resetUser !== null}
         onClose={() => !reset.isPending && setResetUser(null)}
         ariaLabel="Reset user password"
-        className="form-dialog compact"
+        className="form-dialog compact users-dialog"
       >
         <div className="dialog-head">
           <div>
             <p className="users-page-kicker">Account recovery</p>
-            <h2>Reset User Password</h2>
+            <h2>Reset password</h2>
           </div>
           <button
             className="icon-button"
             type="button"
-            onClick={() => setResetUser(null)}
+            disabled={reset.isPending}
+            onClick={() => !reset.isPending && setResetUser(null)}
             aria-label="Cancel password reset"
           >
             <X size={18} />
           </button>
         </div>
-        <p>
-          Reset {resetUser?.name}'s password to a new one-time password? They
-          will create a new permanent password at their next sign-in.
+        <div className="users-reset-identity">
+          <span className="users-reset-icon" aria-hidden="true">
+            <KeyRound size={20} />
+          </span>
+          <div>
+            <span className="users-reset-label">Account access</span>
+            <strong>{resetUser?.name}</strong>
+          </div>
+        </div>
+        <p className="users-reset-copy">
+          This will invalidate the current password and issue a one-time
+          password. {resetUser?.name} must create a new password at the next
+          sign-in.
         </p>
         {reset.error && (
           <p className="notice error" role="alert">
@@ -371,14 +375,16 @@ export function UserManagement() {
             disabled={reset.isPending}
             onClick={() => setResetUser(null)}
           >
-            Cancel
+            Keep current password
           </button>
           <button
             type="button"
+            className="users-reset-confirm"
             disabled={reset.isPending}
+            aria-busy={reset.isPending}
             onClick={() => resetUser && reset.mutate(resetUser.id)}
           >
-            {reset.isPending ? "Resetting..." : "Confirm"}
+            {reset.isPending ? "Resetting..." : "Reset password"}
           </button>
         </div>
       </Modal>
@@ -386,7 +392,7 @@ export function UserManagement() {
         open={issuedCredential !== null}
         onClose={closeIssuedCredential}
         ariaLabel="One-time password issued"
-        className="form-dialog compact"
+        className="form-dialog compact users-dialog"
       >
         <div className="dialog-head">
           <div>
@@ -453,7 +459,7 @@ function CreateUser({
   busy: boolean;
   error?: string;
   onClose: () => void;
-  onSubmit: (body: { name: string; ops_id: string }) => void;
+  onSubmit: (body: { name: string; ops_id: string; role: "ops_pic" | "doc_officer" }) => void;
 }) {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -461,17 +467,18 @@ function CreateUser({
     onSubmit({
       name: String(data.get("name") ?? ""),
       ops_id: String(data.get("ops_id") ?? ""),
+      role: (String(data.get("role") ?? "ops_pic") as "ops_pic" | "doc_officer"),
     });
   }
   return (
     <Modal
       open
       onClose={onClose}
-      className="form-dialog compact"
-      ariaLabel="Add Ops PIC"
+      className="form-dialog compact users-dialog"
+      ariaLabel="Add backroom user"
     >
       <div className="dialog-head">
-        <h2>Add Ops PIC</h2>
+        <h2>Add backroom user</h2>
         <button
           className="icon-button"
           type="button"
@@ -485,6 +492,13 @@ function CreateUser({
         <label>
           Name
           <input name="name" required />
+        </label>
+        <label>
+          Role
+          <select name="role" defaultValue="ops_pic">
+            <option value="ops_pic">Ops PIC</option>
+            <option value="doc_officer">DOC Officer</option>
+          </select>
         </label>
         <label>
           OPS ID

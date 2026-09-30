@@ -22,7 +22,7 @@ final class BackroomController
         $opsId = strtolower(trim($data['ops_id']));
         $profile = DB::table('profiles')
             ->whereRaw('lower(ops_id) = ?', [$opsId])
-            ->where('role', 'ops_pic')
+            ->whereIn('role', ['ops_pic', 'doc_officer'])
             ->where('is_active', true)
             ->first(['id', 'must_change_password']);
 
@@ -48,7 +48,7 @@ final class BackroomController
     public function changePassword(Request $request): JsonResponse
     {
         $actor = $request->attributes->get('actor');
-        abort_unless($actor->role === 'ops_pic', 403, 'Only Backroom accounts use this flow.');
+        abort_unless(in_array($actor->role, ['ops_pic', 'doc_officer'], true), 403, 'Only Backroom accounts use this flow.');
         abort_unless($actor->must_change_password && $actor->password_reset_at, 409, 'Password change is not required.');
 
         $data = $request->validate([

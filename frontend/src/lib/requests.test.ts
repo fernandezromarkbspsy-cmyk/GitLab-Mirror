@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildMidmileAssignmentPayload,
   buildRequestPayload,
   defaultRequestFilters,
   requestMetricsQueryString,
@@ -9,6 +10,21 @@ import {
 import { getAppPath, getAppView } from "./routes";
 
 describe("request query builders", () => {
+  it("sets provide time when assigning a midmile plate number", () => {
+    const data = new FormData();
+    data.set("plate_number", "ABC-123");
+    data.set("truck_size", "6W");
+    data.set("truck_type", "WETLEASE");
+    const now = new Date("2026-09-30T12:34:56.000Z");
+
+    expect(buildMidmileAssignmentPayload(data, now)).toEqual({
+      plate_number: "ABC-123",
+      truck_size: "6W",
+      truck_type: "WETLEASE",
+      provide_time: "2026-09-30T12:34:56.000Z",
+    });
+  });
+
   it("serializes the default request filters", () => {
     expect(requestQueryString(defaultRequestFilters)).toBe(
       "page=1&per_page=20&sort=created_at&direction=desc",

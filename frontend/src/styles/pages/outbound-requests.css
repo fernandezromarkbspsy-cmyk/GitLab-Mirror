@@ -362,25 +362,40 @@
 .lh-toolbar-icon,
 .lh-row-more {
   display: inline-flex;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid transparent;
-  border-radius: 6px;
+  border: 1px solid rgba(15, 42, 43, 0.1);
+  border-radius: 8px;
   color: var(--soc5-muted);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.72);
   cursor: pointer;
-  transition: color .15s ease, background-color .15s ease, border-color .15s ease;
+  transition: color .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
 
 .lh-toolbar-icon:hover,
 .lh-row-more:hover {
   border-color: var(--soc5-line);
   color: var(--soc5-ink);
-  background: #f4f5f2;
+  background: #f4f7f1;
+  box-shadow: 0 3px 8px rgb(15 42 43 / 10%);
+}
+
+.lh-row-more:focus-visible {
+  border-color: #536500;
+  color: #536500;
+  outline: 3px solid rgb(162 197 0 / 26%);
+  outline-offset: 2px;
+}
+
+.lh-row-more.is-open {
+  border-color: #a2c500;
+  color: #536500;
+  background: #eef6d9;
+  box-shadow: 0 0 0 3px rgb(162 197 0 / 12%);
 }
 
 .lh-refresh-button:disabled {
@@ -447,6 +462,7 @@
   position: relative;
   display: inline-flex;
   flex: 0 0 auto;
+  align-self: center;
 }
 
 .column-visibility-button {
@@ -474,11 +490,13 @@
 
 .column-visibility-menu {
   position: absolute;
-  top: calc(100% + 7px);
-  right: 0;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
   z-index: 30;
   display: grid;
-  min-width: 190px;
+  width: max-content;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 24px));
   max-height: min(70vh, 360px);
   gap: 2px;
   overflow-y: auto;
@@ -785,32 +803,44 @@
 .lh-row-menu {
   position: absolute;
   z-index: 5;
-  top: 34px;
-  right: 8px;
+  top: calc(100% - 2px);
+  right: 6px;
   display: flex;
-  width: 132px;
+  width: 148px;
   flex-direction: column;
-  padding: 5px;
-  border: 1px solid var(--soc5-line);
-  border-radius: 7px;
-  background: var(--soc5-panel);
-  box-shadow: 0 8px 18px rgb(32 32 34 / 14%);
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid rgba(15, 42, 43, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 14px 28px rgb(15 42 43 / 16%), 0 2px 6px rgb(15 42 43 / 8%);
 }
 
 .lh-request-page .lh-row-menu button {
-  min-height: 34px;
-  padding: 0 9px;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 7px;
   color: var(--soc5-ink);
   background: transparent;
   font: 500 12px/1.2 var(--font-body);
   text-align: left;
   cursor: pointer;
+  transition: color .15s ease, background-color .15s ease;
 }
 
 .lh-request-page .lh-row-menu button:hover {
-  background: #f1f3ee;
+  color: #536500;
+  background: #eef6d9;
+}
+
+.lh-request-page .lh-row-menu button:focus-visible {
+  color: #536500;
+  background: #eef6d9;
+  outline: 2px solid rgb(162 197 0 / 55%);
+  outline-offset: -2px;
 }
 
 .lh-empty-state {
@@ -1084,6 +1114,10 @@
 
   .lh-table-toolbar-actions {
     justify-content: flex-end;
+  }
+
+  .column-visibility-menu {
+    max-height: min(60vh, 320px);
   }
 
   .lh-records-table {

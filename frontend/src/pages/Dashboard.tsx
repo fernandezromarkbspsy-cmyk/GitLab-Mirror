@@ -7,6 +7,7 @@ import { Skeleton } from "../components/Skeleton";
 import { SkeletonTable } from "../components/SkeletonTable";
 import { useQueueNotifications } from "../hooks/useQueueNotifications";
 import { getAppPath, getAppView } from "../lib/routes";
+import { api } from "../lib/api";
 import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
 import type { AppView, Role, User } from "../types";
@@ -82,6 +83,19 @@ export function Dashboard({
     routerNavigate(path, { replace });
   }
 
+  async function signOut() {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      try {
+        await api("/auth/seatalk/logout", { method: "POST" });
+      } catch {
+        // Supabase sign-out still leaves the client signed out if the
+        // optional SeaTalk session cleanup is unavailable.
+      }
+    }
+  }
+
   useEffect(() => {
     if (location.pathname !== getAppPath(view))
       routerNavigate(getAppPath(view), { replace: true });
@@ -95,7 +109,7 @@ export function Dashboard({
         open={menuOpen}
         onOpenChange={setMenuOpen}
         onNavigate={navigate}
-        onSignOut={() => void supabase.auth.signOut()}
+        onSignOut={() => void signOut()}
         pendingCount={queue.count}
       />
       <main className="app-content" aria-label="Primary content">

@@ -108,3 +108,14 @@ Desktop.ini
 *.lcov
 # Added by code-review-graph
 .code-review-graph/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+/frontend/playwright/.auth/
+/frontend/playwright-report/
+/frontend/test-results/
+!frontend/.env.e2e.example

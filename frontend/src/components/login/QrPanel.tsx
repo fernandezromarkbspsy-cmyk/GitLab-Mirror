@@ -1,6 +1,7 @@
 import { Loader2, MapPin, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import trucksImage from "../../assets/trucks.jpg";
+import { createSingleFlight } from "../../lib/singleFlight";
 import { Reveal } from "./Reveal";
 
 declare global {
@@ -18,10 +19,19 @@ interface QrPanelProps {
 export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
   const widgetRef = useRef<HTMLDivElement>(null);
   const sdkContainerRef = useRef<HTMLDivElement>(null);
+  const renderLoginOnce = useRef<(() => Promise<void>) | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
 
-  async function renderSeaTalkLogin() {
+  function renderSeaTalkLogin() {
+    if (!renderLoginOnce.current) {
+      renderLoginOnce.current = createSingleFlight(renderSeaTalkLoginImpl);
+    }
+
+    return renderLoginOnce.current();
+  }
+
+  async function renderSeaTalkLoginImpl() {
     const container = sdkContainerRef.current;
     if (!container) return;
     setStatus("loading");
@@ -69,11 +79,12 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
     } catch (cause) {
       setStatus("error");
       setError(cause instanceof Error ? cause.message : "Unable to load SeaTalk login.");
+      throw cause;
     }
   }
 
   useEffect(() => {
-    if (_enabled) void renderSeaTalkLogin();
+    if (_enabled) void renderSeaTalkLogin().catch(() => undefined);
   }, [_enabled]);
 
   return (
@@ -125,7 +136,7 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
           {status === "error" && (
             <div className="mt-3 text-[12px] leading-relaxed text-danger">
               <p>{error}</p>
-              <button type="button" onClick={() => void renderSeaTalkLogin()} className="mt-2 inline-flex items-center gap-1.5 font-semibold text-link hover:underline">
+              <button type="button" onClick={() => void renderSeaTalkLogin().catch(() => undefined)} className="mt-2 inline-flex items-center gap-1.5 font-semibold text-link hover:underline">
                 <RefreshCw className="h-3.5 w-3.5" /> Retry SeaTalk login
               </button>
             </div>

@@ -123,6 +123,22 @@ final class BackroomLoginTest extends TestCase
         ])->assertOk()->assertJsonPath('access_token', 'normal-access-token');
     }
 
+    public function test_doc_officer_can_sign_in_with_backroom_credentials(): void
+    {
+        $this->insertProfile(['role' => 'doc_officer', 'must_change_password' => false]);
+        Http::fake([
+            'https://test-project.supabase.co/auth/v1/token*' => Http::response([
+                'access_token' => 'doc-officer-access-token',
+                'refresh_token' => 'doc-officer-refresh-token',
+            ]),
+        ]);
+
+        $this->postJson('/api/auth/backroom/login', [
+            'ops_id' => 'ops123',
+            'password' => 'doc-officer-password',
+        ])->assertOk()->assertJsonPath('access_token', 'doc-officer-access-token');
+    }
+
     public function test_repeated_attempts_for_the_same_ops_id_are_rate_limited(): void
     {
         $this->insertProfile();

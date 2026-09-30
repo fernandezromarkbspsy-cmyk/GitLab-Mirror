@@ -12,6 +12,10 @@ import carLoadingUrl from "../assets/Car loading.svg";
 import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
 import { supabase } from "./lib/supabase";
+import {
+  clearSeatalkSessionHint,
+  rememberSeatalkSession,
+} from "./lib/seatalkSession";
 import { ChangePassword } from "./pages/ChangePassword";
 import type { User } from "./types";
 
@@ -87,6 +91,7 @@ export default function App() {
   const [profile, setProfile] = useState<User | null>(null);
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
+  const seatalkSession = useRef(false);
 
   useEffect(() => {
     const duration = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -105,6 +110,37 @@ export default function App() {
       if (!session) {
         lastToken.current = null;
         requestSequence.current += 1;
+
+        if (seatalkSession.current) {
+          const requestId = requestSequence.current;
+          try {
+            const resolvedProfile = await api<User>("/auth/me");
+            if (requestId !== requestSequence.current) return;
+            setProfile(resolvedProfile);
+            if (
+              window.location.pathname === "/" ||
+              window.location.pathname === "/login"
+            ) {
+              navigate("/dashboard", { replace: true });
+            }
+            setState(
+              resolvedProfile.must_change_password ? "change-password" : "ready",
+            );
+            return;
+          } catch (cause) {
+            if (requestId !== requestSequence.current) return;
+            clearSeatalkSessionHint(sessionStorage);
+            seatalkSession.current = false;
+            if (cause instanceof ApiError && cause.status === 401) {
+              setState("signed-out");
+              return;
+            }
+            setFailure(describeFailure(cause));
+            setState("unauthorized");
+            return;
+          }
+        }
+
         setProfile(null);
         setState("signed-out");
         return;
@@ -149,7 +185,16 @@ export default function App() {
   }, [resolveSession]);
 
   useEffect(() => {
+    seatalkSession.current = rememberSeatalkSession(
+      window.location.search,
+      sessionStorage,
+    );
+
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        clearSeatalkSessionHint(sessionStorage);
+        seatalkSession.current = false;
+      }
       if (
         event === "INITIAL_SESSION" ||
         event === "SIGNED_IN" ||

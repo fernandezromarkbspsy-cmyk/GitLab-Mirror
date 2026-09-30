@@ -35,8 +35,10 @@ final class UserController
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:120'],
             'ops_id' => ['required', 'string', 'max:40', 'regex:/^ops[0-9]+$/i'],
+            'role' => ['sometimes', Rule::in(['ops_pic', 'doc_officer'])],
         ]);
         $opsId = strtolower(trim($data['ops_id']));
+        $role = $data['role'] ?? 'ops_pic';
         abort_if(DB::table('profiles')->whereRaw('lower(ops_id) = ?', [$opsId])->exists(), 422, 'That Ops ID is already registered.');
         $email = $opsId.'@backroom.soc5.internal';
 
@@ -52,19 +54,12 @@ final class UserController
         }
 
         try {
-            $profile = DB::transaction(function () use ($authUserId, $data, $opsId, $actor) {
+            $profile = DB::transaction(function () use ($authUserId, $data, $opsId, $role, $actor) {
                 $profile = DB::table('profiles')->insertGetId([
-                    'id' => $authUserId, 'name' => $data['name'], 'role' => 'ops_pic',
+                    'id' => $authUserId, 'name' => $data['name'], 'role' => $role,
                     'ops_id' => $opsId, 'email' => null, 'is_active' => true,
                     'must_change_password' => true, 'password_reset_at' => now(), 'created_at' => now(), 'updated_at' => now(),
                 ], 'id');
-
-                if (DB::getSchemaBuilder()->hasTable('user_imports')) {
-                    DB::table('user_imports')->whereRaw('lower(ops_id) = ?', [$opsId])->update([
-                        'auth_user_id' => $authUserId,
-                        'imported_at' => now(),
-                    ]);
-                }
 
                 $this->userEvent($profile, $actor->id, 'USER_CREATED', ['name' => $data['name'], 'ops_id' => $opsId]);
 
@@ -87,6 +82,7 @@ final class UserController
             'id' => $profile,
             'name' => $data['name'],
             'ops_id' => $opsId,
+            'role' => $role,
             'must_change_password' => true,
             'initial_password' => $initialPassword,
         ], 201);

@@ -36,6 +36,18 @@ export type RequestPayload = {
   truck_type: "WETLEASE" | "DRYLEASE";
 };
 
+export function buildMidmileAssignmentPayload(
+  data: FormData,
+  now: Date = new Date(),
+) {
+  return {
+    plate_number: data.get("plate_number"),
+    truck_size: data.get("truck_size"),
+    truck_type: data.get("truck_type"),
+    provide_time: now.toISOString(),
+  };
+}
+
 export function buildRequestPayload(data: FormData): RequestPayload {
   return {
     cluster: data.get("cluster"),

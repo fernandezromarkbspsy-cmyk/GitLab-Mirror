@@ -13,23 +13,23 @@ use RuntimeException;
 class GoogleSheetsRequestSync
 {
     private const HEADERS = [
-        'Request timestamp',
+        'Request time',
         'Cluster',
         'Region',
         'Dock #',
         'Backlog',
         'Backlogs Time Stamp',
-        'LH Type (Request)',
+        'LH type (input by FTE MM) (Request)',
         'Ops FTE',
         'Plate number',
         'MM FTE',
-        'LH size (input by FTE MM)',
+        'LH size',
         'LH type (input by FTE MM)',
         'Provide Time',
         'Linehaul Trip',
         'Assigned time',
         'Docked Time',
-        'Doc Officer',
+        'DOC Officer',
         'OPS/PIC',
         'Status',
     ];

@@ -36,36 +36,33 @@ start-backend.ps1        Backend development server
 No administrator access is required. PHP and Composer use the project-local
 configuration in `tools/php.ini`.
 
+cloudflared tunnel --config "C:\Users\SPXPH4227\.cloudflared\config.yml" run soc5-outbound
+cloudflared tunnel --protocol http2 run soc5-outbound
+
 1. Configure `backend/.env` and `frontend/.env` as described in the
    [Setup Guide](docs/setup-guide.md).
-2. Initialize the backend:
+2. Initialize the backend: 
 
    ```powershell
    .\setup-backend.ps1
    ```
 
-3. Start Laravel in the first terminal:
+3. Start the backend, frontend, and Cloudflare tunnel together:
 
    ```powershell
-   .\start-backend.ps1
+   .\start-dev.ps1
    ```
 
-4. Start React in a second terminal:
+   To use a different named tunnel:
 
    ```powershell
-   cd frontend
-   npm install
-   npx vite preview --host 0.0.0.0 --port 5173
+   .\start-dev.ps1 -TunnelId '<tunnel-id>'
    ```
 
-5. Start the Cloudflare Tunnel in a third terminal after configuring
-   [`docs/tunnel-setup.md`](docs/tunnel-setup.md):
+   The terminal streams labeled backend, frontend, and Cloudflare logs and
+   reports `RUNNING` or `FAILED` for each service.
 
-   ```powershell
-   cloudflared tunnel run 0f1afc50-0389-4468-9de9-1e49e48a3626
-   ```
-
-6. Open `http://localhost:5173`, or the Cloudflare hostname when the tunnel is
+4. Open `http://localhost:5173`, or the Cloudflare hostname when the tunnel is
    running.
 
 Laravel runs on `http://127.0.0.1:8000`; Vite proxies browser `/api` requests to

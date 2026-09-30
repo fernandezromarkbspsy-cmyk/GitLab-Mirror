@@ -181,15 +181,21 @@ test('switches views and supports row view and edit actions', async ({ page }) =
   await page.getByRole('button', { name: 'Close request details' }).click();
 
   await page.getByRole('button', { name: 'Table', exact: true }).click();
-  await page.getByRole('button', { name: 'Actions for request request-1' }).click();
-  await page.getByRole('button', { name: 'View', exact: true }).click();
+  const rowActions = page.getByRole('button', {
+    name: 'Actions for request request-1',
+  });
+  await expect(rowActions).toHaveAttribute('aria-haspopup', 'menu');
+  await expect(rowActions).toHaveAttribute('aria-expanded', 'false');
+  await rowActions.click();
+  await expect(rowActions).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('menuitem', { name: 'View', exact: true }).click();
   await expect(
     page.getByRole('region', { name: 'Details for request request-1' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Close request details' }).click();
 
-  await page.getByRole('button', { name: 'Actions for request request-1' }).click();
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await rowActions.click();
+  await page.getByRole('menuitem', { name: 'Edit', exact: true }).click();
   await expect(page.getByLabel('Truck Type')).toHaveValue('WETLEASE');
 });
 

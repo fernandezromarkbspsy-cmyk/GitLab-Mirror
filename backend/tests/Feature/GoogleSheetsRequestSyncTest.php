@@ -113,6 +113,27 @@ final class GoogleSheetsRequestSyncTest extends TestCase
 
                 return $spreadsheetId === 'test-sheet'
                     && $range === "'Sheet1'!A1:S2"
+                    && $rows[0] === [
+                        'Request time',
+                        'Cluster',
+                        'Region',
+                        'Dock #',
+                        'Backlog',
+                        'Backlogs Time Stamp',
+                        'LH type (input by FTE MM) (Request)',
+                        'Ops FTE',
+                        'Plate number',
+                        'MM FTE',
+                        'LH size',
+                        'LH type (input by FTE MM)',
+                        'Provide Time',
+                        'Linehaul Trip',
+                        'Assigned time',
+                        'Docked Time',
+                        'DOC Officer',
+                        'OPS/PIC',
+                        'Status',
+                    ]
                     && $rows[0][18] === 'Status'
                     && $rows[1][18] === 'CANCELLED';
             });

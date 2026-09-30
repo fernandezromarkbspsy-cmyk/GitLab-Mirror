@@ -5,15 +5,24 @@ type Option = { key: string; label: string };
 
 export const linehaulColumnOptions: Option[] = [
   { key: "status", label: "Status" },
-  { key: "requestTime", label: "Request Time" },
+  { key: "requestTime", label: "Request time" },
   { key: "cluster", label: "Cluster" },
   { key: "region", label: "Region" },
   { key: "dock", label: "Dock #" },
-  { key: "backlogs", label: "Backlogs" },
-  { key: "truckSize", label: "LH Size" },
-  { key: "socPic", label: "SOC PIC" },
-  { key: "tripNumber", label: "LH Trip #" },
-  { key: "plateNumber", label: "Plate #" },
+  { key: "backlogs", label: "Backlog" },
+  { key: "backlogsTime", label: "Backlogs Time Stamp" },
+  { key: "lhTypeRequest", label: "LH Type (Request)" },
+  { key: "opsFte", label: "Ops FTE" },
+  { key: "plateNumber", label: "Plate number" },
+  { key: "mmFte", label: "MM FTE" },
+  { key: "truckSize", label: "LH size" },
+  { key: "lhTypeInput", label: "LH type (input by FTE MM)" },
+  { key: "provideTime", label: "Provide Time" },
+  { key: "linehaulTrip", label: "Linehaul Trip" },
+  { key: "assignedTime", label: "Assigned time" },
+  { key: "dockedTime", label: "Docked Time" },
+  { key: "docOfficer", label: "DOC Officer" },
+  { key: "opsPic", label: "OPS/PIC" },
 ];
 
 type Props = {

@@ -12,9 +12,7 @@ import {
   Printer,
   RefreshCw,
   Table2,
-  Tag,
   Truck,
-  Users,
   X,
 } from "lucide-react";
 import type { FormEvent } from "react";
@@ -32,7 +30,11 @@ import { StatusBadge } from "../components/StatusBadge";
 import { useRequestFilters } from "../hooks/useRequestFilters";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
-import { openRequestsSheet, requestQueryString } from "../lib/requests";
+import {
+  buildMidmileAssignmentPayload,
+  openRequestsSheet,
+  requestQueryString,
+} from "../lib/requests";
 import type { Page, RequestSort, TruckRequest, User } from "../types";
 
 type MmAction = "assign-truck" | "reject-mm";
@@ -313,30 +315,31 @@ export function MidmileRequests({ user }: { user: User }) {
                     <span>Backlogs</span>
                   </button>
                 )}
+                {hasColumn("backlogsTime") && <span>Backlogs Time Stamp</span>}
+                {hasColumn("lhTypeRequest") && <span>LH Type (Request)</span>}
+                {hasColumn("opsFte") && <span>Ops FTE</span>}
+                {hasColumn("plateNumber") && (
+                  <button type="button" onClick={() => sortBy("plate_number")}>
+                    <Hash size={14} />
+                    <span>Plate number</span>
+                  </button>
+                )}
+                {hasColumn("mmFte") && <span>MM FTE</span>}
                 {hasColumn("truckSize") && (
                   <span>
                     <Truck size={14} />
                     LH Size
                   </span>
                 )}
-                {hasColumn("socPic") && (
-                  <span>
-                    <Users size={14} />
-                    SOC PIC
-                  </span>
+                {hasColumn("lhTypeInput") && (
+                  <span>LH type (input by FTE MM)</span>
                 )}
-                {hasColumn("tripNumber") && (
-                  <span>
-                    <Tag size={14} />
-                    LH Trip #
-                  </span>
-                )}
-                {hasColumn("plateNumber") && (
-                  <button type="button" onClick={() => sortBy("plate_number")}>
-                    <Hash size={14} />
-                    <span>Plate #</span>
-                  </button>
-                )}
+                {hasColumn("provideTime") && <span>Provide Time</span>}
+                {hasColumn("linehaulTrip") && <span>Linehaul Trip</span>}
+                {hasColumn("assignedTime") && <span>Assigned time</span>}
+                {hasColumn("dockedTime") && <span>Docked Time</span>}
+                {hasColumn("docOfficer") && <span>DOC Officer</span>}
+                {hasColumn("opsPic") && <span>OPS/PIC</span>}
                 <span />
               </div>
               <div className="lh-table-body">
@@ -402,15 +405,40 @@ export function MidmileRequests({ user }: { user: User }) {
                       {hasColumn("backlogs") && (
                         <span>{row.backlogs.toLocaleString()}</span>
                       )}
-                      {hasColumn("truckSize") && <span>{row.truck_size}</span>}
-                      {hasColumn("socPic") && (
-                        <span>{displayValue(row.ob_fte)}</span>
+                      {hasColumn("backlogsTime") && (
+                        <span>{formatDateTime(row.backlogs_timestamp)}</span>
                       )}
-                      {hasColumn("tripNumber") && (
-                        <span>{displayValue(row.linehaul_trip_no)}</span>
+                      {hasColumn("lhTypeRequest") && (
+                        <span>{displayValue(row.truck_type)}</span>
+                      )}
+                      {hasColumn("opsFte") && (
+                        <span>{displayValue(row.ob_fte_name ?? row.ob_fte)}</span>
                       )}
                       {hasColumn("plateNumber") && (
                         <span>{displayValue(row.plate_number)}</span>
+                      )}
+                      {hasColumn("mmFte") && (
+                        <span>{displayValue(row.created_by_name ?? row.created_by)}</span>
+                      )}
+                      {hasColumn("truckSize") && <span>{row.truck_size}</span>}
+                      {hasColumn("lhTypeInput") && (
+                        <span>{displayValue(row.truck_type)}</span>
+                      )}
+                      {hasColumn("provideTime") && (
+                        <span>{formatDateTime(row.provide_time)}</span>
+                      )}
+                      {hasColumn("linehaulTrip") && (
+                        <span>{displayValue(row.linehaul_trip_no)}</span>
+                      )}
+                      {hasColumn("assignedTime") && <span>-</span>}
+                      {hasColumn("dockedTime") && (
+                        <span>{formatDateTime(row.docked_time)}</span>
+                      )}
+                      {hasColumn("docOfficer") && (
+                        <span>{displayValue(row.created_by_name ?? row.created_by)}</span>
+                      )}
+                      {hasColumn("opsPic") && (
+                        <span>{displayValue(row.ob_fte_name ?? row.ob_fte)}</span>
                       )}
                       <span className="lh-row-menu-wrap">
                         <button
@@ -586,12 +614,7 @@ function MidmileActionDialog({
     const data = new FormData(event.currentTarget);
     onSubmit(
       confirming
-        ? {
-            plate_number: data.get("plate_number"),
-            truck_size: data.get("truck_size"),
-            truck_type: data.get("truck_type"),
-            provide_time: data.get("provide_time") || null,
-          }
+        ? buildMidmileAssignmentPayload(data)
         : { rejection_remarks: data.get("rejection_remarks") },
     );
   }
@@ -648,10 +671,6 @@ function MidmileActionDialog({
                 <option>WETLEASE</option>
                 <option>DRYLEASE</option>
               </select>
-            </label>
-            <label>
-              Provide time
-              <input name="provide_time" type="datetime-local" />
             </label>
           </>
         ) : (

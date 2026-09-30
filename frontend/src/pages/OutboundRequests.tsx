@@ -12,9 +12,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Table2,
-  Tag,
   Truck,
-  Users,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -290,31 +288,32 @@ export function OutboundRequests({
                     <SlidersHorizontal size={13} />
                   </button>
                 )}
+                {hasColumn("backlogsTime") && <span>Backlogs Time Stamp</span>}
+                {hasColumn("lhTypeRequest") && <span>LH Type (Request)</span>}
+                {hasColumn("opsFte") && <span>Ops FTE</span>}
+                {hasColumn("plateNumber") && (
+                  <button type="button" onClick={() => sortBy("plate_number")}>
+                    <Hash size={14} />
+                    <span>Plate number</span>
+                    <SlidersHorizontal size={13} />
+                  </button>
+                )}
+                {hasColumn("mmFte") && <span>MM FTE</span>}
                 {hasColumn("truckSize") && (
                   <span>
                     <Truck size={14} />
                     LH Size
                   </span>
                 )}
-                {hasColumn("socPic") && (
-                  <span>
-                    <Users size={14} />
-                    SOC PIC
-                  </span>
+                {hasColumn("lhTypeInput") && (
+                  <span>LH type (input by FTE MM)</span>
                 )}
-                {hasColumn("tripNumber") && (
-                  <span>
-                    <Tag size={14} />
-                    LH Trip #
-                  </span>
-                )}
-                {hasColumn("plateNumber") && (
-                  <button type="button" onClick={() => sortBy("plate_number")}>
-                    <Hash size={14} />
-                    <span>Plate #</span>
-                    <SlidersHorizontal size={13} />
-                  </button>
-                )}
+                {hasColumn("provideTime") && <span>Provide Time</span>}
+                {hasColumn("linehaulTrip") && <span>Linehaul Trip</span>}
+                {hasColumn("assignedTime") && <span>Assigned time</span>}
+                {hasColumn("dockedTime") && <span>Docked Time</span>}
+                {hasColumn("docOfficer") && <span>DOC Officer</span>}
+                {hasColumn("opsPic") && <span>OPS/PIC</span>}
                 <span className="justify-center">
                   {canApprove && selectedCount > 0 && (
                     <button
@@ -391,21 +390,49 @@ export function OutboundRequests({
                           {hasColumn("backlogs") && (
                             <span>{row.backlogs.toLocaleString()}</span>
                           )}
-                          {hasColumn("truckSize") && <span>{row.truck_size}</span>}
-                          {hasColumn("socPic") && (
-                            <span>{displayValue(row.ob_fte)}</span>
+                          {hasColumn("backlogsTime") && (
+                            <span>{formatDateTime(row.backlogs_timestamp)}</span>
                           )}
-                          {hasColumn("tripNumber") && (
-                            <span>{displayValue(row.linehaul_trip_no)}</span>
+                          {hasColumn("lhTypeRequest") && (
+                            <span>{displayValue(row.truck_type)}</span>
+                          )}
+                          {hasColumn("opsFte") && (
+                            <span>{displayValue(row.ob_fte_name ?? row.ob_fte)}</span>
                           )}
                           {hasColumn("plateNumber") && (
                             <span>{displayValue(row.plate_number)}</span>
                           )}
+                          {hasColumn("mmFte") && (
+                            <span>{displayValue(row.created_by_name ?? row.created_by)}</span>
+                          )}
+                          {hasColumn("truckSize") && <span>{row.truck_size}</span>}
+                          {hasColumn("lhTypeInput") && (
+                            <span>{displayValue(row.truck_type)}</span>
+                          )}
+                          {hasColumn("provideTime") && (
+                            <span>{formatDateTime(row.provide_time)}</span>
+                          )}
+                          {hasColumn("linehaulTrip") && (
+                            <span>{displayValue(row.linehaul_trip_no)}</span>
+                          )}
+                          {hasColumn("assignedTime") && <span>-</span>}
+                          {hasColumn("dockedTime") && (
+                            <span>{formatDateTime(row.docked_time)}</span>
+                          )}
+                          {hasColumn("docOfficer") && (
+                            <span>{displayValue(row.created_by_name ?? row.created_by)}</span>
+                          )}
+                          {hasColumn("opsPic") && (
+                            <span>{displayValue(row.ob_fte_name ?? row.ob_fte)}</span>
+                          )}
                           <span className="lh-row-menu-wrap">
                             <button
-                              className="lh-row-more"
+                              className={`lh-row-more${openRow === row.id ? " is-open" : ""}`}
                               type="button"
                               aria-label={`Actions for request ${row.id}`}
+                              aria-haspopup="menu"
+                              aria-expanded={openRow === row.id}
+                              title="More actions"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setOpenRow(openRow === row.id ? null : row.id);
@@ -414,8 +441,9 @@ export function OutboundRequests({
                               <MoreHorizontal size={17} />
                             </button>
                             {openRow === row.id && (
-                              <span className="lh-row-menu">
+                              <span className="lh-row-menu" role="menu">
                                 <button
+                                  role="menuitem"
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
@@ -426,6 +454,7 @@ export function OutboundRequests({
                                   View
                                 </button>
                                 <button
+                                  role="menuitem"
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
@@ -438,6 +467,7 @@ export function OutboundRequests({
                                 </button>
                                 {canApprove && row.status === "PENDING" && (
                                   <button
+                                    role="menuitem"
                                     className="request-action-button request-action-reject"
                                     type="button"
                                     onClick={() => {
@@ -448,16 +478,19 @@ export function OutboundRequests({
                                     Reject
                                   </button>
                                 )}
-                                {canEdit && <button
-                                  type="button"
-                                  onClick={() => {
-                                    updateRequest.reset();
-                                    setEditing(row);
-                                    setOpenRow(null);
-                                  }}
-                                >
-                                  Edit
-                                </button>}
+                                {canEdit && (
+                                  <button
+                                    role="menuitem"
+                                    type="button"
+                                    onClick={() => {
+                                      updateRequest.reset();
+                                      setEditing(row);
+                                      setOpenRow(null);
+                                    }}
+                                  >
+                                    Edit
+                                  </button>
+                                )}
                               </span>
                             )}
                           </span>

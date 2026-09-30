@@ -24,6 +24,7 @@ foreach ($entry in $files.GetEnumerator()) {
     $watcher.Path = $directory
     $watcher.Filter = $fileName
     $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite
+    $watcher.EnableRaisingEvents = $true
 
     $state = @{
         LastSync = [datetime]::MinValue

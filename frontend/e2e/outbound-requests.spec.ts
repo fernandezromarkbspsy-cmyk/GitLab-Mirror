@@ -214,7 +214,11 @@ test('selects requests, approves them, and expands a row inline', async ({ page 
   await expect(
     page.getByLabel('Expanded details for request request-1'),
   ).toBeVisible();
-  await expect(page.getByText('WETLEASE', { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByLabel('Expanded details for request request-1')
+      .getByText('WETLEASE', { exact: true }),
+  ).toBeVisible();
 
   await page.getByLabel('Select request request-1').check();
   await expect(page.getByRole('button', { name: 'Approved', exact: true })).toBeVisible();

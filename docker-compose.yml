@@ -33,3 +33,22 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+  
+  # C:\Users\SPXPH4227\OneDrive\mark_files\soc5-outbound\docker-compose.yml
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    expose:
+      - "6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+  volumes:
+      redis-data:

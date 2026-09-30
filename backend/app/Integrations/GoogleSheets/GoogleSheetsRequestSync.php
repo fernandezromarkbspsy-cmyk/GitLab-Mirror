@@ -2,6 +2,7 @@
 
 namespace App\Integrations\GoogleSheets;
 
+use Carbon\CarbonImmutable;
 use Closure;
 use Google\Client;
 use Google\Service\Sheets;
@@ -71,27 +72,37 @@ class GoogleSheetsRequestSync
             $createdMetadata = $this->metadata($created?->metadata);
 
             $values[] = [
-                $request->request_timestamp,
+                $this->formatTimestamp($request->request_timestamp),
                 $request->cluster,
                 $request->region,
                 $request->dock_no,
                 $request->backlogs,
-                $request->backlogs_timestamp,
+                $this->formatTimestamp($request->backlogs_timestamp),
                 $createdMetadata['lh_type_request'] ?? $request->truck_type,
                 $approved?->actor_name,
                 $request->plate_number,
                 $assigned?->actor_name,
                 $request->truck_size,
                 $request->truck_type,
-                $request->provide_time,
+                $this->formatTimestamp($request->provide_time),
                 $request->linehaul_trip_no,
-                $assigned?->created_at,
-                $request->docked_time,
+                $this->formatTimestamp($assigned?->created_at),
+                $this->formatTimestamp($request->docked_time),
                 $confirmed?->actor_name,
                 $request->ops_pic,
                 $request->status,
             ];
         }
+
+        // The Google PHP client omits null cells while serializing. Reindex
+        // each row first so sparse numeric keys cannot become JSON objects.
+        $values = array_map(
+            static fn (array $row): array => array_map(
+                static fn (mixed $cell): mixed => $cell ?? '',
+                array_values($row),
+            ),
+            $values,
+        );
 
         $sheets = $this->client();
         $spreadsheetId = (string) config('services.google_sheets.spreadsheet_id');
@@ -151,6 +162,17 @@ class GoogleSheetsRequestSync
         $sheet = str_replace("'", "''", (string) config('services.google_sheets.sheet_name', 'Sheet1'));
 
         return "'{$sheet}'!{$suffix}";
+    }
+
+    private function formatTimestamp(mixed $timestamp): string
+    {
+        if ($timestamp === null || $timestamp === '') {
+            return '';
+        }
+
+        return CarbonImmutable::parse((string) $timestamp)
+            ->setTimezone((string) config('app.timezone'))
+            ->format('n/j/Y G:i:s');
     }
 
     private function metadata(mixed $metadata): array

@@ -1,0 +1,539 @@
+# C:\Users\phlspxuser\OneDrive\development\soc-5-outbound\scripts\preflight.ps1
+
+param(
+    [switch]$Fix,
+    [switch]$All
+)
+
+$ErrorActionPreference = "Stop"
+
+$Root = Split-Path -Parent $PSScriptRoot
+Set-Location $Root
+
+$Failures = @()
+$FrontendDependencyInstallOutput = ""
+
+function Invoke-CommandChecked {
+    param(
+        [scriptblock]$Command,
+        [string]$ErrorMessage
+    )
+
+    & $Command
+
+    if ($LASTEXITCODE -ne 0) {
+        throw $ErrorMessage
+    }
+}
+
+function Invoke-ProjectBinary {
+    param(
+        [string]$Name,
+        [object[]]$Arguments = @()
+    )
+
+    $binary = Join-Path (Get-Location) "node_modules\.bin\$Name.cmd"
+
+    if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
+        throw "Project-local binary '$Name' is unavailable. Install frontend dependencies first."
+    }
+
+    & $binary @Arguments
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Project-local binary '$Name' failed with exit code $LASTEXITCODE."
+    }
+}
+
+function Invoke-FrontendNpmCi {
+    $output = @(& npm ci --cache .npm --prefer-offline 2>&1)
+    $exitCode = $LASTEXITCODE
+
+    $output | ForEach-Object { Write-Host ([string]$_) }
+    $script:FrontendDependencyInstallOutput = (($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
+
+    if ($exitCode -ne 0) {
+        throw "npm ci failed with exit code $exitCode."
+    }
+}
+
+function Get-LockedNativeModuleFiles {
+    param(
+        [string]$NodeModulesPath
+    )
+
+    if (-not (Test-Path -LiteralPath $NodeModulesPath -PathType Container)) {
+        return @()
+    }
+
+    $lockedFiles = @(
+        Get-ChildItem -LiteralPath $NodeModulesPath -Recurse -File -Filter '*.node' -ErrorAction SilentlyContinue |
+            ForEach-Object {
+                $nativeFile = $_
+
+                try {
+                    $stream = [System.IO.File]::Open(
+                        $nativeFile.FullName,
+                        [System.IO.FileMode]::Open,
+                        [System.IO.FileAccess]::ReadWrite,
+                        [System.IO.FileShare]::None
+                    )
+                    $stream.Dispose()
+                }
+                catch {
+                    $nativeFile.FullName
+                }
+            }
+    )
+
+    return $lockedFiles
+}
+
+function Repair-FrontendDependencies {
+    $nodeModulesPath = Join-Path $Root 'frontend\node_modules'
+    $lockedNativeFiles = @(Get-LockedNativeModuleFiles -NodeModulesPath $nodeModulesPath)
+
+    if ($lockedNativeFiles.Count -eq 0) {
+        throw "Automatic frontend dependency cleanup was not attempted because no locked native module was found. Review the original npm ci output above."
+    }
+
+    Write-Host "Detected locked native frontend module(s):"
+    $lockedNativeFiles | ForEach-Object { Write-Host "  $_" }
+    Write-Host "Removing stale frontend node_modules and retrying npm ci..."
+
+    try {
+        Remove-Item -LiteralPath $nodeModulesPath -Recurse -Force -ErrorAction Stop
+    }
+    catch {
+        $paths = $lockedNativeFiles -join '; '
+        throw "Could not remove frontend node_modules because a native module is still locked: $paths. Stop the process holding the file (for example Node, Vite, Vitest, Playwright, an editor, antivirus, or OneDrive), then rerun with -Fix. Original error: $($_.Exception.Message)"
+    }
+
+    Set-Location (Join-Path $Root 'frontend')
+    Invoke-FrontendNpmCi
+}
+
+function Mark-Blocked {
+    param(
+        [string]$Name,
+        [string]$Reason
+    )
+
+    Write-Host ""
+    Write-Host "==> $Name"
+    Write-Host "[BLOCKED] $Name - $Reason"
+    $script:Failures += "$Name (blocked)"
+}
+
+function Run-Step {
+    param(
+        [string]$Name,
+        [scriptblock]$Command,
+        [scriptblock]$FixCommand = $null
+    )
+
+    Write-Host ""
+    Write-Host "==> $Name"
+
+    try {
+        & $Command
+
+        Write-Host "[PASS] $Name"
+        return $true
+    }
+    catch {
+        Write-Host "[FAIL] $Name"
+        Write-Host "  $($_.Exception.Message)"
+
+        if ($Fix -and $FixCommand) {
+            try {
+                Write-Host "Auto-fixing..."
+                & $FixCommand
+
+                Write-Host "Re-checking..."
+                & $Command
+
+                Write-Host "[PASS AFTER FIX] $Name"
+                return $true
+            }
+            catch {
+                Write-Host "[FAILED AFTER FIX] $Name"
+                Write-Host "  $($_.Exception.Message)"
+            }
+        }
+
+        $script:Failures += $Name
+        return $false
+    }
+}
+
+function Get-ChangedFiles {
+
+    $files = @()
+
+    # Committed changes compared with main
+    try {
+        git rev-parse --verify origin/main *> $null
+
+        if ($LASTEXITCODE -eq 0) {
+            $files += git diff --name-only origin/main...HEAD
+        }
+        else {
+            $files += git diff --name-only main...HEAD
+        }
+    }
+    catch {}
+
+    # Staged changes
+    $files += git diff --cached --name-only
+
+    # Unstaged changes
+    $files += git diff --name-only
+
+    # New/untracked files
+    $files += git ls-files --others --exclude-standard
+
+    return $files |
+        Where-Object { $_ } |
+        Sort-Object -Unique
+}
+
+Write-Host ""
+Write-Host "======================================"
+Write-Host " SOC5 OUTBOUND PRE-PUSH ORCHESTRATOR"
+Write-Host "======================================"
+
+$ChangedFiles = @(Get-ChangedFiles)
+
+if ($ChangedFiles.Count -eq 0) {
+    Write-Host ""
+    Write-Host "No changed files detected."
+    Write-Host "Running full preflight for safety."
+    $All = $true
+}
+else {
+    Write-Host ""
+    Write-Host "Changed files discovered:"
+
+    foreach ($file in $ChangedFiles) {
+        Write-Host "  $file"
+    }
+}
+
+$RunFrontend   = $false
+$RunBackend    = $false
+$RunPostgres   = $false
+$RunEdge       = $false
+$RunDeployment = $false
+
+if ($All) {
+    $RunFrontend   = $true
+    $RunBackend    = $true
+    $RunPostgres   = $true
+    $RunEdge       = $true
+    $RunDeployment = $true
+}
+else {
+
+    foreach ($file in $ChangedFiles) {
+
+        # Frontend
+        if ($file -match '^frontend/') {
+            $RunFrontend = $true
+        }
+
+        # Laravel backend
+        if (
+            $file -match '^backend/app/' -or
+            $file -match '^backend/routes/' -or
+            $file -match '^backend/config/' -or
+            $file -match '^backend/tests/' -or
+            $file -eq 'backend/composer.json' -or
+            $file -eq 'backend/composer.lock' -or
+            $file -eq 'backend/phpunit.xml'
+        ) {
+            $RunBackend = $true
+        }
+
+        # Database-sensitive changes
+        if (
+            $file -match '^backend/database/' -or
+            $file -match '^supabase/migrations/'
+        ) {
+            $RunBackend  = $true
+            $RunPostgres = $true
+        }
+
+        # Supabase Edge Functions
+        if ($file -match '^supabase/functions/') {
+            $RunEdge = $true
+        }
+
+        # Deployment
+        if (
+            $file -match '^docker-compose.*\.yml$' -or
+            $file -match 'Dockerfile$' -or
+            $file -match '^deploy/'
+        ) {
+            $RunDeployment = $true
+        }
+
+        # High-risk/shared files -> full CI simulation
+        if (
+            $file -eq '.travis.yml' -or
+            $file -eq 'composer.json' -or
+            $file -eq 'package.json' -or
+            $file -eq 'deno.json'
+        ) {
+            $RunFrontend   = $true
+            $RunBackend    = $true
+            $RunPostgres   = $true
+            $RunEdge       = $true
+            $RunDeployment = $true
+        }
+    }
+}
+
+Write-Host ""
+Write-Host "Checks selected:"
+Write-Host "  Frontend:            $RunFrontend"
+Write-Host "  Backend:             $RunBackend"
+Write-Host "  Backend PostgreSQL:  $RunPostgres"
+Write-Host "  Edge Functions:      $RunEdge"
+Write-Host "  Deployment:          $RunDeployment"
+
+# ------------------------------------------------------------
+# FRONTEND
+# ------------------------------------------------------------
+
+if ($RunFrontend) {
+
+    $FrontendDependenciesReady = Run-Step "Frontend dependencies" {
+        Set-Location "$Root\frontend"
+        Invoke-FrontendNpmCi
+    } {
+        Set-Location "$Root\frontend"
+        Repair-FrontendDependencies
+    }
+
+    if ($FrontendDependenciesReady) {
+        Run-Step "Frontend robots" {
+            Set-Location "$Root\frontend"
+
+            Invoke-CommandChecked {
+                npm run check:robots
+            } "robots check failed"
+        }
+
+        Run-Step "Frontend lint" {
+            Set-Location "$Root\frontend"
+
+            Invoke-CommandChecked {
+                npm run lint
+            } "frontend lint failed"
+        } {
+            Set-Location "$Root\frontend"
+            Invoke-ProjectBinary -Name 'biome' -Arguments @('check', '--write', 'src', 'scripts')
+        }
+
+        Run-Step "Frontend formatting" {
+            Set-Location "$Root\frontend"
+
+            Invoke-CommandChecked {
+                npm run format:check
+            } "frontend formatting failed"
+        } {
+            Set-Location "$Root\frontend"
+            Invoke-ProjectBinary -Name 'biome' -Arguments @(
+                'format',
+                '--write',
+                'src/App.tsx',
+                'src/lib/routes.ts',
+                'src/lib/requests.test.ts',
+                'scripts/check-source-artifacts.mjs'
+            )
+        }
+
+        Run-Step "Frontend unit tests" {
+            Set-Location "$Root\frontend"
+
+            Invoke-CommandChecked {
+                npm test
+            } "frontend tests failed"
+        }
+
+        Run-Step "Playwright Chromium" {
+            Set-Location "$Root\frontend"
+
+            Invoke-ProjectBinary -Name 'playwright' -Arguments @('install', 'chromium')
+        }
+
+        Run-Step "Frontend E2E" {
+            Set-Location "$Root\frontend"
+
+            Invoke-CommandChecked {
+                npm run test:e2e
+            } "E2E tests failed"
+        }
+
+        Run-Step "Frontend build" {
+            Set-Location "$Root\frontend"
+
+            Invoke-CommandChecked {
+                npm run build
+            } "frontend build failed"
+        }
+    }
+    else {
+        $blockedReason = "frontend dependencies failed; dependent checks were not run"
+        Mark-Blocked "Frontend robots" $blockedReason
+        Mark-Blocked "Frontend lint" $blockedReason
+        Mark-Blocked "Frontend formatting" $blockedReason
+        Mark-Blocked "Frontend unit tests" $blockedReason
+        Mark-Blocked "Playwright Chromium" $blockedReason
+        Mark-Blocked "Frontend E2E" $blockedReason
+        Mark-Blocked "Frontend build" $blockedReason
+    }
+}
+
+# ------------------------------------------------------------
+# BACKEND
+# ------------------------------------------------------------
+
+if ($RunBackend) {
+
+    Run-Step "Backend dependencies" {
+        Set-Location "$Root\backend"
+
+        Invoke-CommandChecked {
+            composer install --no-interaction --prefer-dist --no-progress
+        } "composer install failed"
+    }
+
+    Run-Step "Composer validation" {
+        Set-Location "$Root\backend"
+
+        Invoke-CommandChecked {
+            composer validate --no-check-publish
+        } "composer validation failed"
+    }
+
+    Run-Step "Laravel Pint" {
+        Set-Location "$Root\backend"
+
+        Invoke-CommandChecked {
+            .\vendor\bin\pint --test
+        } "Laravel Pint failed"
+    } {
+        Set-Location "$Root\backend"
+        .\vendor\bin\pint
+    }
+
+    Run-Step "Backend tests" {
+        Set-Location "$Root\backend"
+
+        Invoke-CommandChecked {
+            php artisan test --fail-on-skipped --exclude-group=postgres
+        } "backend tests failed"
+    }
+}
+
+# ------------------------------------------------------------
+# POSTGRESQL
+# ------------------------------------------------------------
+
+if ($RunPostgres) {
+
+    Run-Step "Backend PostgreSQL tests" {
+        Set-Location "$Root\backend"
+
+        $env:POSTGRES_TESTS = "1"
+        $env:DB_CONNECTION = "pgsql"
+        $env:DB_HOST = "127.0.0.1"
+        $env:DB_PORT = "5432"
+        $env:DB_DATABASE = "postgres"
+        $env:DB_USERNAME = "postgres"
+        $env:DB_PASSWORD = ""
+        $env:DB_SSLMODE = "disable"
+
+        Invoke-CommandChecked {
+            php artisan test --group=postgres --fail-on-skipped
+        } "PostgreSQL tests failed"
+    }
+}
+
+# ------------------------------------------------------------
+# EDGE FUNCTIONS
+# ------------------------------------------------------------
+
+if ($RunEdge) {
+
+    Run-Step "Edge Functions type check" {
+        Set-Location $Root
+
+        Invoke-CommandChecked {
+            deno check `
+                supabase/functions/sync-clusters/index.ts `
+                supabase/functions/sync-intraday/index.ts
+        } "Deno check failed"
+    } {
+        Set-Location $Root
+        deno fmt supabase/functions
+    }
+
+    Run-Step "Edge Functions tests" {
+        Set-Location $Root
+
+        Invoke-CommandChecked {
+            deno test --allow-env `
+                supabase/functions/sync-clusters/index_test.ts `
+                supabase/functions/sync-intraday/index_test.ts
+        } "Edge Function tests failed"
+    }
+}
+
+# ------------------------------------------------------------
+# DEPLOYMENT
+# ------------------------------------------------------------
+
+if ($RunDeployment) {
+
+    Run-Step "Deployment configuration" {
+        Set-Location $Root
+
+        $compose = Get-Content ".\docker-compose.yml" -Raw
+
+        if ($compose -notmatch "(?m)^services:") {
+            throw "docker-compose.yml is missing services:"
+        }
+
+        if ($compose -notmatch "scheduler") {
+            throw "docker-compose.yml is missing scheduler"
+        }
+    }
+}
+
+Set-Location $Root
+
+Write-Host ""
+Write-Host "======================================"
+
+if ($Failures.Count -gt 0) {
+
+    Write-Host "PRE-FLIGHT FAILED"
+    Write-Host ""
+
+    foreach ($failure in $Failures) {
+        Write-Host "  [FAILED] $failure"
+    }
+
+    Write-Host ""
+    Write-Host "DO NOT PUSH YET"
+    exit 1
+}
+
+Write-Host "ALL SELECTED CHECKS PASSED"
+Write-Host "SAFE TO PUSH"
+Write-Host "======================================"
+
+exit 0

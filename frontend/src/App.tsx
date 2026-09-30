@@ -11,11 +11,11 @@ import { useNavigate } from "react-router-dom";
 import carLoadingUrl from "../assets/Car loading.svg";
 import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
-import { supabase } from "./lib/supabase";
 import {
   clearSeatalkSessionHint,
   rememberSeatalkSession,
 } from "./lib/seatalkSession";
+import { supabase } from "./lib/supabase";
 import { ChangePassword } from "./pages/ChangePassword";
 import type { User } from "./types";
 
@@ -124,7 +124,9 @@ export default function App() {
               navigate("/dashboard", { replace: true });
             }
             setState(
-              resolvedProfile.must_change_password ? "change-password" : "ready",
+              resolvedProfile.must_change_password
+                ? "change-password"
+                : "ready",
             );
             return;
           } catch (cause) {

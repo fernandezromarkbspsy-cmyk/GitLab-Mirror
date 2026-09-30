@@ -135,7 +135,50 @@ final class GoogleSheetsRequestSyncTest extends TestCase
                         'Status',
                     ]
                     && $rows[0][18] === 'Status'
-                    && $rows[1][18] === 'CANCELLED';
+                    && $rows[1][18] === 'CANCELLED'
+                    && array_is_list(json_decode(
+                        json_encode($body->toSimpleObject(), JSON_THROW_ON_ERROR),
+                        true,
+                        512,
+                        JSON_THROW_ON_ERROR,
+                    )['values'][1]);
+            });
+        $values->shouldReceive('batchClear')->once();
+        $sheets = Mockery::mock(Sheets::class);
+        $sheets->spreadsheets_values = $values;
+        $sync = new GoogleSheetsRequestSync(fn (): Sheets => $sheets);
+
+        $this->assertSame(1, $sync->sync());
+    }
+
+    public function test_sync_formats_all_exported_timestamps_for_google_sheets(): void
+    {
+        DB::table('requests')->where('id', 'request-id')->update([
+            'request_timestamp' => '2026-10-01 01:00:37',
+            'backlogs_timestamp' => '2026-10-01 01:00:37',
+            'provide_time' => '2026-10-01 01:00:37',
+            'docked_time' => '2026-10-01 01:00:37',
+        ]);
+        DB::table('request_events')->insert([
+            'request_id' => 'request-id',
+            'event_type' => 'TRUCK_ASSIGNED',
+            'created_at' => '2026-10-01 01:00:37',
+            'metadata' => null,
+            'actor_id' => null,
+        ]);
+
+        $values = Mockery::mock(SpreadsheetsValues::class);
+        $values->shouldReceive('update')
+            ->once()
+            ->withArgs(function (string $spreadsheetId, string $range, object $body): bool {
+                $row = $body->getValues()[1];
+                $expected = '10/1/2026 1:00:37';
+
+                return $row[0] === $expected
+                    && $row[5] === $expected
+                    && $row[12] === $expected
+                    && $row[14] === $expected
+                    && $row[15] === $expected;
             });
         $values->shouldReceive('batchClear')->once();
         $sheets = Mockery::mock(Sheets::class);

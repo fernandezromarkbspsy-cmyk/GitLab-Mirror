@@ -100,7 +100,7 @@ export function OutboundRequests({
   const canApprove = _user.role === "fte_ops";
   const canEdit = _user.role === "fte_ops";
   const selectedCount = selectedIds.size;
-  const approvalLabel = selectedCount > 2 ? "Bulk Requested" : "Requested";
+  const approvalLabel = selectedCount > 2 ? "Bulk Approved" : "Approved";
 
   function toggleSelected(id: string) {
     setSelectedIds((current) => {
@@ -550,7 +550,7 @@ export function OutboundRequests({
                 <SkeletonCardList rows={4} />
               ) : (
                 rows.map((row) => (
-                  <article className="flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39_/_4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39_/_7%)] hover:transform-none max-[680px]:flex-wrap" key={row.id}>
+                  <article className="lh-record-card flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39_/_4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39_/_7%)] hover:transform-none max-[680px]:flex-wrap" key={row.id}>
                     <div>
                       <small className="text-soc5-muted text-[11px]">
                         {row.id}

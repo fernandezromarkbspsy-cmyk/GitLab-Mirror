@@ -9,7 +9,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use PDO;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;

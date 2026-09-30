@@ -210,13 +210,13 @@ export default function App() {
   }, [resolveSession]);
 
   if (!startupAnimationComplete) return <StartupLoading />;
-  if (state === "loading") return <LoginBackdrop />;
+  if (state === "loading") return <StartupLoading />;
   if (state === "signed-out") return <UnauthenticatedEntry />;
   if (state === "unauthorized") {
     return (
-      <main className="state">
+      <main className="p-12 text-center">
         <h1>{failure.title}</h1>
-        <p className="error">{failure.message}</p>
+        <p className="error text-[var(--color-danger)]">{failure.message}</p>
         <p>{failure.detail}</p>
         <button type="button" onClick={() => void retrySession()}>
           Try again
@@ -230,11 +230,11 @@ export default function App() {
   if (state === "change-password")
     return <ChangePassword onComplete={() => setState("ready")} />;
   return profile ? (
-    <Suspense fallback={<LoginBackdrop />}>
+    <Suspense fallback={<StartupLoading />}>
       <Dashboard user={profile} />
     </Suspense>
   ) : (
-    <LoginBackdrop />
+    <StartupLoading />
   );
 }
 

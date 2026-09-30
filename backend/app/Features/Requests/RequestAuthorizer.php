@@ -27,10 +27,6 @@ final class RequestAuthorizer
                 || ($actor->role === 'ops_pic' && $request->created_by === $actor->id);
         }
 
-        if ($action === 'confirm') {
-            return $actor->role === 'doc_officer';
-        }
-
         return match ($action) {
             'approve', 'reject-ops' => $actor->role === 'fte_ops',
             'reject-mm', 'assign-truck' => $actor->role === 'fte_mm',

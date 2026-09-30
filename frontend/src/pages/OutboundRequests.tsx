@@ -100,7 +100,7 @@ export function OutboundRequests({
   const canApprove = _user.role === "fte_ops";
   const canEdit = _user.role === "fte_ops";
   const selectedCount = selectedIds.size;
-  const approvalLabel = selectedCount > 2 ? "Bulk Approved" : "Approved";
+  const approvalLabel = selectedCount > 2 ? "Bulk Requested" : "Requested";
 
   function toggleSelected(id: string) {
     setSelectedIds((current) => {
@@ -332,14 +332,16 @@ export function OutboundRequests({
                   <SkeletonRequestTable rows={6} columns={visibleColumns.length + 1} />
                 )}
                 {requests.error && (
-                  <div className="lh-empty-state">{requests.error.message}</div>
+                  <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
+                    {requests.error.message}
+                  </div>
                 )}
                 {!requests.isFetching &&
                   !requests.error &&
                   rows.map((row, index) => {
                     const isExpanded = expandedRow === row.id;
                     const isAlerting =
-                      row.status === "PENDING" &&
+                      (row.status === "PENDING" || row.status === "REROUTED") &&
                       _queue.alerts.some((alert) => alert.id === row.id);
                     return (
                       <div className="contents" key={row.id}>
@@ -366,7 +368,7 @@ export function OutboundRequests({
                                 aria-hidden="true"
                                 className={`size-3.5 shrink-0 text-[#718071] transition-transform ${isExpanded ? "rotate-180 text-[#536500]" : ""}`}
                               />
-                              {canApprove && row.status === "PENDING" && (
+                              {canApprove && (row.status === "PENDING" || row.status === "REROUTED") && (
                                 <input
                                   type="checkbox"
                                   className="request-row-checkbox"
@@ -465,7 +467,7 @@ export function OutboundRequests({
                                   <Printer size={14} />
                                   Print
                                 </button>
-                                {canApprove && row.status === "PENDING" && (
+                                {canApprove && (row.status === "PENDING" || row.status === "REROUTED") && (
                                   <button
                                     role="menuitem"
                                     className="request-action-button request-action-reject"
@@ -478,7 +480,7 @@ export function OutboundRequests({
                                     Reject
                                   </button>
                                 )}
-                                {canEdit && (
+                                {canEdit && (row.status === "PENDING" || row.status === "REROUTED") && (
                                   <button
                                     role="menuitem"
                                     type="button"
@@ -536,28 +538,34 @@ export function OutboundRequests({
                 {!requests.isFetching &&
                   !requests.error &&
                   rows.length === 0 && (
-                    <div className="lh-empty-state">
+                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
                       No live requests match the current filters.
                     </div>
                   )}
               </div>
             </div>
           ) : (
-            <div className="lh-card-view">
+            <div className="grid min-h-0 content-start grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] gap-[10px] p-3 overflow-auto bg-[#f8f9f7]">
               {requests.isFetching ? (
                 <SkeletonCardList rows={4} />
               ) : (
                 rows.map((row) => (
-                  <article className="lh-record-card" key={row.id}>
+                  <article className="flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39_/_4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39_/_7%)] hover:transform-none max-[680px]:flex-wrap" key={row.id}>
                     <div>
-                      <small>{row.id}</small>
-                      <h3>{row.cluster}</h3>
-                      <p>
+                      <small className="text-soc5-muted text-[11px]">
+                        {row.id}
+                      </small>
+                      <h3 className="mt-2 mb-1 text-soc5-ink text-[14px] font-semibold">
+                        {row.cluster}
+                      </h3>
+                      <p className="m-0 text-soc5-muted text-[11px]">
                         {row.region} · Dock {row.dock_no}
                       </p>
                     </div>
-                    <div className="lh-card-right">
-                      <strong>{row.truck_size}</strong>
+                    <div className="flex flex-col items-end gap-2 max-[760px]:items-start">
+                      <strong className="text-soc5-ink text-[12px]">
+                        {row.truck_size}
+                      </strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
                       <StatusBadge status={row.status} uppercase />
                       <button
@@ -651,7 +659,9 @@ export function OutboundRequests({
         >
           <div className="dialog-head">
             <div>
-              <p className="eyebrow">FTE Ops action</p>
+              <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">
+                FTE Ops action
+              </p>
               <h2 id="outbound-reject-title">Reject request</h2>
               <p>{rejecting.id}</p>
             </div>
@@ -675,7 +685,9 @@ export function OutboundRequests({
               <textarea name="rejection_remarks" required rows={4} />
             </label>
             {rejectRequest.error && (
-              <p className="notice error">{rejectRequest.error.message}</p>
+              <p className="notice error text-[var(--color-danger)]">
+                {rejectRequest.error.message}
+              </p>
             )}
             <div className="dialog-actions">
               <button
@@ -698,7 +710,10 @@ export function OutboundRequests({
         </Modal>
       )}
       {toast && (
-        <div className="lh-toast" role="status">
+        <div
+          className="fixed right-5 bottom-5 z-30 max-w-[min(420px,calc(100vw_-_32px))] rounded-[7px] border border-[#c8d68f] bg-[#fbfdec] px-[14px] py-[11px] text-[12px] text-soc5-ink shadow-[0_8px_24px_rgb(32_32_34_/_14%)]"
+          role="status"
+        >
           {toast}
         </div>
       )}

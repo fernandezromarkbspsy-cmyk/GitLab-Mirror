@@ -5,11 +5,10 @@ namespace App\Features\Requests;
 enum RequestStatus: string
 {
     case Pending = 'PENDING';
-    case Approved = 'APPROVED';
+    case Requested = 'REQUESTED';
     case Cancelled = 'CANCELLED';
-    case RejectedByMm = 'REJECTED_BY_MM';
+    case Rerouted = 'REROUTED';
     case Assigned = 'ASSIGNED';
-    case ForDocking = 'FOR_DOCKING';
+    case Docking = 'DOCKING';
     case Docked = 'DOCKED';
-    case Confirmed = 'CONFIRMED';
 }

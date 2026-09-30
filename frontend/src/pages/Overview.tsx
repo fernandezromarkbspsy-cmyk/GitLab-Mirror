@@ -161,7 +161,7 @@ export function Overview({
   const assignedTrucks = rows
     .filter(
       (request) =>
-        (request.status === "FOR_DOCKING" || request.status === "ASSIGNED") &&
+        (request.status === "DOCKING" || request.status === "ASSIGNED") &&
         request.plate_number,
     )
     .slice(0, 4);
@@ -179,7 +179,7 @@ export function Overview({
   }, [analytics.data, sizeTotal]);
   const totalRequests = metrics.data?.total ?? 0;
   const pendingRequests = metrics.data?.by_status.PENDING ?? 0;
-  const forDockingRequests = metrics.data?.by_status.FOR_DOCKING ?? 0;
+  const forDockingRequests = metrics.data?.by_status.DOCKING ?? 0;
   const dockedRequests = metrics.data?.by_status.DOCKED ?? 0;
   const completionRate = totalRequests
     ? Math.round((dockedRequests / totalRequests) * 100)
@@ -212,7 +212,7 @@ export function Overview({
     },
     {
       label: "Awaiting Docking",
-      status: "FOR_DOCKING",
+      status: "DOCKING",
       value: forDockingRequests,
       icon: <Truck size={22} aria-hidden="true" />,
       chip: "Dock queue",
@@ -243,7 +243,7 @@ export function Overview({
         metrics.error ||
         analytics.error ||
         intraday.error) && (
-        <p className="error notice" role="alert">
+        <p className="error notice text-[var(--color-danger)]" role="alert">
           Some dashboard data could not be loaded. Check the affected panel for
           details.
         </p>

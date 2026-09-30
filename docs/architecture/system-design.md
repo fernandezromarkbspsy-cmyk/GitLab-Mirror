@@ -144,17 +144,17 @@ Observed safeguards:
 ```mermaid
 flowchart LR
     Create[Create request] --> Pending[PENDING]
-    Pending --> Approved[APPROVED]
+    Pending --> Requested[REQUESTED]
     Pending --> Cancelled[CANCELLED]
-    Approved --> Rejected[REJECTED_BY_MM]
-    Rejected --> Pending
-    Approved --> Assigned[ASSIGNED]
-    Assigned --> Docking[FOR_DOCKING]
-    Docking --> Docked[DOCKED]
-    Docked --> Confirmed[CONFIRMED]
+    Requested --> Cancelled[CANCELLED]
+    Requested --> Docking[DOCKING]
+    Pending --> Rerouted[REROUTED]
+    Rerouted --> Requested
+    Docking --> Assigned[ASSIGNED]
+    Assigned --> Docked[DOCKED]
 
     Pending -. event and notification .-> Events[(request_events and notifications)]
-    Approved -. event and notification .-> Events
+    Requested -. event and notification .-> Events
     Assigned -. event and notification .-> Events
     Docked -. event and notification .-> Events
 ```

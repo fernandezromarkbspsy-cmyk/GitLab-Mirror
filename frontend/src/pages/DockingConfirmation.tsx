@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Printer, ShipWheel, X } from "lucide-react";
+import { Printer, ShipWheel, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { Modal } from "../components/Modal";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
@@ -9,7 +9,7 @@ import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
 import type { Page, TruckRequest, User } from "../types";
 
-type DockAction = "mark-docked" | "confirm";
+type DockAction = "mark-docked";
 
 export function DockingConfirmation({ user }: { user: User }) {
   const client = useQueryClient();
@@ -54,7 +54,9 @@ export function DockingConfirmation({ user }: { user: User }) {
   });
   const rows = (queue.data?.data ?? []).filter(
     (request) =>
-      request.status === "FOR_DOCKING" || request.status === "DOCKED",
+      request.status === "DOCKING" ||
+      request.status === "ASSIGNED" ||
+      request.status === "DOCKED",
   );
   const actions = (request: TruckRequest) => (
     <>
@@ -66,18 +68,18 @@ export function DockingConfirmation({ user }: { user: User }) {
         <Printer size={15} />
         Print
       </button>
-      {request.status === "DOCKED" && user.role === "doc_officer" && (
+      {request.status === "DOCKING" && user.role === "doc_officer" && (
         <button
           type="button"
-          className="table-action approve"
+          className="table-action assign"
           disabled={action.isPending}
-          onClick={() => action.mutate({ request, action: "confirm" })}
+          onClick={() => setSelected(request)}
         >
-          <CheckCircle2 size={15} />
-          Confirm
+          <ShipWheel size={15} />
+          Dock truck
         </button>
       )}
-      {request.status === "FOR_DOCKING" && (
+      {request.status === "ASSIGNED" && user.role === "ops_pic" && (
         <button
           type="button"
           className="table-action assign"
@@ -93,7 +95,11 @@ export function DockingConfirmation({ user }: { user: User }) {
 
   return (
     <div className="workspace-view">
-      {action.error && <p className="notice error">{action.error.message}</p>}
+      {action.error && (
+        <p className="notice error text-[var(--color-danger)]">
+          {action.error.message}
+        </p>
+      )}
       <section className="panel data-panel">
         <div className="panel-head">
           <div>
@@ -170,7 +176,9 @@ function DockDialog({
     >
       <div className="dialog-head">
         <div>
-          <p className="eyebrow">{request.cluster}</p>
+          <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">
+            {request.cluster}
+          </p>
           <h2>Dock truck</h2>
         </div>
         <button

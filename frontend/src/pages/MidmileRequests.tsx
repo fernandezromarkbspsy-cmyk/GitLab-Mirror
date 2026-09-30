@@ -156,7 +156,7 @@ export function MidmileRequests({ user }: { user: User }) {
       >
         {(notice || transition.error) && (
           <p
-            className={`notice${transition.error || notice.includes("failed") ? " error" : " success-notice"}`}
+            className={`notice${transition.error || notice.includes("failed") ? " error text-[var(--color-danger)]" : " success-notice"}`}
           >
             {transition.error?.message || notice}
           </p>
@@ -347,7 +347,9 @@ export function MidmileRequests({ user }: { user: User }) {
                   <SkeletonRequestTable rows={6} columns={visibleColumns.length + 1} />
                 )}
                 {requests.error && (
-                  <div className="lh-empty-state">{requests.error.message}</div>
+                  <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
+                    {requests.error.message}
+                  </div>
                 )}
                 {!requests.isPending &&
                   !requests.error &&
@@ -377,7 +379,7 @@ export function MidmileRequests({ user }: { user: User }) {
                     >
                       {hasColumn("status") && (
                         <span className="flex items-center gap-2">
-                        {row.status === "PENDING" && (
+                        {row.status === "REQUESTED" && (
                           <input
                             type="checkbox"
                             className="request-row-checkbox"
@@ -465,7 +467,7 @@ export function MidmileRequests({ user }: { user: User }) {
                               <Printer size={14} />
                               Print
                             </button>
-                            {row.status === "PENDING" && (
+                            {row.status === "REQUESTED" && (
                               <>
                                 <button
                                   className="request-action-button request-action-assign"
@@ -531,28 +533,34 @@ export function MidmileRequests({ user }: { user: User }) {
                 {!requests.isPending &&
                   !requests.error &&
                   (requests.data?.data ?? []).length === 0 && (
-                    <div className="lh-empty-state">
+                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
                       No live requests match the current filters.
                     </div>
                   )}
               </div>
             </div>
           ) : (
-            <div className="lh-card-view">
+            <div className="grid min-h-0 content-start grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] gap-[10px] p-3 overflow-auto bg-[#f8f9f7]">
               {requests.isPending ? (
                 <SkeletonCardList rows={4} />
               ) : (
                 (requests.data?.data ?? []).map((row) => (
-                  <article className="lh-record-card" key={row.id}>
+                  <article className="flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39_/_4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39_/_7%)] hover:transform-none max-[680px]:flex-wrap" key={row.id}>
                     <div>
-                      <small>{row.id}</small>
-                      <h3>{row.cluster}</h3>
-                      <p>
+                      <small className="text-soc5-muted text-[11px]">
+                        {row.id}
+                      </small>
+                      <h3 className="mt-2 mb-1 text-soc5-ink text-[14px] font-semibold">
+                        {row.cluster}
+                      </h3>
+                      <p className="m-0 text-soc5-muted text-[11px]">
                         {row.region} · Dock {row.dock_no}
                       </p>
                     </div>
-                    <div className="lh-card-right">
-                      <strong>{row.truck_size}</strong>
+                    <div className="flex flex-col items-end gap-2 max-[760px]:items-start">
+                      <strong className="text-soc5-ink text-[12px]">
+                        {row.truck_size}
+                      </strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
                       <StatusBadge status={row.status} uppercase />
                       <button
@@ -628,7 +636,9 @@ function MidmileActionDialog({
     >
       <div className="dialog-head">
         <div>
-          <p className="eyebrow">{selection.request.cluster}</p>
+          <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">
+            {selection.request.cluster}
+          </p>
           <h2 id="action-title">
             {confirming ? "Assign truck" : "Reject request"}
           </h2>
@@ -679,7 +689,9 @@ function MidmileActionDialog({
             <textarea name="rejection_remarks" required rows={4} />
           </label>
         )}
-        {error && <p className="error notice">{error}</p>}
+        {error && (
+          <p className="error notice text-[var(--color-danger)]">{error}</p>
+        )}
         <div className="dialog-actions">
           <button className="secondary-button" type="button" onClick={onClose}>
             Cancel

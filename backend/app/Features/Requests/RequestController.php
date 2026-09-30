@@ -35,7 +35,7 @@ final class RequestController
             'date_to' => 'nullable|date|after_or_equal:date_from',
         ]);
         $byStatus = $this->repository->metrics($request->attributes->get('actor'), $filters);
-        $awaiting = collect(['PENDING', 'APPROVED', 'ASSIGNED', 'DOCKED'])->sum(fn (string $status): int => (int) ($byStatus[$status] ?? 0));
+        $awaiting = collect(['PENDING', 'REQUESTED', 'REROUTED', 'DOCKING', 'ASSIGNED'])->sum(fn (string $status): int => (int) ($byStatus[$status] ?? 0));
 
         return response()->json([
             'total' => $byStatus->sum(),
@@ -115,7 +115,7 @@ final class RequestController
     private function actionRules(string $action, string $role): array
     {
         return match ($action) {
-            'approve', 'cancel', 'confirm' => [],
+            'approve', 'cancel' => [],
             'reject-ops' => [
                 'rejection_remarks' => 'sometimes|string|max:2000',
             ],

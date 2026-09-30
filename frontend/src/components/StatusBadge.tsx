@@ -1,26 +1,24 @@
 import type { Status } from "../types";
 
 const statusLabelMap: Partial<Record<Status, string>> = {
-  APPROVED: "Approved",
+  REQUESTED: "Requested",
   ASSIGNED: "Assigned",
   CANCELLED: "Cancelled",
-  CONFIRMED: "Confirmed",
+  DOCKING: "Docking",
   DOCKED: "Docked",
-  FOR_DOCKING: "For docking",
   PENDING: "Pending",
-  REJECTED_BY_MM: "Rejected",
+  REROUTED: "Rerouted",
 };
 
 const statusClassMap: Record<Status, string> = {
-  APPROVED: "bg-status-success-surface text-status-success-ink",
+  REQUESTED: "bg-status-success-surface text-status-success-ink",
   ASSIGNED: "bg-status-info-surface text-status-info-ink",
   CANCELLED: "bg-status-danger-surface text-status-danger-ink",
-  CONFIRMED: "bg-status-success-surface text-status-success-ink",
+  DOCKING: "bg-status-info-surface text-status-info-ink",
   DOCKED: "bg-status-success-surface text-status-success-ink",
-  FOR_DOCKING: "bg-status-info-surface text-status-info-ink",
   PENDING:
     "border-status-pending-line bg-status-pending-surface text-status-pending-ink",
-  REJECTED_BY_MM: "bg-status-danger-surface text-status-danger-ink",
+  REROUTED: "bg-status-pending-surface text-status-pending-ink",
 };
 
 export function StatusBadge({

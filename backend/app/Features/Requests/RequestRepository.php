@@ -29,7 +29,7 @@ final class RequestRepository
             $query->where('created_by', $actor->id);
         }
         if ($status = $filters['status'] ?? null) {
-            $query->where('status', $this->storedStatus($actor, $status));
+            $query->whereIn('status', $this->storedStatuses($actor, $status));
         }
         if ($search = trim((string) ($filters['search'] ?? ''))) {
             $query->whereRaw("lower(coalesce(plate_number, '')) like ?", ['%'.strtolower($search).'%']);
@@ -60,7 +60,12 @@ final class RequestRepository
 
         return $query
             ->pluck('total', 'status')
-            ->mapWithKeys(fn (int $total, string $status): array => [$this->displayStatus($actor, $status) => $total]);
+            ->reduce(function (Collection $counts, int $total, string $status) use ($actor): Collection {
+                $displayStatus = $this->displayStatus($actor, $status);
+                $counts[$displayStatus] = (int) ($counts[$displayStatus] ?? 0) + $total;
+
+                return $counts;
+            }, collect());
     }
 
     public function analytics(object $actor, array $filters = []): array
@@ -122,7 +127,7 @@ final class RequestRepository
             $query->where('created_by', $actor->id);
         }
         if ($status = $filters['status'] ?? null) {
-            $query->where('status', $this->storedStatus($actor, $status));
+            $query->whereIn('status', $this->storedStatuses($actor, $status));
         }
         if ($search = trim((string) ($filters['search'] ?? ''))) {
             $query->whereRaw("lower(coalesce(plate_number, '')) like ?", ['%'.strtolower($search).'%']);
@@ -190,16 +195,16 @@ final class RequestRepository
         $query->where('request_timestamp', $operator, $bound);
     }
 
-    private function storedStatus(object $actor, string $status): string
+    private function storedStatuses(object $actor, string $status): array
     {
-        return $actor->role === 'fte_mm' && $status === 'PENDING'
-            ? 'APPROVED'
-            : $status;
+        return in_array($actor->role, ['fte_mm', 'doc_officer'], true) && $status === 'PENDING'
+            ? ['PENDING', 'REROUTED']
+            : [$status];
     }
 
     private function displayStatus(object $actor, string $status): string
     {
-        return $actor->role === 'fte_mm' && $status === 'APPROVED'
+        return in_array($actor->role, ['fte_mm', 'doc_officer'], true) && $status === 'REROUTED'
             ? 'PENDING'
             : $status;
     }

@@ -21,9 +21,9 @@ const root = ReactDOM.createRoot(document.getElementById("root")!);
 
 if (supabaseConfigError) {
   root.render(
-    <main className="state">
+    <main className="p-12 text-center">
       <h1>Configuration error</h1>
-      <p className="error">{supabaseConfigError}</p>
+      <p className="error text-[var(--color-danger)]">{supabaseConfigError}</p>
       <p>Contact support to finish deployment configuration.</p>
     </main>,
   );

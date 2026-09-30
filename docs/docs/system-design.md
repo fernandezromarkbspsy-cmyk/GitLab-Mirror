@@ -26,12 +26,13 @@ repositories query data. Laravel policies are the final authorization guard.
 | From | Action / role | To |
 |---|---|---|
 | new | create / Ops PIC or FTE Ops | PENDING |
-| PENDING, REJECTED_BY_MM | approve / FTE Ops | APPROVED |
-| PENDING, REJECTED_BY_MM | cancel / owner or FTE Ops | CANCELLED |
-| APPROVED | reject / FTE MM | REJECTED_BY_MM |
-| APPROVED | assign and route to dock / FTE MM | FOR_DOCKING |
-| FOR_DOCKING | add driver / Doc Officer, add trip / owning Ops PIC | FOR_DOCKING or DOCKED once both exist |
-| DOCKED | confirm / Doc Officer | CONFIRMED |
+| PENDING, REROUTED | approve / FTE Ops | REQUESTED |
+| PENDING, REROUTED | reject / FTE Ops | REROUTED |
+| PENDING, REROUTED | cancel / owner or FTE Ops | CANCELLED |
+| REQUESTED | reject / FTE MM | CANCELLED |
+| REQUESTED | assign plate / FTE MM | DOCKING |
+| DOCKING | add driver / Doc Officer | ASSIGNED |
+| ASSIGNED | add trip / owning Ops PIC | DOCKED |
 
 ## Data and performance
 

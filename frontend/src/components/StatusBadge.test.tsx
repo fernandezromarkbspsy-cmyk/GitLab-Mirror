@@ -8,7 +8,7 @@ function render(status: Status) {
 }
 
 describe("StatusBadge", () => {
-  it.each(["APPROVED", "CONFIRMED", "DOCKED"] as Status[])(
+  it.each(["REQUESTED", "DOCKED"] as Status[])(
     "uses the success treatment for %s",
     (status) => {
       const markup = render(status);
@@ -17,7 +17,7 @@ describe("StatusBadge", () => {
     },
   );
 
-  it.each(["ASSIGNED", "FOR_DOCKING"] as Status[])(
+  it.each(["DOCKING", "ASSIGNED"] as Status[])(
     "uses the informational treatment for %s",
     (status) => {
       const markup = render(status);
@@ -26,30 +26,33 @@ describe("StatusBadge", () => {
     },
   );
 
-  it.each(["CANCELLED", "REJECTED_BY_MM"] as Status[])(
-    "uses the danger treatment for %s",
-    (status) => {
-      const markup = render(status);
-      expect(markup).toContain("bg-status-danger-surface");
-      expect(markup).toContain("text-status-danger-ink");
-    },
-  );
+  it("uses the danger treatment for cancelled requests", () => {
+    const markup = render("CANCELLED");
+    expect(markup).toContain("bg-status-danger-surface");
+    expect(markup).toContain("text-status-danger-ink");
+  });
+
+  it("uses the pending treatment for rerouted requests", () => {
+    const markup = render("REROUTED");
+    expect(markup).toContain("bg-status-pending-surface");
+    expect(markup).toContain("text-status-pending-ink");
+  });
 
   it("preserves the distinct pending border and readable labels", () => {
     const pending = render("PENDING");
-    const rejected = render("REJECTED_BY_MM");
+    const rejected = render("CANCELLED");
 
     expect(pending).toContain("border-status-pending-line");
     expect(pending).toContain(">Pending</span>");
-    expect(rejected).toContain(">Rejected</span>");
+    expect(rejected).toContain(">Cancelled</span>");
   });
 
   it("can preserve uppercase presentation for operational request views", () => {
     const markup = renderToStaticMarkup(
-      <StatusBadge status="FOR_DOCKING" uppercase />,
+      <StatusBadge status="DOCKING" uppercase />,
     );
 
     expect(markup).toContain(" uppercase");
-    expect(markup).toContain(">For docking</span>");
+    expect(markup).toContain(">Docking</span>");
   });
 });

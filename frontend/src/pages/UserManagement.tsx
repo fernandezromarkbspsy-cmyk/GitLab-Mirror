@@ -162,7 +162,7 @@ export function UserManagement() {
       </section>
 
       {(update.error || disable.error || reset.error) && (
-        <p className="notice error users-notice">
+        <p className="notice error users-notice text-[var(--color-danger)]">
           {(update.error || disable.error || reset.error)?.message}
         </p>
       )}
@@ -364,7 +364,7 @@ export function UserManagement() {
           sign-in.
         </p>
         {reset.error && (
-          <p className="notice error" role="alert">
+          <p className="notice error text-[var(--color-danger)]" role="alert">
             {reset.error.message}
           </p>
         )}
@@ -509,7 +509,9 @@ function CreateUser({
             placeholder="ops12345"
           />
         </label>
-        {error && <p className="notice error">{error}</p>}
+        {error && (
+          <p className="notice error text-[var(--color-danger)]">{error}</p>
+        )}
         <div className="dialog-actions">
           <button type="button" className="secondary-button" onClick={onClose}>
             Cancel

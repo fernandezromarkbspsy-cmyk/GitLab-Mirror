@@ -52,16 +52,21 @@ final class RequestWorkflowTest extends TestCase
 
         $this->assertSame('SOC 6', $updated->cluster);
         $this->assertDatabaseHas('request_events', ['request_id' => $request->id, 'event_type' => 'REQUEST_EDITED']);
+        $this->assertDatabaseHas('notifications', [
+            'request_id' => $request->id,
+            'user_id' => $request->created_by,
+            'event_type' => 'REQUEST_EDITED',
+        ]);
     }
 
-    public function test_fte_ops_rejection_cancels_the_request(): void
+    public function test_fte_ops_rejection_reroutes_the_request(): void
     {
         $request = $this->insertRequest(['status' => 'PENDING']);
         $actor = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops'];
 
         $updated = $this->service->transition($request->id, $actor, 'reject-ops', []);
 
-        $this->assertSame('CANCELLED', $updated->status);
+        $this->assertSame('REROUTED', $updated->status);
         $this->assertDatabaseHas('request_events', ['request_id' => $request->id, 'event_type' => 'REQUEST_REJECTED_BY_OPS']);
     }
 
@@ -84,18 +89,51 @@ final class RequestWorkflowTest extends TestCase
         $this->assertSame('ABC-1234', $result->items()[0]->plate_number);
     }
 
-    public function test_fte_mm_sees_an_approved_handoff_as_pending(): void
+    public function test_fte_mm_sees_a_requested_handoff_as_requested(): void
     {
-        $request = $this->insertRequest(['status' => 'APPROVED']);
+        $request = $this->insertRequest(['status' => 'REQUESTED']);
         $midmile = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
         $ops = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops'];
 
-        $midmileRequests = $this->repository->paginate($midmile, ['status' => 'PENDING']);
-        $opsRequests = $this->repository->paginate($ops, ['status' => 'APPROVED']);
+        $midmileRequests = $this->repository->paginate($midmile, ['status' => 'REQUESTED']);
+        $opsRequests = $this->repository->paginate($ops, ['status' => 'REQUESTED']);
 
         $this->assertSame($request->id, $midmileRequests->items()[0]->id);
-        $this->assertSame('PENDING', $midmileRequests->items()[0]->status);
-        $this->assertSame('APPROVED', $opsRequests->items()[0]->status);
+        $this->assertSame('REQUESTED', $midmileRequests->items()[0]->status);
+        $this->assertSame('REQUESTED', $opsRequests->items()[0]->status);
+    }
+
+    public function test_fte_mm_rejection_is_cancelled_and_not_editable(): void
+    {
+        $request = $this->insertRequest(['status' => 'REQUESTED']);
+        $midmile = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
+        $ops = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops'];
+
+        $updated = $this->service->transition($request->id, $midmile, 'reject-mm', [
+            'rejection_remarks' => 'No truck available',
+        ]);
+
+        $this->assertSame('CANCELLED', $updated->status);
+        $this->assertSame('CANCELLED', $this->repository->findVisible($request->id, $ops)->status);
+
+        $this->expectException(HttpException::class);
+        $this->service->updateDetails($request->id, $ops, ['cluster' => 'SOC 6']);
+    }
+
+    public function test_fte_ops_rejection_is_rerouted_or_pending_by_role(): void
+    {
+        $request = $this->insertRequest(['status' => 'PENDING']);
+        $opsPic = (object) ['id' => $request->created_by, 'role' => 'ops_pic'];
+        $fteOps = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops'];
+        $fteMm = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
+        $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
+
+        $this->service->transition($request->id, $fteOps, 'reject-ops', []);
+
+        $this->assertSame('REROUTED', $this->repository->findVisible($request->id, $opsPic)->status);
+        $this->assertSame('REROUTED', $this->repository->findVisible($request->id, $fteOps)->status);
+        $this->assertSame('PENDING', $this->repository->findVisible($request->id, $fteMm)->status);
+        $this->assertSame('PENDING', $this->repository->findVisible($request->id, $docOfficer)->status);
     }
 
     public function test_analytics_applies_date_filters(): void
@@ -129,7 +167,7 @@ final class RequestWorkflowTest extends TestCase
 
     public function test_docking_assignment_notifies_doc_officer(): void
     {
-        $request = $this->insertRequest(['status' => 'APPROVED']);
+        $request = $this->insertRequest(['status' => 'REQUESTED']);
         $actor = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
 
         $this->service->transition($request->id, $actor, 'assign-truck', ['plate_number' => 'ABC-123']);
@@ -138,40 +176,34 @@ final class RequestWorkflowTest extends TestCase
         $this->assertDatabaseHas('request_events', [
             'request_id' => $request->id,
             'event_type' => 'TRUCK_ASSIGNED',
-            'from_status' => 'APPROVED',
-            'to_status' => 'ASSIGNED',
+            'from_status' => 'REQUESTED',
+            'to_status' => 'DOCKING',
         ]);
-        $this->assertDatabaseHas('request_events', [
-            'request_id' => $request->id,
-            'event_type' => 'TRUCK_FOR_DOCKING',
-            'from_status' => 'ASSIGNED',
-            'to_status' => 'FOR_DOCKING',
-        ]);
-        $this->assertSame('FOR_DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
+        $this->assertSame('DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
     }
 
     public function test_request_becomes_docked_only_after_driver_and_trip_are_present(): void
     {
         $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
         $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
-        $request = $this->insertRequest(['status' => 'FOR_DOCKING', 'created_by' => $opsPic->id]);
+        $request = $this->insertRequest(['status' => 'DOCKING', 'created_by' => $opsPic->id]);
 
         $this->service->transition($request->id, $docOfficer, 'mark-docked', ['driver_id' => 'DRV-1']);
-        $this->assertSame('FOR_DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
+        $this->assertSame('ASSIGNED', DB::table('requests')->where('id', $request->id)->value('status'));
 
         $this->service->transition($request->id, $opsPic, 'mark-docked', ['linehaul_trip_no' => 'LH-1']);
         $this->assertSame('DOCKED', DB::table('requests')->where('id', $request->id)->value('status'));
         $this->assertDatabaseHas('request_events', [
             'request_id' => $request->id,
             'event_type' => 'TRUCK_DOCKED',
-            'from_status' => 'FOR_DOCKING',
+            'from_status' => 'ASSIGNED',
             'to_status' => 'DOCKED',
         ]);
     }
 
     public function test_non_owner_ops_pic_cannot_mark_request_docked(): void
     {
-        $request = $this->insertRequest(['status' => 'FOR_DOCKING', 'created_by' => (string) Str::uuid()]);
+        $request = $this->insertRequest(['status' => 'ASSIGNED', 'created_by' => (string) Str::uuid()]);
         $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
 
         try {
@@ -184,48 +216,33 @@ final class RequestWorkflowTest extends TestCase
         $this->assertNull(DB::table('requests')->where('id', $request->id)->value('linehaul_trip_no'));
     }
 
-    public function test_transition_ignores_fields_owned_by_another_workflow_step(): void
+    public function test_docking_transition_ignores_fields_owned_by_another_workflow_step(): void
     {
-        $request = $this->insertRequest(['status' => 'DOCKED', 'truck_type' => 'WETLEASE', 'driver_id' => 'DRV-1', 'linehaul_trip_no' => 'LH-1']);
-        $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
+        $request = $this->insertRequest(['status' => 'ASSIGNED', 'truck_type' => 'WETLEASE', 'driver_id' => 'DRV-1']);
+        $opsPic = (object) ['id' => $request->created_by, 'role' => 'ops_pic'];
 
-        $updated = $this->service->transition($request->id, $docOfficer, 'confirm', ['truck_type' => 'DRYLEASE']);
+        $updated = $this->service->transition($request->id, $opsPic, 'mark-docked', [
+            'linehaul_trip_no' => 'LH-1',
+            'truck_type' => 'DRYLEASE',
+        ]);
 
-        $this->assertSame('CONFIRMED', $updated->status);
+        $this->assertSame('DOCKED', $updated->status);
         $this->assertSame('WETLEASE', $updated->truck_type);
     }
 
     public function test_disallowed_docking_field_cannot_complete_the_transition(): void
     {
         $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
-        $request = $this->insertRequest(['status' => 'FOR_DOCKING', 'created_by' => $opsPic->id]);
+        $request = $this->insertRequest(['status' => 'ASSIGNED', 'created_by' => $opsPic->id]);
 
         $updated = $this->service->transition($request->id, $opsPic, 'mark-docked', [
             'linehaul_trip_no' => 'LH-1',
             'driver_id' => 'DRV-INJECTED',
         ]);
 
-        $this->assertSame('FOR_DOCKING', $updated->status);
+        $this->assertSame('ASSIGNED', $updated->status);
         $this->assertSame('LH-1', $updated->linehaul_trip_no);
         $this->assertNull($updated->driver_id);
-    }
-
-    public function test_injected_confirmation_fields_cannot_bypass_docking_requirements(): void
-    {
-        $request = $this->insertRequest(['status' => 'DOCKED']);
-        $docOfficer = (object) ['id' => (string) Str::uuid(), 'role' => 'doc_officer'];
-
-        try {
-            $this->service->transition($request->id, $docOfficer, 'confirm', [
-                'driver_id' => 'DRV-INJECTED',
-                'linehaul_trip_no' => 'LH-INJECTED',
-            ]);
-            $this->fail('Disallowed confirmation fields should not satisfy docking requirements.');
-        } catch (ValidationException $exception) {
-            $this->assertArrayHasKey('driver_id', $exception->errors());
-        }
-
-        $this->assertSame('DOCKED', DB::table('requests')->where('id', $request->id)->value('status'));
     }
 
     private function insertRequest(array $overrides = []): object

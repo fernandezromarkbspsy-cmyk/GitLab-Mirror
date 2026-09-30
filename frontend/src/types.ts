@@ -1,13 +1,12 @@
 export type Role = "ops_pic" | "fte_ops" | "fte_mm" | "doc_officer";
 export type Status =
   | "PENDING"
-  | "APPROVED"
+  | "REQUESTED"
   | "CANCELLED"
-  | "REJECTED_BY_MM"
+  | "REROUTED"
   | "ASSIGNED"
-  | "FOR_DOCKING"
-  | "DOCKED"
-  | "CONFIRMED";
+  | "DOCKING"
+  | "DOCKED";
 export interface User {
   id: string;
   name: string;

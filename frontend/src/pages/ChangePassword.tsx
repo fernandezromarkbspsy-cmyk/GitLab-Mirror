@@ -37,7 +37,7 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
   return (
     <main className="login">
       <section>
-        <p className="eyebrow">FIRST LOGIN</p>
+        <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">FIRST LOGIN</p>
         <h1>Secure your account</h1>
         <p>Set a permanent password before continuing.</p>
       </section>
@@ -64,7 +64,7 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
           />
         </label>
         {error && (
-          <p className="error" role="alert">
+          <p className="error text-[var(--color-danger)]" role="alert">
             {error}
           </p>
         )}

@@ -71,5 +71,5 @@ Route::middleware([StartSession::class, 'throttle:api-ip', 'supabase.auth', 'thr
     Route::get('/requests/{id}/events', [RequestController::class, 'events']);
     Route::put('/requests/{id}', [RequestController::class, 'update'])->middleware('idempotency');
     Route::post('/requests/{id}/{action}', [RequestController::class, 'action'])->middleware('idempotency')
-        ->whereIn('action', ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked', 'confirm']);
+        ->whereIn('action', ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked']);
 });

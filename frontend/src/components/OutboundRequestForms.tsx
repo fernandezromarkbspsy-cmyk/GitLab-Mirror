@@ -149,7 +149,9 @@ export function InlineCreateRow({
           <option>6WF</option>
         </select>
       </label>
-      {error && <p className="error notice">{error}</p>}
+      {error && (
+        <p className="error notice text-[var(--color-danger)]">{error}</p>
+      )}
       <div className="inline-create-actions">
         <button className="secondary-button" type="button" onClick={onCancel}>
           <X size={15} />
@@ -237,7 +239,9 @@ export function InlineEditRow({
           <option>DRYLEASE</option>
         </select>
       </label>
-      {error && <p className="error notice">{error}</p>}
+      {error && (
+        <p className="error notice text-[var(--color-danger)]">{error}</p>
+      )}
       <div className="inline-create-actions">
         <button className="secondary-button" type="button" onClick={onCancel}>
           <X size={15} />

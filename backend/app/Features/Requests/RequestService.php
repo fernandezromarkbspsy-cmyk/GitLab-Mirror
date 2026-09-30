@@ -31,9 +31,10 @@ final class RequestService
 
         return DB::transaction(function () use ($id, $actor, $data) {
             $request = $this->requests->lock($id);
-            abort_unless(in_array($request->status, ['PENDING', 'REJECTED_BY_MM'], true), 409, "Cannot edit a {$request->status} request.");
-            $updated = $this->requests->update($id, $data);
-            $this->event($id, $actor->id, 'REQUEST_EDITED', $request->status, $request->status, $data);
+            abort_unless(in_array($request->status, ['PENDING', 'REROUTED'], true), 409, "Cannot edit a {$request->status} request.");
+            $updated = $this->requests->update($id, $data + ['status' => 'REQUESTED']);
+            $this->event($id, $actor->id, 'REQUEST_EDITED', $request->status, 'REQUESTED', $data);
+            $this->notifyUser($id, $request->created_by, 'REQUEST_EDITED', 'Request updated', "Request {$id} was updated by FTE Ops.");
 
             return $updated;
         });
@@ -44,13 +45,14 @@ final class RequestService
         return DB::transaction(function () use ($id, $actor, $action, $input) {
             $request = $this->requests->lock($id);
             [$from, $to, $event] = match ($action) {
-                'approve' => [['PENDING', 'REJECTED_BY_MM'], 'APPROVED', 'REQUEST_APPROVED'],
-                'reject-ops' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'REQUEST_REJECTED_BY_OPS'],
-                'cancel' => [['PENDING', 'REJECTED_BY_MM'], 'CANCELLED', 'REQUEST_CANCELLED'],
-                'reject-mm' => [['APPROVED'], 'REJECTED_BY_MM', 'REQUEST_REJECTED_BY_MM'],
-                'assign-truck' => [['APPROVED'], 'ASSIGNED', 'TRUCK_ASSIGNED'],
-                'mark-docked' => [['FOR_DOCKING'], 'DOCKED', 'TRUCK_DOCKED'],
-                'confirm' => [['DOCKED'], 'CONFIRMED', 'REQUEST_CONFIRMED'],
+                'approve' => [['PENDING', 'REROUTED'], 'REQUESTED', 'REQUEST_APPROVED'],
+                'reject-ops' => [['PENDING', 'REROUTED'], 'REROUTED', 'REQUEST_REJECTED_BY_OPS'],
+                'cancel' => [['PENDING', 'REROUTED'], 'CANCELLED', 'REQUEST_CANCELLED'],
+                'reject-mm' => [['REQUESTED'], 'CANCELLED', 'REQUEST_REJECTED_BY_MM'],
+                'assign-truck' => [['REQUESTED'], 'DOCKING', 'TRUCK_ASSIGNED'],
+                'mark-docked' => $actor->role === 'doc_officer'
+                    ? [['DOCKING'], 'ASSIGNED', 'DRIVER_ASSIGNED']
+                    : [['ASSIGNED'], 'DOCKED', 'TRUCK_DOCKED'],
                 default => throw ValidationException::withMessages(['action' => 'Unknown action.']),
             };
             abort_unless(in_array($request->status, $from, true), 409, "Cannot {$action} a {$request->status} request.");
@@ -75,41 +77,29 @@ final class RequestService
             if ($action === 'mark-docked') {
                 $driverId = $fields['driver_id'] ?? $request->driver_id;
                 $tripNo = $fields['linehaul_trip_no'] ?? $request->linehaul_trip_no;
-                if (blank($driverId) || blank($tripNo)) {
+                if ($actor->role !== 'doc_officer' && blank($driverId)) {
                     $updated = $this->requests->update($id, $fields);
 
                     return $updated;
                 }
             }
             $fields['status'] = $to;
-            if ($to === 'APPROVED') {
+            if ($to === 'REQUESTED') {
                 $fields['approved_at'] = now();
             }
-            if ($to === 'REJECTED_BY_MM') {
+            if ($to === 'CANCELLED' && $action === 'reject-mm') {
                 $fields['rejected_at'] = now();
             }
             if ($to === 'DOCKED' && blank($fields['docked_time'] ?? null)) {
                 $fields['docked_time'] = now();
             }
-            if ($to === 'CONFIRMED') {
-                $fields['confirmed_at'] = now();
-            }
             $updated = $this->requests->update($id, $fields);
             $this->event($id, $actor->id, $event, $request->status, $to, $fields);
-            if ($action === 'assign-truck') {
-                $updated = $this->requests->update($id, ['status' => 'FOR_DOCKING']);
-                $this->event($id, $actor->id, 'TRUCK_FOR_DOCKING', 'ASSIGNED', 'FOR_DOCKING');
-            }
-            $target = match ($action === 'assign-truck' ? 'FOR_DOCKING' : $to) {
-                'APPROVED' => 'fte_mm', 'REJECTED_BY_MM' => 'fte_ops', 'FOR_DOCKING' => 'doc_officer', 'CONFIRMED' => 'fte_ops', default => null
+            $target = match ($to) {
+                'REQUESTED' => 'fte_mm', 'DOCKING' => 'doc_officer', 'REROUTED' => 'fte_mm', default => null
             };
             if ($target) {
-                $notificationEvent = $action === 'assign-truck' ? 'TRUCK_FOR_DOCKING' : $event;
-                $finalStatus = $action === 'assign-truck' ? 'FOR_DOCKING' : $to;
-                $this->notify($id, $target, $notificationEvent, str_replace('_', ' ', $notificationEvent), "Request {$id} is now {$finalStatus}.");
-                if ($to === 'CONFIRMED') {
-                    $this->notify($id, 'fte_mm', $event, str_replace('_', ' ', $event), "Request {$id} is now {$to}.");
-                }
+                $this->notify($id, $target, $event, str_replace('_', ' ', $event), "Request {$id} is now {$to}.");
             }
             if ($action === 'reject-ops') {
                 $this->notifyUser($id, $request->created_by, $event, 'Request rejected', "Request {$id} was rejected by FTE Ops.");

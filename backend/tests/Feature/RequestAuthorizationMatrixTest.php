@@ -15,9 +15,9 @@ final class RequestAuthorizationMatrixTest extends TestCase
             'ops_pic' => ['cancel', 'mark-docked'],
             'fte_ops' => ['approve', 'reject-ops'],
             'fte_mm' => ['reject-mm', 'assign-truck'],
-            'doc_officer' => ['mark-docked', 'confirm'],
+            'doc_officer' => ['mark-docked'],
         ];
-        $actions = ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked', 'confirm'];
+        $actions = ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked'];
         $authorizer = new RequestAuthorizer;
 
         foreach (['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'] as $role) {

@@ -4,12 +4,11 @@ import type { RequestFilters as Filters, Status } from "../types";
 export const statuses: Array<Status | "ALL"> = [
   "ALL",
   "PENDING",
-  "APPROVED",
-  "REJECTED_BY_MM",
+  "REQUESTED",
+  "REROUTED",
   "ASSIGNED",
-  "FOR_DOCKING",
+  "DOCKING",
   "DOCKED",
-  "CONFIRMED",
   "CANCELLED",
 ];
 

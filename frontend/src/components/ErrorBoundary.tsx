@@ -33,9 +33,11 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children;
 
     return (
-      <main className="state">
+      <main className="p-12 text-center">
         <h1>Something went wrong</h1>
-        <p className="error">The application hit an unexpected error.</p>
+        <p className="error text-[var(--color-danger)]">
+          The application hit an unexpected error.
+        </p>
         <button type="button" onClick={() => window.location.reload()}>
           Reload
         </button>{" "}

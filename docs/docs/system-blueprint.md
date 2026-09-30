@@ -131,10 +131,9 @@ Permissions:
 
 ### Rejection Flow
 
-1. FTE MM rejects the approved request.
-2. Request status becomes REJECTED_BY_MM.
-3. Request goes back to FTE Ops.
-4. FTE Ops may edit, cancel, or approve again.
+1. FTE MM rejects the requested request.
+2. Request status becomes CANCELLED and is not editable.
+3. The cancelled request remains visible to all users.
 
 ---
 
@@ -143,13 +142,12 @@ Permissions:
 | Status | Description |
 |---|---|
 | PENDING | Created request waiting for FTE Ops checking |
-| APPROVED | Approved by FTE Ops and routed to FTE MM |
+| REQUESTED | Approved or edited by FTE Ops and routed to FTE MM |
 | CANCELLED | Cancelled request |
-| REJECTED_BY_MM | Rejected by FTE MM and returned to FTE Ops |
-| ASSIGNED | Truck plate number assigned by FTE MM |
-| FOR_DOCKING | Routed to Doc Officer for docking confirmation |
+| REROUTED | Rejected by FTE Ops and routed back through the request flow |
+| DOCKING | Truck plate number provided; waiting for dock processing |
+| ASSIGNED | Driver assigned by Doc Officer |
 | DOCKED | Truck marked as docked |
-| CONFIRMED | Final confirmed request with Driver ID and LH Trip Number |
 
 ---
 
@@ -164,9 +162,8 @@ Events:
 - REQUEST_CANCELLED
 - REQUEST_REJECTED_BY_MM
 - TRUCK_ASSIGNED
-- TRUCK_FOR_DOCKING
+- DRIVER_ASSIGNED
 - TRUCK_DOCKED
-- REQUEST_CONFIRMED
 - USER_CREATED
 - USER_UPDATED
 - USER_DISABLED
@@ -190,8 +187,7 @@ Sound alert should trigger when:
 | REQUEST_APPROVED | FTE MM |
 | REQUEST_REJECTED_BY_MM | FTE Ops |
 | TRUCK_ASSIGNED | Doc Officer |
-| TRUCK_FOR_DOCKING | Doc Officer |
-| REQUEST_CONFIRMED | FTE Ops and FTE MM |
+| DRIVER_ASSIGNED | Ops PIC |
 
 Frontend behavior:
 1. Listen for realtime changes.

@@ -163,7 +163,7 @@ final class IdempotencyTest extends TestCase
         $this->assertSame($first->json(), $second->json());
         $this->assertDatabaseCount('request_events', 1);
         $this->assertDatabaseCount('notifications', 1);
-        $this->assertDatabaseHas('requests', ['id' => $request->id, 'status' => 'APPROVED']);
+        $this->assertDatabaseHas('requests', ['id' => $request->id, 'status' => 'REQUESTED']);
     }
 
     public function test_update_is_replayed_without_duplicate_events(): void

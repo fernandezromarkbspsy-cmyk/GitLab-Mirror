@@ -2,16 +2,15 @@
 
 ## Scope
 
-FTE-MM can access only the Truck Request workspace. An FTE-OPS approval remains
-the authoritative `APPROVED` workflow state, but is presented to FTE-MM as
-`PENDING` to indicate that the truck assignment action is waiting for them.
+FTE-MM can access only the Truck Request workspace. An FTE-OPS approval is the
+`REQUESTED` workflow state and is presented consistently to every role.
 
 ## Design
 
-- The request repository translates an FTE-MM `PENDING` filter to the stored
-  `APPROVED` state and translates those rows back to `PENDING` in responses.
+- The request repository presents `REROUTED` rows as `PENDING` to FTE-MM and
+  Doc Officers, while Ops PIC and FTE Ops see `REROUTED`.
 - Transition authorization and the stored state machine remain unchanged:
-  FTE-MM assignment and rejection still require stored `APPROVED` requests.
+  FTE-MM assignment and rejection still require stored `REQUESTED` requests.
 - The Truck Request workspace uses the LH Request table/card controls, without
   create, edit, or FTE-OPS approval controls, and retains only assign/reject
   actions for pending FTE-MM handoffs.

@@ -78,7 +78,7 @@ final class PostgresReportingTest extends TestCase
                 'backlogs' => 0,
                 'truck_size' => '4W',
                 'truck_type' => 'Closed Van',
-                'status' => 'CONFIRMED',
+                'status' => 'DOCKED',
                 'created_by' => '00000000-0000-0000-0000-000000000099',
             ],
             [
@@ -90,7 +90,7 @@ final class PostgresReportingTest extends TestCase
                 'backlogs' => 0,
                 'truck_size' => '4W',
                 'truck_type' => 'Closed Van',
-                'status' => 'CONFIRMED',
+                'status' => 'DOCKED',
                 'created_by' => '00000000-0000-0000-0000-000000000099',
             ],
         ]);

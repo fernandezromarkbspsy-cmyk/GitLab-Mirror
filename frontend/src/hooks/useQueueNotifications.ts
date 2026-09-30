@@ -84,7 +84,7 @@ export function useQueueNotifications(user: User): QueueSnapshot {
       : user.role === "fte_mm"
         ? "PENDING"
         : user.role === "doc_officer"
-          ? "FOR_DOCKING"
+          ? "DOCKING"
           : null;
   const knownIds = useRef<Set<string> | null>(null);
   const [acknowledged, setAcknowledged] = useState<Set<string>>(

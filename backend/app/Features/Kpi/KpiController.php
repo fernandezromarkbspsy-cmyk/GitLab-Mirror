@@ -22,7 +22,7 @@ final class KpiController
             : CarbonImmutable::now($timezone)->endOfDay()->utc();
         $query = DB::table('requests')->whereBetween('request_timestamp', [$from, $to]);
         $total = (clone $query)->count();
-        $confirmed = (clone $query)->where('status', 'CONFIRMED')->count();
+        $confirmed = (clone $query)->where('status', 'DOCKED')->count();
         $cancelled = (clone $query)->where('status', 'CANCELLED')->count();
         $averageApprovalMinutes = (clone $query)->whereNotNull('approved_at')
             ->selectRaw('avg(extract(epoch from (approved_at - request_timestamp)) / 60) as value')->value('value');
@@ -54,7 +54,7 @@ final class KpiController
 
         $rows = DB::table('requests')->whereBetween('request_timestamp', [$fromBinding, $toBinding])
             ->selectRaw("{$dateExpression} as date, count(*) as total")
-            ->selectRaw("sum(case when status = 'CONFIRMED' then 1 else 0 end) as confirmed")
+            ->selectRaw("sum(case when status = 'DOCKED' then 1 else 0 end) as confirmed")
             ->groupByRaw($dateExpression)->orderBy('date')->get();
 
         return response()->json(['data' => $rows]);

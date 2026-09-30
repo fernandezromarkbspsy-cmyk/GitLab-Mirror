@@ -15,7 +15,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    allowedHosts: ['.e2b.app', '.soc5outboundops.app', '.trycloudflare.com', 'muzzle-onion-regalia.ngrok-free.dev'],
+    allowedHosts: ['.e2b.app', '.soc5outboundops.app', '.trycloudflare.com', 'localhost.lambdatest.com'],
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000',

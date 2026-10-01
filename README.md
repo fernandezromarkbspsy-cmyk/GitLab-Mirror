@@ -82,10 +82,9 @@ The publishable key may be used in the browser. Never put the service-role key i
 
 .\scripts\preflight.ps1 -Fix
 
-Get-Process node_ErrorAction SilentlyContinue |
-Stop-Process -Force
+Get-Process node -ErrorAction SilentlyContinue |Stop-Process -Force
 
-Remove-Item-Recurse -Force .\Frontend\node_modules
+Remove-Item -Recurse -Force .\Frontend\node_modules
 /frontend
 npm ci
 

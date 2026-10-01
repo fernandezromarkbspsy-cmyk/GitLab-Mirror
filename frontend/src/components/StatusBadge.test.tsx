@@ -8,7 +8,7 @@ function render(status: Status) {
 }
 
 describe("StatusBadge", () => {
-  it.each(["REQUESTED", "DOCKED"] as Status[])(
+  it.each(["DOCKED"] as Status[])(
     "uses the success treatment for %s",
     (status) => {
       const markup = render(status);
@@ -16,6 +16,12 @@ describe("StatusBadge", () => {
       expect(markup).toContain("text-status-success-ink");
     },
   );
+
+  it("uses the pending treatment for newly requested requests", () => {
+    const markup = render("REQUESTED");
+    expect(markup).toContain("bg-status-pending-surface");
+    expect(markup).toContain("text-status-pending-ink");
+  });
 
   it.each(["DOCKING", "ASSIGNED"] as Status[])(
     "uses the informational treatment for %s",

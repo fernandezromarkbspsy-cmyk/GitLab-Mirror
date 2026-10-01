@@ -43,6 +43,7 @@ describe("api request helper", () => {
 
     const getHeaders = new Headers(fetchMock.mock.calls[1]?.[1]?.headers);
     expect(getHeaders.has("Content-Type")).toBe(false);
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/health");
   });
 
   it("preserves an explicitly supplied content type", async () => {

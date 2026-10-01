@@ -11,14 +11,20 @@ const statusLabelMap: Partial<Record<Status, string>> = {
 };
 
 const statusClassMap: Record<Status, string> = {
-  REQUESTED: "bg-status-success-surface text-status-success-ink",
-  ASSIGNED: "bg-status-info-surface text-status-info-ink",
-  CANCELLED: "bg-status-danger-surface text-status-danger-ink",
-  DOCKING: "bg-status-info-surface text-status-info-ink",
-  DOCKED: "bg-status-success-surface text-status-success-ink",
+  REQUESTED:
+    "border-current/20 bg-status-pending-surface text-status-pending-ink",
+  ASSIGNED:
+    "border-current/20 bg-status-info-surface text-status-info-ink",
+  CANCELLED:
+    "border-current/20 bg-status-danger-surface text-status-danger-ink",
+  DOCKING:
+    "border-current/20 bg-status-info-surface text-status-info-ink",
+  DOCKED:
+    "border-current/20 bg-status-success-surface text-status-success-ink",
   PENDING:
     "border-status-pending-line bg-status-pending-surface text-status-pending-ink",
-  REROUTED: "bg-status-pending-surface text-status-pending-ink",
+  REROUTED:
+    "border-current/20 bg-status-pending-surface text-status-pending-ink",
 };
 
 export function StatusBadge({

@@ -1,7 +1,7 @@
 import { useUiStore } from "../stores/ui";
 import { supabase } from "./supabase";
 
-const base = import.meta.env.VITE_API_URL ?? "/api";
+const base = import.meta.env.VITE_API_URL ?? "/api/v1";
 
 export class ApiError extends Error {
   constructor(

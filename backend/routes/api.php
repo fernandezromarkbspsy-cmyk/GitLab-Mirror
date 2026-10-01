@@ -13,63 +13,71 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/auth/status', function () {
-    abort_unless(
-        filled(config('services.supabase.url')) && filled(config('services.supabase.anon_key')),
-        503,
-        'Authentication service is not configured.'
-    );
+$registerApiRoutes = static function (string $prefix): void {
+    Route::prefix($prefix)->group(static function (): void {
+        Route::get('/auth/status', function () {
+            abort_unless(
+                filled(config('services.supabase.url')) && filled(config('services.supabase.anon_key')),
+                503,
+                'Authentication service is not configured.'
+            );
 
-    return response()->json(['configured' => true]);
-});
+            return response()->json(['configured' => true]);
+        });
 
-Route::middleware([StartSession::class])->group(function (): void {
-    Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
-    Route::post('/auth/seatalk/logout', [SeatalkController::class, 'logout']);
-});
+        Route::middleware([StartSession::class])->group(function (): void {
+            Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
+            Route::post('/auth/seatalk/logout', [SeatalkController::class, 'logout']);
+        });
 
-Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
-Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
+        Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
+        Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
-Route::middleware([StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
-    Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
-    Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
-    Route::get('/users', [UserController::class, 'index']);
-    Route::post('/users', [UserController::class, 'store']);
-    Route::put('/users/{id}', [UserController::class, 'update']);
-    Route::patch('/users/{id}/disable', [UserController::class, 'disable']);
-    Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'read']);
-    Route::get('/clusters', function (Request $request) {
-        $data = $request->validate(['search' => 'required|string|min:3|max:80']);
-        $search = strtolower($data['search']);
+        Route::middleware([StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
+            Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
+            Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
+            Route::get('/users', [UserController::class, 'index']);
+            Route::post('/users', [UserController::class, 'store']);
+            Route::put('/users/{id}', [UserController::class, 'update']);
+            Route::patch('/users/{id}/disable', [UserController::class, 'disable']);
+            Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
+            Route::get('/notifications', [NotificationController::class, 'index']);
+            Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
+            Route::patch('/notifications/{id}/read', [NotificationController::class, 'read']);
+            Route::get('/clusters', function (Request $request) {
+                $data = $request->validate(['search' => 'required|string|min:3|max:80']);
+                $search = strtolower($data['search']);
 
-        return response()->json(['data' => DB::table('clusters')
-            ->select('id', 'cluster_name', 'hub_name', 'region', 'dock_number', 'backlogs', 'backlogs_ts')
-            ->where(function ($query) use ($search): void {
-                $query->whereRaw('lower(cluster_name) like ?', ["%{$search}%"])
-                    ->orWhereRaw('lower(hub_name) like ?', ["%{$search}%"]);
-            })
-            ->where(function ($query): void {
-                $query->where('active', true)->orWhereNull('active');
-            })
-            ->orderBy('cluster_name')
-            ->limit(12)
-            ->get()]);
+                return response()->json(['data' => DB::table('clusters')
+                    ->select('id', 'cluster_name', 'hub_name', 'region', 'dock_number', 'backlogs', 'backlogs_ts')
+                    ->where(function ($query) use ($search): void {
+                        $query->whereRaw('lower(cluster_name) like ?', ["%{$search}%"])
+                            ->orWhereRaw('lower(hub_name) like ?', ["%{$search}%"]);
+                    })
+                    ->where(function ($query): void {
+                        $query->where('active', true)->orWhereNull('active');
+                    })
+                    ->orderBy('cluster_name')
+                    ->limit(12)
+                    ->get()]);
+            });
+            Route::get('/kpi/summary', [KpiController::class, 'summary']);
+            Route::get('/kpi/daily', [KpiController::class, 'daily']);
+            Route::get('/dispatch/intraday', [DispatchController::class, 'intraday']);
+            Route::get('/requests/metrics', [RequestController::class, 'metrics']);
+            Route::get('/requests/analytics', [RequestController::class, 'analytics']);
+            Route::get('/requests', [RequestController::class, 'index']);
+            Route::post('/requests', [RequestController::class, 'store'])->middleware('idempotency');
+            Route::post('/requests/bulk-approve', [RequestController::class, 'bulkApprove']);
+            Route::get('/requests/{id}', [RequestController::class, 'show']);
+            Route::get('/requests/{id}/events', [RequestController::class, 'events']);
+            Route::put('/requests/{id}', [RequestController::class, 'update'])->middleware('idempotency');
+            Route::post('/requests/{id}/{action}', [RequestController::class, 'action'])->middleware('idempotency')
+                ->whereIn('action', ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked']);
+        });
     });
-    Route::get('/kpi/summary', [KpiController::class, 'summary']);
-    Route::get('/kpi/daily', [KpiController::class, 'daily']);
-    Route::get('/dispatch/intraday', [DispatchController::class, 'intraday']);
-    Route::get('/requests/metrics', [RequestController::class, 'metrics']);
-    Route::get('/requests/analytics', [RequestController::class, 'analytics']);
-    Route::get('/requests', [RequestController::class, 'index']);
-    Route::post('/requests', [RequestController::class, 'store'])->middleware('idempotency');
-    Route::post('/requests/bulk-approve', [RequestController::class, 'bulkApprove']);
-    Route::get('/requests/{id}', [RequestController::class, 'show']);
-    Route::get('/requests/{id}/events', [RequestController::class, 'events']);
-    Route::put('/requests/{id}', [RequestController::class, 'update'])->middleware('idempotency');
-    Route::post('/requests/{id}/{action}', [RequestController::class, 'action'])->middleware('idempotency')
-        ->whereIn('action', ['approve', 'reject-ops', 'cancel', 'reject-mm', 'assign-truck', 'mark-docked']);
-});
+};
+
+// Versioned routes are canonical; the unversioned group preserves existing clients.
+$registerApiRoutes('v1');
+$registerApiRoutes('');

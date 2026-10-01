@@ -554,7 +554,7 @@
   grid-template-columns: repeat(11, minmax(max-content, 1fr));
   grid-template-rows: 48px minmax(0, 1fr);
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(15, 42, 43, 0.08);
@@ -568,6 +568,9 @@
 
 .lh-table-head {
   grid-column: 1 / -1;
+  position: sticky;
+  top: 0;
+  z-index: 4;
   min-height: 48px;
   border-bottom: 1px solid rgba(15, 42, 43, 0.08);
   color: rgba(56, 64, 68, 0.82);
@@ -658,8 +661,9 @@
   align-content: start;
   min-width: 0;
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  padding-block: 8px 10px;
+  row-gap: 4px;
+  overflow: visible;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 250, 248, 0.94));
 }
 
@@ -694,11 +698,62 @@
   min-height: 50px;
   border-bottom: 1px solid rgba(15, 42, 43, 0.06);
   color: var(--soc5-ink);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.96);
   font-size: 12px;
   cursor: pointer;
   animation: none;
   transition: background-color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+
+.lh-table-head > :first-child,
+.lh-table-row > :first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 6px 0 10px -10px rgba(15, 42, 43, 0.65);
+}
+
+.lh-table-head > :last-child,
+.lh-table-row > :last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -6px 0 10px -10px rgba(15, 42, 43, 0.65);
+}
+
+.lh-table-row > :first-child,
+.lh-table-row > :last-child {
+  z-index: 6;
+  background: #fff;
+}
+
+.lh-request-page .lh-table-row:hover > :first-child,
+.lh-request-page .lh-table-row:hover > :last-child,
+.lh-request-page .lh-table-row:focus-visible > :first-child,
+.lh-request-page .lh-table-row:focus-visible > :last-child {
+  background: #f4f9df;
+}
+
+.lh-request-page .lh-table-row.is-expanded > :first-child,
+.lh-request-page .lh-table-row.is-expanded > :last-child {
+  background: #fbfcf7;
+}
+
+.lh-request-page .lh-table-row.is-selected > :first-child,
+.lh-request-page .lh-table-row.is-selected > :last-child {
+  background: #eef9f5;
+}
+
+.lh-request-page .lh-table-row.is-selected:hover > :first-child,
+.lh-request-page .lh-table-row.is-selected:hover > :last-child,
+.lh-request-page .lh-table-row.is-selected:focus-visible > :first-child,
+.lh-request-page .lh-table-row.is-selected:focus-visible > :last-child {
+  background: #e3f5ef;
+}
+
+.lh-table-head > :first-child,
+.lh-table-head > :last-child {
+  z-index: 3;
 }
 
 .lh-table-row > * + * {

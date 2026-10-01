@@ -111,7 +111,7 @@ for your new named tunnel.
 Run the named tunnel:
 
 ```powershell
-cloudflared tunnel run af622e0a-a27b-411d-9855-f917a3c08d0f
+cloudflared tunnel run 3aa6fc44-e074-4e89-866e-89e0b6e75926
 ```
 
 `cloudflared tunnel run` uses the tunnel UUID and the credentials file in

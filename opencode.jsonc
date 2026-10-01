@@ -7,7 +7,7 @@
         "code-review-graph",
         "serve",
         "--repo",
-        "C:\\Users\\spxph4227\\Desktop\\soc5-outbound"
+        "."
       ]
     }
   }

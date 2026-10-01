@@ -1,9 +1,9 @@
 param(
-    [string]$TunnelId = '3aa6fc44-e074-4e89-866e-89e0b6e75926'
+    [string]$TunnelId = $(if ($env:CLOUDFLARE_TUNNEL_ID) { $env:CLOUDFLARE_TUNNEL_ID } else { '3aa6fc44-e074-4e89-866e-89e0b6e75926' })
 )
 
 $ErrorActionPreference = 'Stop'
-$root = $PSScriptRoot
+$root = (Resolve-Path $PSScriptRoot).Path
 $jobs = @()
 $serviceStates = @{}
 $allServicesReported = $false

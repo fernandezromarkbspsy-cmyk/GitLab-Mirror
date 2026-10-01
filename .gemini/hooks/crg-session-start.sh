@@ -5,7 +5,8 @@ set -euo pipefail
 
 cat > /dev/null || true
 
-msg="$(code-review-graph status --repo "C:/Users/spxph4227/Desktop/soc5-outbound" 2>&1 | head -n 1 || true)"
+repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+msg="$(code-review-graph status --repo "$repo" 2>&1 | head -n 1 || true)"
 
 CRG_MSG="$msg" python3 -c '
 import json,os

@@ -36,7 +36,7 @@ start-backend.ps1        Backend development server
 No administrator access is required. PHP and Composer use the project-local
 configuration in `tools/php.ini`.
 
-cloudflared tunnel --config "C:\Users\SPXPH4227\.cloudflared\config.yml" run soc5-outbound
+cloudflared tunnel --config "$env:USERPROFILE\.cloudflared\config.yml" run soc5-outbound
 cloudflared tunnel --protocol http2 run soc5-outbound
 
 1. Configure `backend/.env` and `frontend/.env` as described in the

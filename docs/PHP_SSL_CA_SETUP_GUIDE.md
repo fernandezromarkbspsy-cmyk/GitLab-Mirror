@@ -1,4 +1,4 @@
-# PHP SSL Certificate Setup Guide (Windows + Scoop)
+# PHP SSL Certificate Setup Guide (Windows)
 
 Use this guide when setting up the Laravel backend on a new Windows laptop and PHP/Guzzle shows errors such as:
 
@@ -11,32 +11,30 @@ cURL error 60: SSL certificate OpenSSL verify result: unable to get local issuer
 Run:
 
 ```powershell
-# C:\Users\<your-user>\OneDrive\development\backend
+Set-Location (Resolve-Path .)
+.\scripts\setup-local.ps1
 php --ini
 ```
 
-Confirm that `Loaded Configuration File` points to your active `php.ini`, for example:
+Confirm that `Loaded Configuration File` points to `tools/php.local.ini`.
 
-```text
-C:\Users\<your-user>\scoop\apps\php\current\php.ini
-```
+The script discovers the active PHP installation and writes its extension and
+CA settings to this ignored, machine-local file.
 
 ## 2. Download the CA certificate bundle
 
 Run:
 
 ```powershell
-# C:\Users\<your-user>\OneDrive\development\backend
 Invoke-WebRequest `
   -Uri "https://curl.se/ca/cacert.pem" `
-  -OutFile "$HOME\scoop\persist\php\cacert.pem"
+  -OutFile (Join-Path (Resolve-Path .\tools).Path 'cacert.pem')
 ```
 
 Verify it exists:
 
 ```powershell
-# C:\Users\<your-user>\OneDrive\development\backend
-Test-Path "$HOME\scoop\persist\php\cacert.pem"
+Test-Path .\tools\cacert.pem
 ```
 
 Expected result:
@@ -47,22 +45,9 @@ True
 
 ## 3. Configure PHP
 
-Open the active `php.ini`.
-
-Example:
-
-```text
-C:\Users\<your-user>\scoop\apps\php\current\php.ini
-```
-
-Add or update:
-
-```ini
-curl.cainfo="C:\Users\<your-user>\scoop\persist\php\cacert.pem"
-openssl.cafile="C:\Users\<your-user>\scoop\persist\php\cacert.pem"
-```
-
-Replace `<your-user>` with the Windows username on that laptop.
+Run `scripts/setup-local.ps1` again after placing the bundle in
+`tools/cacert.pem`. It updates the ignored local PHP configuration without
+changing the shared template.
 
 ## 4. Restart PHP processes
 
@@ -80,29 +65,25 @@ php artisan tinker
 Run:
 
 ```powershell
-# C:\Users\<your-user>\OneDrive\development\backend
+# Run from the repository root.
 php -i | Select-String "curl.cainfo|openssl.cafile"
 ```
 
-Both settings should point to:
-
-```text
-C:\Users\<your-user>\scoop\persist\php\cacert.pem
-```
+Both settings should point to the current laptop's `tools/cacert.pem` path.
 
 ## 6. Retest Laravel / Google Sheets
 
 Start the queue worker:
 
 ```powershell
-# C:\Users\<your-user>\OneDrive\development\backend
+# Run from the repository root.
 php artisan queue:work redis --sleep=3 --tries=3 --backoff=5 --timeout=90
 ```
 
 Then dispatch the Google Sheets sync job from Tinker:
 
 ```powershell
-# C:\Users\<your-user>\OneDrive\development\backend
+# Run from the repository root.
 php artisan tinker
 ```
 

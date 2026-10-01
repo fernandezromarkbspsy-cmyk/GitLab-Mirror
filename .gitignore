@@ -26,6 +26,8 @@ known_hosts
 deploy/certs/
 tools/google/service-account.json
 tools/google/google-service-account.json
+tools/php.local.ini
+tools/cacert.pem
 
 backend/.env
 frontend/.env

@@ -8,6 +8,8 @@ use App\Features\Notifications\NotificationController;
 use App\Features\Requests\RequestController;
 use App\Features\Users\AccessRequestController;
 use App\Features\Users\UserController;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +27,14 @@ $registerApiRoutes = static function (string $prefix): void {
             return response()->json(['configured' => true]);
         });
 
-        Route::middleware([StartSession::class])->group(function (): void {
+        // SeaTalk authorization starts on an API endpoint and finishes on a
+        // web callback. Use the cookie middleware shared by Laravel's web
+        // group so both endpoints resolve the same encrypted session cookie.
+        Route::middleware([
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+        ])->group(function (): void {
             Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
             Route::post('/auth/seatalk/logout', [SeatalkController::class, 'logout']);
         });

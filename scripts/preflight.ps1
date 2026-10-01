@@ -1,5 +1,3 @@
-# C:\Users\phlspxuser\OneDrive\development\soc-5-outbound\scripts\preflight.ps1
-
 param(
     [switch]$Fix,
     [switch]$All

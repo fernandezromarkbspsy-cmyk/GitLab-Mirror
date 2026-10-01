@@ -5,6 +5,7 @@ set -euo pipefail
 
 cat > /dev/null || true
 
-code-review-graph update --skip-flows --repo "C:/Users/spxph4227/Desktop/soc5-outbound" >/dev/null 2>&1 || true
+repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+code-review-graph update --skip-flows --repo "$repo" >/dev/null 2>&1 || true
 echo '{"suppressOutput": true}'
 exit 0

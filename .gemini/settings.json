@@ -6,7 +6,7 @@
         "code-review-graph",
         "serve"
       ],
-      "cwd": "C:\\Users\\spxph4227\\Desktop\\soc5-outbound"
+      "cwd": "."
     }
   },
   "hooks": {}

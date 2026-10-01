@@ -223,6 +223,7 @@ $RunBackend    = $false
 $RunPostgres   = $false
 $RunEdge       = $false
 $RunDeployment = $false
+$RunDevScripts = $false
 
 if ($All) {
     $RunFrontend   = $true
@@ -230,6 +231,7 @@ if ($All) {
     $RunPostgres   = $true
     $RunEdge       = $true
     $RunDeployment = $true
+    $RunDevScripts = $true
 }
 else {
 
@@ -289,6 +291,16 @@ else {
             $RunEdge       = $true
             $RunDeployment = $true
         }
+
+        # Development launchers and local tunnel helpers
+        if (
+            $file -eq 'start-dev.ps1' -or
+            $file -eq 'scripts/preflight.ps1' -or
+            $file -eq 'scripts/cloudflare-tunnel.ps1' -or
+            $file -match '^scripts/tests/.*\.ps1$'
+        ) {
+            $RunDevScripts = $true
+        }
     }
 }
 
@@ -299,6 +311,46 @@ Write-Host "  Backend:             $RunBackend"
 Write-Host "  Backend PostgreSQL:  $RunPostgres"
 Write-Host "  Edge Functions:      $RunEdge"
 Write-Host "  Deployment:          $RunDeployment"
+Write-Host "  Development scripts: $RunDevScripts"
+
+# ------------------------------------------------------------
+# DEVELOPMENT SCRIPTS
+# ------------------------------------------------------------
+
+if ($RunDevScripts) {
+
+    Run-Step "Development script syntax and tests" {
+        $scriptFiles = @(
+            (Join-Path $Root 'start-dev.ps1'),
+            (Join-Path $Root 'start-backend.ps1'),
+            (Join-Path $Root 'scripts\preflight.ps1'),
+            (Join-Path $Root 'scripts\cloudflare-tunnel.ps1')
+        )
+
+        foreach ($scriptFile in $scriptFiles) {
+            $parseErrors = @()
+            [System.Management.Automation.Language.Parser]::ParseFile(
+                $scriptFile,
+                [ref]$null,
+                [ref]$parseErrors
+            ) | Out-Null
+
+            if ($parseErrors.Count -gt 0) {
+                throw "$scriptFile contains PowerShell parse errors."
+            }
+        }
+
+        if (-not (Get-Command Invoke-Pester -ErrorAction SilentlyContinue)) {
+            throw 'Pester is required to validate development script tests.'
+        }
+
+        $testPath = Join-Path $Root 'scripts\tests'
+        $pesterResult = Invoke-Pester -Path $testPath -PassThru
+        if ($pesterResult.FailedCount -gt 0) {
+            throw "Development script tests failed: $($pesterResult.FailedCount) failure(s)."
+        }
+    }
+}
 
 # ------------------------------------------------------------
 # FRONTEND

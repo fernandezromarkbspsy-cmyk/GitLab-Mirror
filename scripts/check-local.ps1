@@ -62,10 +62,25 @@ foreach ($port in @(8000, 5173)) {
 }
 
 $cloudflared = Get-ToolPath 'cloudflared'
-$cloudflareConfig = if ($env:CLOUDFLARED_CONFIG) { $env:CLOUDFLARED_CONFIG } else { Join-Path $env:USERPROFILE '.cloudflared\config.yml' }
+$cloudflareTunnelId = 'aebf91e4-acf5-4eb4-aaae-8b56a58e8035'
+$cloudflareCert = if ($env:TUNNEL_ORIGIN_CERT) { $env:TUNNEL_ORIGIN_CERT } else { Join-Path $env:USERPROFILE '.cloudflared\cert.pem' }
 if ($RequireCloudflare) {
+    . (Join-Path $ProjectRoot 'scripts\cloudflare-tunnel.ps1')
+    $backendEnvPath = Join-Path $ProjectRoot 'backend\.env'
+    $backendEnvContent = if (Test-Path -LiteralPath $backendEnvPath -PathType Leaf) { Get-Content -LiteralPath $backendEnvPath } else { @() }
+    $seatalkCallback = Get-DotEnvValue -Content $backendEnvContent -Name 'SEATALK_REDIRECT_URI'
+    Check-Condition ($seatalkCallback -ceq (Get-ExpectedSeatalkCallbackUrl)) 'SeaTalk callback matches the Cloudflare public URL' 'SEATALK_REDIRECT_URI must equal https://soc5outboundops.app/auth/seatalk/callback'
     Check-Condition ($null -ne $cloudflared) 'cloudflared is available' 'cloudflared was not found on PATH'
-    Check-Condition (Test-Path -LiteralPath $cloudflareConfig -PathType Leaf) "Found Cloudflare config $cloudflareConfig" "Cloudflare config not found at $cloudflareConfig"
+    Check-Condition (Test-Path -LiteralPath $cloudflareCert -PathType Leaf) "Found Cloudflare origin certificate $cloudflareCert" "Cloudflare origin certificate not found at $cloudflareCert; run cloudflared tunnel login"
+    if ($null -ne $cloudflared -and (Test-Path -LiteralPath $cloudflareCert -PathType Leaf)) {
+        try {
+            $tokenOutput = & $cloudflared @(Get-CloudflareTunnelTokenCommand -TunnelId $cloudflareTunnelId) 2>&1
+            $null = Get-CloudflareTokenFromOutput -Output ([string[]]$tokenOutput)
+            Check-Condition $true "Cloudflare tunnel $cloudflareTunnelId returned a token" ''
+        } catch {
+            Check-Condition $false "Cloudflare tunnel $cloudflareTunnelId returned a token" $_.Exception.Message
+        }
+    }
 } else {
     Write-Host "[INFO] Cloudflare: $(if ($cloudflared) { 'available' } else { 'optional/not found' })"
 }

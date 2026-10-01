@@ -29,6 +29,7 @@ docs/                    Product and architecture documents
 tools/php.ini            Project-local PHP configuration
 setup-backend.ps1        Backend installation and validation
 start-backend.ps1        Backend development server
+start-dev.ps1            Backend, frontend, and Cloudflare development launcher
 ```
 
 ## Quick start on this Windows machine
@@ -36,37 +37,48 @@ start-backend.ps1        Backend development server
 No administrator access is required. PHP and Composer use the project-local
 configuration in `tools/php.ini`.
 
-cloudflared tunnel --config "$env:USERPROFILE\.cloudflared\config.yml" run soc5-outbound
-cloudflared tunnel --protocol http2 run soc5-outbound
+Before starting, ensure `php`, `composer`, `npm`, and `cloudflared` are
+available on `PATH`. Authenticate `cloudflared` once if needed:
+
+```powershell
+cloudflared tunnel login
+```
 
 1. Configure `backend/.env` and `frontend/.env` as described in the
    [Setup Guide](docs/setup-guide.md).
-2. Initialize the backend: 
+2. Initialize the backend and local machine prerequisites:
 
    ```powershell
+   .\scripts\bootstrap-machine.ps1
    .\setup-backend.ps1
    ```
 
-3. Start the backend, frontend, and Cloudflare tunnel together:
+3. Start the complete development stack from the repository root:
 
    ```powershell
    .\start-dev.ps1
    ```
 
-   To use a different named tunnel:
+   This starts the Laravel backend, Vite frontend, and Cloudflare tunnel in
+   managed jobs. The Cloudflare launcher obtains a token for the configured
+   tunnel at startup and passes it through `TUNNEL_TOKEN`; it does not use a
+   `config.yml` file.
 
-   ```powershell
-   .\start-dev.ps1 -TunnelId '<tunnel-id>'
-   ```
-
-   The terminal streams labeled backend, frontend, and Cloudflare logs and
-   reports `RUNNING` or `FAILED` for each service.
+   Wait for `ALL SERVICES RUNNING`. Keep this terminal open; press `Ctrl+C` to
+   stop all three services together.
 
 4. Open `http://localhost:5173`, or the Cloudflare hostname when the tunnel is
    running.
 
 Laravel runs on `http://127.0.0.1:8000`; Vite proxies browser `/api` requests to
-that address.
+that address. To validate the local services from another PowerShell window:
+
+```powershell
+Test-NetConnection 127.0.0.1 -Port 8000
+Test-NetConnection 127.0.0.1 -Port 5173
+```
+
+Both checks should report `TcpTestSucceeded: True`.
 
 ## Supabase initialization
 

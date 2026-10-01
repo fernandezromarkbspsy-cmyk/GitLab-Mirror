@@ -39,8 +39,8 @@ Invoke-WebRequest `
 cloudflared tunnel login
 supabase login
 
-# Start development
-$env:CLOUDFLARE_TUNNEL_ID = "your-local-tunnel-id"  # optional override
+# Validate the configured remote-managed tunnel and start development
+.\scripts\check-local.ps1 -RequireCloudflare
 .\start-dev.ps1
 ```
 
@@ -212,11 +212,11 @@ The checker validates:
 After validation, run `start-dev.ps1` from the command block at the top.
 
 The backend runs on `http://127.0.0.1:8000`, and the Vite frontend runs on
-port `5173`. The Cloudflare tunnel ID can be overridden without editing the
-script:
-
-Set `CLOUDFLARE_TUNNEL_ID` before starting if the default tunnel ID does not
-apply to the laptop.
+port `5173`. The startup script always obtains a token for the configured
+remote-managed tunnel with `cloudflared tunnel token aebf91e4-acf5-4eb4-aaae-8b56a58e8035`,
+then passes it through the `TUNNEL_TOKEN` environment variable to
+`cloudflared tunnel --no-autoupdate run`. The token is not written to the
+repository or printed by the startup script.
 
 ## Expected manual setup per laptop
 

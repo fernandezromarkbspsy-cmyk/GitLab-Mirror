@@ -1,9 +1,7 @@
-param(
-    [string]$TunnelId = $(if ($env:CLOUDFLARE_TUNNEL_ID) { $env:CLOUDFLARE_TUNNEL_ID } else { '3aa6fc44-e074-4e89-866e-89e0b6e75926' })
-)
-
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path $PSScriptRoot).Path
+$TunnelId = 'aebf91e4-acf5-4eb4-aaae-8b56a58e8035'
+$cloudflareTunnelScript = Join-Path $root 'scripts\cloudflare-tunnel.ps1'
 $jobs = @()
 $serviceStates = @{}
 $allServicesReported = $false
@@ -59,7 +57,8 @@ $null = Start-DevJob -Name 'soc5-frontend' -Command {
 
 $null = Start-DevJob -Name 'soc5-cloudflared' -Command {
     Set-Location $using:root
-    cloudflared tunnel run $using:TunnelId
+    . $using:cloudflareTunnelScript
+    Start-CloudflareTokenTunnel -TunnelId $using:TunnelId
 }
 
 Write-Host ''
@@ -82,13 +81,21 @@ try {
             }
 
             if ($job.State -in @('Failed', 'Stopped', 'Completed')) {
-                $reason = if ($job.ChildJobs[0].JobStateInfo.Reason) {
-                    $job.ChildJobs[0].JobStateInfo.Reason.Message
+                $jobErrors = @(
+                    $job.ChildJobs |
+                        ForEach-Object { $_.Error } |
+                        ForEach-Object { $_.ToString().Trim() } |
+                        Where-Object { $_ }
+                )
+                if ($jobErrors.Count -gt 0) {
+                    $reason = ($jobErrors | Select-Object -Last 12) -join [Environment]::NewLine
+                } elseif ($job.ChildJobs[0].JobStateInfo.Reason) {
+                    $reason = $job.ChildJobs[0].JobStateInfo.Reason.Message
                 } else {
-                    "Job ended with state $($job.State)."
+                    $reason = "Job ended with state $($job.State)."
                 }
                 Set-ServiceState -Name $job.Name -State 'FAILED'
-                throw "$($job.Name): $reason"
+                throw "$($job.Name) failed:`n$reason"
             }
         }
 
@@ -111,6 +118,8 @@ finally {
     Write-Host 'Stopping SOC 5 development stack...' -ForegroundColor Yellow
     $jobs | Stop-Job -ErrorAction SilentlyContinue
     $jobs | Remove-Job -Force -ErrorAction SilentlyContinue
-    $serviceStates.Keys | ForEach-Object { $serviceStates[$_] = 'STOPPED' }
+    foreach ($name in @($serviceStates.Keys)) {
+        $serviceStates[$name] = 'STOPPED'
+    }
     Write-Host 'Development stack stopped.' -ForegroundColor Green
 }

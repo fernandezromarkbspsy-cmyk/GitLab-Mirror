@@ -25,8 +25,7 @@ backend split.
 - `backend/.env` and `frontend/.env` already created
 - Supabase URL and publishable key configured
 - Cloudflare Tunnel installed through `cloudflared`
-- A tunnel credentials file for the named tunnel, stored in
-  `C:\Users\spxph4227\.cloudflared\`
+- A Cloudflare origin certificate created by `cloudflared tunnel login`
 - The domain `soc5outboundops.app` is added to Cloudflare and points to the
   tunnel
 
@@ -67,61 +66,37 @@ npm run dev
 
 Confirm Vite is running on `http://localhost:5173`.
 
-## Step 3: Restore or create the tunnel credentials file
+## Step 3: Validate the remote-managed tunnel
 
-The error `tunnel credentials file not found` means the named tunnel exists in
-Cloudflare, but this machine does not have the JSON credentials file for it.
-
-You need a file like:
-
-```text
-C:\Users\spxph4227\.cloudflared\0f1afc50-0389-4468-9de9-1e49e48a3626.json
-```
-
-If that file already exists on another machine, copy it here.
-
-If it does not exist anywhere, create or re-create the tunnel in Cloudflare so
-that a new credentials file is issued for this machine.
-
-## Step 4: Create the tunnel config file
-
-Create `C:\Users\spxph4227\.cloudflared\config.yml` with ingress rules for both
-local services.
-
-Example:
-
-```yaml
-tunnel: 0f1afc50-0389-4468-9de9-1e49e48a3626
-credentials-file: C:\Users\spxph4227\.cloudflared\0f1afc50-0389-4468-9de9-1e49e48a3626.json
-
-ingress:
-  - hostname: soc5outboundops.app
-    service: http://localhost:5173
-  - hostname: soc5outboundops.app
-    path: /api/*
-    service: http://127.0.0.1:8000
-  - service: http_status:404
-```
-
-Replace the tunnel UUID and credentials path with the values Cloudflare issued
-for your new named tunnel.
-
-## Step 5: Start the named tunnel
-
-Run the named tunnel:
+Authenticate this machine once, then validate that the configured tunnel can
+return a token:
 
 ```powershell
-cloudflared tunnel run 3aa6fc44-e074-4e89-866e-89e0b6e75926
+cloudflared tunnel login
+.\scripts\check-local.ps1 -RequireCloudflare
 ```
 
-`cloudflared tunnel run` uses the tunnel UUID and the credentials file in
-`C:\Users\spxph4227\.cloudflared\config.yml`.
+The checker runs `cloudflared tunnel token aebf91e4-acf5-4eb4-aaae-8b56a58e8035`
+without printing the returned token.
+
+## Step 4: Start the token-based tunnel
+
+Start the complete local stack:
+
+```powershell
+.\start-dev.ps1
+```
+
+The script obtains the token for tunnel `aebf91e4-acf5-4eb4-aaae-8b56a58e8035`
+and supplies it through `TUNNEL_TOKEN` to
+`cloudflared tunnel --no-autoupdate run`. No tunnel credential file or tracked
+token is required.
 
 Vite must allow the Cloudflare frontend hostname. This repo already does that
 through `frontend/vite.config.ts` with `server.allowedHosts:
 ['soc5outboundops.app', '.trycloudflare.com']`.
 
-## Step 6: Update the frontend environment
+## Step 5: Update the frontend environment
 
 Edit `frontend/.env` and keep the API path on the same origin:
 
@@ -131,7 +106,7 @@ VITE_API_URL=/api
 
 This makes the browser call Laravel through the same public domain.
 
-## Step 7: Update the backend environment
+## Step 6: Update the backend environment
 
 Edit `backend/.env` and point `FRONTEND_URL` to the public frontend URL:
 
@@ -143,7 +118,7 @@ FRONTEND_URL=https://soc5outboundops.app
 Keep `APP_URL` on the local Laravel address unless you are also deploying the
 backend behind a different public origin.
 
-## Step 8: Restart both services
+## Step 7: Restart both services
 
 Restart Laravel and the frontend so the new env values take effect:
 
@@ -158,7 +133,7 @@ npm run dev
 If you already had the tunnels open, you do not need to recreate them unless
 their URLs changed.
 
-## Step 9: Update Supabase settings
+## Step 8: Update Supabase settings
 
 If login or session redirects are part of your flow, update Supabase with the
 new public frontend URL:
@@ -169,7 +144,16 @@ new public frontend URL:
 
 Use the public frontend URL, not the backend URL, for browser auth redirects.
 
-## Step 10: Test the split setup
+For SeaTalk, register this exact callback URL in SeaTalk Open Platform:
+
+```text
+https://soc5outboundops.app/auth/seatalk/callback
+```
+
+The local Cloudflare validation checks that `backend/.env` uses this same
+`SEATALK_REDIRECT_URI` value.
+
+## Step 9: Test the split setup
 
 Open the public frontend URL in a browser:
 
@@ -215,11 +199,11 @@ Confirm each tunnel points to the correct local port:
 - `5173` for the frontend
 - `8000` for the backend
 
-### `cloudflared tunnel run` says credentials file not found
+### `cloudflared tunnel token` fails
 
-Make sure the JSON file named after the tunnel UUID exists in
-`C:\Users\spxph4227\.cloudflared\`. If it does not exist, recreate the tunnel or
-copy the credentials file from the machine that created it.
+Run `cloudflared tunnel login` again and confirm the authenticated account has
+permission to read the configured tunnel. Do not copy a token into the
+repository or commit a credentials file.
 
 ### I only have `trycloudflare.com` URLs
 
@@ -234,10 +218,10 @@ When setting this up from scratch, follow this sequence:
 
 1. Start the backend.
 2. Start the frontend.
-3. Restore or create the tunnel credentials file.
-4. Create `config.yml`.
-5. Run the named tunnel.
+3. Authenticate `cloudflared tunnel login`.
+4. Validate with `scripts/check-local.ps1 -RequireCloudflare`.
+5. Start the stack with `start-dev.ps1`.
 6. Update `frontend/.env` and `backend/.env`.
-7. Restart both apps.
+7. Restart both apps if their env values changed.
 8. Update Supabase URLs.
 9. Test login and API requests from the public frontend URL.

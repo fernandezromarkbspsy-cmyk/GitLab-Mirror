@@ -39,7 +39,7 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
     container.replaceChildren();
 
     try {
-      const response = await fetch("/api/auth/seatalk/config", {
+      const response = await fetch("/api/v1/auth/seatalk/config", {
         credentials: "same-origin",
         headers: { Accept: "application/json" },
       });

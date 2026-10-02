@@ -122,3 +122,37 @@ npm run build
 - [Wireframes](docs/wireframes.md)
 - [Feature Breakdown](docs/feature-breakdown.md)
 - [System Blueprint](docs/system-blueprint.md)
+
+Cloudflare command
+# PowerShell
+cloudflared tunnel token <TUNNEL-ID>
+
+Example:
+# PowerShell
+cloudflared tunnel token 12345678-abcd-1234-abcd-1234567890ab
+
+That prints the tunnel token you can use with:
+# PowerShell
+cloudflared tunnel run --token <TOKEN>
+
+
+From the new project directory, use separate PowerShell windows.
+Terminal 1 — setup once:
+cd C:\path\to\soc5-outbound
+.\setup-backend.ps1
+.\scripts\check-local.ps1
+Terminal 2 — backend:
+cd C:\path\to\soc5-outbound
+.\start-backend.ps1
+Terminal 3 — frontend:
+cd C:\path\to\soc5-outbound\frontend
+npm run build
+npm run dev
+Terminal 4 — Cloudflare tunnel:
+cloudflared tunnel run --token "<YOUR_TUNNEL_TOKEN>"
+Then verify:
+Invoke-WebRequest http://127.0.0.1:8000/up
+Invoke-WebRequest http://localhost:5173/
+If preferred, the project’s combined launcher is:
+cd C:\path\to\soc5-outbound
+.\start-dev.ps1

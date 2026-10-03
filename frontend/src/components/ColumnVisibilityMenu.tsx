@@ -25,6 +25,19 @@ export const linehaulColumnOptions: Option[] = [
   { key: "opsPic", label: "OPS/PIC" },
 ];
 
+export const linehaulPrimaryColumnKeys = [
+  "status",
+  "cluster",
+  "region",
+  "dock",
+  "backlogs",
+  "plateNumber",
+  "linehaulTrip",
+  "truckSize",
+  "requestTime",
+  "dockedTime",
+] as const;
+
 type Props = {
   label: string;
   options: readonly Option[];

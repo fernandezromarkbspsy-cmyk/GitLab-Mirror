@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Combobox } from "@headlessui/react";
 import { Save, X } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
@@ -41,9 +42,9 @@ export function InlineCreateRow({
     enabled: clusterSearch.trim().length >= 3,
   });
 
-  function pick(cluster: ClusterLookup) {
+  function pick(cluster: ClusterLookup | null) {
     setSelected(cluster);
-    setClusterText(cluster.cluster_name);
+    setClusterText(cluster?.cluster_name ?? "");
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,50 +55,54 @@ export function InlineCreateRow({
     <form className="inline-create-row" onSubmit={submit}>
       <label className="cluster-lookup-field">
         Cluster
-        <input
-          name="cluster"
-          required
-          maxLength={120}
-          value={clusterText}
-          onChange={(event) => {
-            setClusterText(event.target.value);
-            setSelected(null);
-          }}
-          placeholder="Type 3 chars"
-        />
-        {searchIsCurrent &&
-          clusterSearch.length >= 3 &&
-          lookup.isFetching &&
-          !lookup.data && (
-            <div className="cluster-suggestions">
-              <p>Searching...</p>
-            </div>
-          )}
-        {searchIsCurrent && lookup.isError && (
-          <div className="cluster-suggestions">
-            <p>Unable to load clusters.</p>
-          </div>
-        )}
-        {searchIsCurrent && lookup.data && !selected && !lookup.isFetching && (
-          <div className="cluster-suggestions">
-            {lookup.data.data.length ? (
-              lookup.data.data.map((cluster) => (
-                <button
-                  key={cluster.id}
-                  type="button"
-                  onClick={() => pick(cluster)}
-                >
-                  <strong>{cluster.cluster_name}</strong>
-                  <span>
-                    Dock {cluster.dock_number} / {cluster.region}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p>No cluster found.</p>
+        <Combobox value={selected} by="id" onChange={pick} nullable>
+          <Combobox.Input
+            name="cluster"
+            required
+            maxLength={120}
+            displayValue={() => clusterText}
+            onChange={(event) => {
+              setClusterText(event.target.value);
+              setSelected(null);
+            }}
+            placeholder="Type 3 chars"
+          />
+          <Combobox.Options as="div" className="cluster-suggestions">
+            {searchIsCurrent &&
+              clusterSearch.length >= 3 &&
+              lookup.isFetching &&
+              !lookup.data && <p>Searching...</p>}
+            {searchIsCurrent && lookup.isError && (
+              <p>Unable to load clusters.</p>
             )}
-          </div>
-        )}
+            {searchIsCurrent && lookup.data && !lookup.isFetching && (
+              lookup.data.data.length ? (
+                lookup.data.data.map((cluster) => (
+                  <Combobox.Option
+                    key={cluster.id}
+                    value={cluster}
+                    as="button"
+                    type="button"
+                  >
+                    {({ active }) => (
+                      <>
+                        <strong>{cluster.cluster_name}</strong>
+                        <span>
+                          Dock {cluster.dock_number} / {cluster.region}
+                        </span>
+                        <span className="sr-only">
+                          {active ? "Currently focused" : ""}
+                        </span>
+                      </>
+                    )}
+                  </Combobox.Option>
+                ))
+              ) : (
+                <p>No cluster found.</p>
+              )
+            )}
+          </Combobox.Options>
+        </Combobox>
       </label>
       <label>
         Region

@@ -16,10 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  ColumnVisibilityMenu,
-  linehaulColumnOptions,
-} from "../components/ColumnVisibilityMenu";
+import { linehaulPrimaryColumnKeys } from "../components/ColumnVisibilityMenu";
 import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
 import {
   InlineCreateRow,
@@ -58,6 +55,86 @@ function formatCluster(value: string) {
     .filter(Boolean)
     .join(" · ");
 }
+function shouldRenderExpandedField(
+  fieldKey: string,
+  visibleColumns: readonly string[],
+) {
+  return !visibleColumns.includes(fieldKey);
+}
+
+function expandedRequestGroups(
+  row: TruckRequest,
+  visibleColumns: readonly string[],
+) {
+  const groups = [
+    {
+      title: "Timing",
+      fields: [
+        {
+          key: "backlogsTime",
+          label: "Backlogs Time Stamp",
+          value: formatDetailDateTime(row.backlogs_timestamp),
+        },
+        {
+          key: "provideTime",
+          label: "Provide Time",
+          value: formatDetailDateTime(row.provide_time),
+        },
+        { key: "assignedTime", label: "Assigned Time", value: "-" },
+      ],
+    },
+    {
+      title: "Assignment",
+      fields: [
+        {
+          key: "opsFte",
+          label: "SOC PIC \u00b7 FTE Ops",
+          value: displayValue(row.ob_fte_name ?? row.ob_fte),
+        },
+        {
+          key: "mmFte",
+          label: "MM FTE",
+          value: displayValue(row.created_by_name ?? row.created_by),
+        },
+        {
+          key: "opsPic",
+          label: "OPS PIC",
+          value: displayValue(row.ob_fte_name ?? row.ob_fte),
+        },
+      ],
+    },
+    {
+      title: "Operations",
+      fields: [
+        {
+          key: "lhTypeRequest",
+          label: "Truck Type",
+          value: displayValue(row.truck_type),
+        },
+        {
+          key: "lhTypeInput",
+          label: "LH Type (input by FTE MM)",
+          value: "Same as Truck Type",
+        },
+        {
+          key: "docOfficer",
+          label: "Doc Officer",
+          value: displayValue(row.created_by_name ?? row.created_by),
+        },
+      ],
+    },
+  ];
+
+  return groups
+    .map((group) => ({
+      ...group,
+      fields: group.fields.filter(({ key }) =>
+        shouldRenderExpandedField(key, visibleColumns),
+      ),
+    }))
+    .filter((group) => group.fields.length > 0);
+}
+
 export function OutboundRequests({
   user: _user,
   queue: _queue,
@@ -90,10 +167,9 @@ export function OutboundRequests({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [rejecting, setRejecting] = useState<TruckRequest | null>(null);
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
-    linehaulColumnOptions.map(({ key }) => key),
-  );
-  const hasColumn = (key: string) => visibleColumns.includes(key);
+  const visibleColumns = linehaulPrimaryColumnKeys;
+  const hasColumn = (key: string) =>
+    (visibleColumns as readonly string[]).includes(key);
   function exportRows() {
     openRequestsSheet();
   }
@@ -215,15 +291,6 @@ export function OutboundRequests({
                   <LayoutGrid size={16} aria-hidden="true" />
                 </button>
               </div>
-              {view === "table" && (
-                <ColumnVisibilityMenu
-                  label="Choose visible columns"
-                  options={linehaulColumnOptions}
-                  visible={visibleColumns}
-                  onChange={setVisibleColumns}
-                  iconOnly
-                />
-              )}
               <button
                 className="lh-table-action is-primary"
                 type="button"
@@ -238,12 +305,13 @@ export function OutboundRequests({
             </div>
           </div>
           {view === "table" ? (
-            <div
-              className="lh-records-table"
-              style={{
-                gridTemplateColumns: `repeat(${visibleColumns.length + 1}, minmax(max-content, 1fr))`,
-              }}
-            >
+            <div className="lh-records-table-scroll">
+              <div
+                className="lh-records-table"
+                style={{
+                  gridTemplateColumns: `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
+                }}
+              >
               <div className="lh-table-head lh-table-grid">
                 {hasColumn("status") && (
                   <span>
@@ -498,39 +566,35 @@ export function OutboundRequests({
                           </span>
                         </div>
                         {isExpanded && (
-                          <dl
-                            className={`sticky left-0 col-span-full grid grid-cols-2 gap-x-6 gap-y-2 border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e] md:grid-cols-4 ${canApprove ? "min-w-[1210px]" : "min-w-[1120px]"}`}
+                          <div
+                            className="col-span-full min-w-0 w-full border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
                             aria-label={`Expanded details for request ${row.id}`}
                           >
-                            {[
-                              ["Cluster", formatCluster(row.cluster)],
-                              [
-                                "Request time",
-                                formatDetailDateTime(row.request_timestamp),
-                              ],
-                              ["Region", row.region],
-                              ["Dock #", row.dock_no],
-                              ["Backlogs", row.backlogs.toLocaleString()],
-                              [
-                                "Backlogs time",
-                                formatDetailDateTime(row.backlogs_timestamp),
-                              ],
-                              ["LH size", row.truck_size],
-                              ["Truck type", row.truck_type],
-                              ["SOC PIC · FTE Ops", displayValue(row.ob_fte_name ?? row.ob_fte)],
-                              ["LH trip #", displayValue(row.linehaul_trip_no)],
-                              ["Plate #", displayValue(row.plate_number)],
-                            ].map(([label, value]) => (
-                              <div className={`min-w-0 border-b border-[#e9eeea] pb-2 ${label === "Cluster" ? "md:col-span-2" : ""}`} key={label}>
-                                <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">
-                                  {label}
-                                </dt>
-                                <dd className={`break-words ${label === "Cluster" ? "text-sm font-bold leading-5 text-[#26352d]" : "text-xs font-medium leading-4 text-[#33423a]"}`}>
-                                  {value}
-                                </dd>
+                            <div
+                              className="contents"
+                            >
+                              <dl>
+                                <div className="border-b border-[#e9eeea] pb-3">
+                                  <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">Cluster</dt>
+                                  <dd className="break-words text-base font-bold leading-6 tracking-[0.01em] text-[#26352d]">{formatCluster(row.cluster)}</dd>
+                                </div>
+                              </dl>
+                              <div className="grid grid-cols-1 gap-4 pt-3 md:grid-cols-3">
+                                {expandedRequestGroups(row, visibleColumns).map(({ fields }) => (
+                                  <section className="min-w-0" key={fields[0]?.key}>
+                                    <dl className="grid gap-2">
+                                      {fields.map(({ key, label, value }) => (
+                                        <div className="min-w-0 border-b border-[#e9eeea] pb-2" key={key}>
+                                          <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">{label}</dt>
+                                          <dd className="break-words text-xs font-medium leading-4 text-[#33423a]">{value}</dd>
+                                        </div>
+                                      ))}
+                                    </dl>
+                                  </section>
+                                ))}
                               </div>
-                            ))}
-                          </dl>
+                            </div>
+                          </div>
                         )}
                       </div>
                     );
@@ -542,6 +606,7 @@ export function OutboundRequests({
                       No live requests match the current filters.
                     </div>
                   )}
+              </div>
               </div>
             </div>
           ) : (

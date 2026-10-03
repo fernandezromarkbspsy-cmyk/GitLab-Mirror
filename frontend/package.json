@@ -21,6 +21,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.10",
     "@joint/core": "^4.3.3",
     "@sentry/react": "^10.74.0",
     "@supabase/supabase-js": "^2.112.4",

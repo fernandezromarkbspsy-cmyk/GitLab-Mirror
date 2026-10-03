@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: var(--font-ui);
+  --font-display: var(--font-ui);
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
   --color-accent: var(--auth-accent);
   --color-accent-2: var(--auth-accent-2);
   --color-faint: var(--auth-faint);

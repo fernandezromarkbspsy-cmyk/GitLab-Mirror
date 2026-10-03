@@ -261,6 +261,10 @@
   background: #f1f3ee;
 }
 
+.lh-table-create-row .cluster-suggestions button[data-headlessui-state~="active"] {
+  background: #f1f3ee;
+}
+
 .lh-table-create-row .cluster-suggestions span,
 .lh-table-create-row .cluster-suggestions p {
   color: var(--soc5-muted);
@@ -547,17 +551,28 @@
   transform: none;
 }
 
-.lh-records-table {
-  display: grid;
+.lh-records-table-scroll {
   min-width: 0;
   min-height: 0;
-  grid-template-columns: repeat(11, minmax(max-content, 1fr));
-  grid-template-rows: 48px minmax(0, 1fr);
   overflow-x: auto;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.lh-records-table {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  min-height: 0;
+  grid-template-columns: repeat(11, minmax(112px, max-content));
+  grid-template-rows: 48px minmax(0, 1fr);
+  overflow: visible;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(15, 42, 43, 0.08);
+  font-variant-numeric: tabular-nums;
 }
 
 .lh-table-grid {
@@ -588,7 +603,8 @@
   min-width: 0;
   padding-inline: 12px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
   white-space: nowrap;
 }
 
@@ -1055,10 +1071,6 @@
 
   .lh-records-table {
     grid-template-rows: 42px minmax(0, 1fr);
-  }
-
-  .lh-records-table {
-    overflow: auto;
   }
 
   .lh-table-body {

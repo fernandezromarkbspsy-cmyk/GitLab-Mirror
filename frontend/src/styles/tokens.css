@@ -36,12 +36,20 @@
   --skeleton-base: #e8efed;
   --skeleton-highlight: #f6f9f8;
 
-  /* Shared typography */
-  --font-display: "Space Grotesk", "Manrope", ui-sans-serif, sans-serif;
-  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-outfit: "Outfit", sans-serif;
+  /* Shared typography: one readable UI family keeps every surface aligned. */
+  --font-ui: "Manrope", "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-ui);
+  --font-body: var(--font-ui);
+  --font-outfit: var(--font-ui);
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --type-body-size: 0.9375rem;
+  --type-body-leading: 1.5;
+  --type-heading-leading: 1.2;
+  --type-label-leading: 1.35;
   --color-gray-500: rgb(102 112 133);
   --color-gray-700: rgb(52 64 84);
 

@@ -15,6 +15,10 @@ import { useEffect, useId, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
+import Notification4, {
+  type NotificationEvent,
+  type NotificationGroup,
+} from "./ui/notification-4";
 import type {
   Notification as AppNotification,
   AppView,
@@ -48,6 +52,49 @@ function formatDate(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }
 
+function relativeNotificationTime(value: string) {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return value;
+  const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function notificationGroups(alerts: AppNotification[]): NotificationGroup[] {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const groups = new Map<string, NotificationEvent[]>();
+
+  for (const alert of alerts) {
+    const created = new Date(alert.created_at);
+    const label =
+      created.toDateString() === today.toDateString()
+        ? "Today"
+        : created.toDateString() === yesterday.toDateString()
+          ? "Yesterday"
+          : "Earlier";
+    const items = groups.get(label) ?? [];
+    items.push({
+      id: String(alert.id),
+      source: { name: "SOC5 Operations", initials: "SO" },
+      title: alert.title,
+      subtitle: alert.body,
+      timestamp: relativeNotificationTime(alert.created_at),
+      unread: !alert.read_at,
+    });
+    groups.set(label, items);
+  }
+
+  return ["Today", "Yesterday", "Earlier"]
+    .filter((label) => groups.has(label))
+    .map((label) => ({ id: label.toLowerCase(), label, items: groups.get(label)! }));
+}
+
 export function AppHeader({
   user,
   preview = false,
@@ -67,7 +114,7 @@ export function AppHeader({
   const searchRef = useRef<HTMLInputElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
-  const notificationMenuRef = useRef<HTMLElement>(null);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
   const filterMenuRef = useRef<HTMLDivElement>(null);
   const mailMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLElement>(null);
@@ -93,6 +140,7 @@ export function AppHeader({
   });
   const count = notifications.data?.unread ?? 0;
   const alerts = notifications.data?.data ?? [];
+  const groupedNotifications = notificationGroups(alerts);
 
   useEffect(() => {
     if (preview) return;
@@ -305,7 +353,7 @@ export function AppHeader({
             </section>
           )}
         </div>
-        <div className="notification-menu">
+        <div ref={notificationMenuRef} className="notification-menu">
           <button
             ref={notificationButtonRef}
             className="top-icon-button notification-button"
@@ -324,48 +372,24 @@ export function AppHeader({
             {count > 0 && <span>{count > 99 ? "99+" : count}</span>}
           </button>
           {open && (
-            <section
-              ref={notificationMenuRef}
+            <Notification4
+              className="notification-popover notification-panel"
+              countLabel={String(count)}
+              groups={groupedNotifications}
               id={notificationMenuId}
-              className="notification-popover"
-              aria-label="Notifications"
-            >
-              <div>
-                <strong>Notifications</strong>
-                {count > 0 ? (
-                  <button
-                    className="text-button"
-                    type="button"
-                    onClick={() => readAll.mutate()}
-                  >
-                    Mark all read
-                  </button>
-                ) : (
-                  <span>0</span>
-                )}
-              </div>
-              {alerts.length ? (
-                <div className="notification-list">
-                  {alerts.slice(0, 6).map((item) => (
-                    <button
-                      key={item.id}
-                      className={item.read_at ? "" : "unread"}
-                      type="button"
-                      onClick={() => {
-                        if (!item.read_at) read.mutate(item.id);
-                        setOpen(false);
-                        notificationButtonRef.current?.focus();
-                      }}
-                    >
-                      <span>{item.title}</span>
-                      <small>{item.body}</small>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p>No notifications.</p>
-              )}
-            </section>
+              onMarkAllRead={() => readAll.mutate()}
+              onDismiss={() => {
+                setOpen(false);
+                notificationButtonRef.current?.focus();
+              }}
+              onSelect={(event) => {
+                const item = alerts.find((alert) => String(alert.id) === event.id);
+                if (item && !item.read_at) read.mutate(item.id);
+                setOpen(false);
+                notificationButtonRef.current?.focus();
+              }}
+              title="Notifications"
+            />
           )}
         </div>
         <div ref={mailMenuRef} className="topbar-menu-wrap">

@@ -40,10 +40,47 @@ body {
   font-family: var(--font-body);
   background-color: var(--color-page);
   color: var(--color-ink);
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-leading);
+  font-weight: var(--font-weight-normal);
+  font-kerning: normal;
+  font-optical-sizing: auto;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-block: 0;
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--type-heading-leading);
+  letter-spacing: -0.015em;
+}
+
+label,
+legend,
+th {
+  line-height: var(--type-label-leading);
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
 }
 
 ::selection {

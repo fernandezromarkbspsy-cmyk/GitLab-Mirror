@@ -1,0 +1,257 @@
+import React from "react";
+import { X } from "lucide-react";
+import { cn } from "../../lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
+import { Badge } from "./badge";
+import { Button } from "./button";
+import { Card, CardContent, CardHeader } from "./card";
+
+export interface NotificationSource {
+  name: string;
+  initials: string;
+  avatar?: string;
+}
+
+export interface NotificationEvent {
+  id: string;
+  source: NotificationSource;
+  title: string;
+  subtitle: string;
+  timestamp: string;
+  unread?: boolean;
+}
+
+export interface NotificationGroup {
+  id: string;
+  label: string;
+  items: NotificationEvent[];
+}
+
+export interface Notification4Props {
+  title?: string;
+  countLabel?: string;
+  groups?: NotificationGroup[];
+  onDismiss?: () => void;
+  onSelect?: (event: NotificationEvent) => void;
+  onMarkAllRead?: () => void;
+  id?: string;
+  className?: string;
+}
+
+const defaultGroups: NotificationGroup[] = [
+  {
+    id: "morning",
+    label: "Morning",
+    items: [
+      {
+        id: "launch-checklist",
+        source: {
+          name: "Ava Patel",
+          initials: "AP",
+          avatar: "https://assets.watermelon.sh/wm_mia.png",
+        },
+        title: "Ava approved the launch checklist",
+        subtitle: "Mobile onboarding release",
+        timestamp: "12m ago",
+        unread: true,
+      },
+      {
+        id: "priority-review",
+        source: {
+          name: "Mateo Cruz",
+          initials: "MC",
+          avatar: "https://assets.watermelon.sh/wm_alex.png",
+        },
+        title: "Mateo assigned a priority review",
+        subtitle: "Security handoff notes",
+        timestamp: "24m ago",
+        unread: true,
+      },
+      {
+        id: "customer-digest",
+        source: {
+          name: "Nora Singh",
+          initials: "NS",
+        },
+        title: "Nora published the customer digest",
+        subtitle: "Enterprise workspace summary",
+        timestamp: "38m ago",
+        unread: true,
+      },
+    ],
+  },
+  {
+    id: "afternoon",
+    label: "Afternoon",
+    items: [
+      {
+        id: "revenue-notes",
+        source: {
+          name: "Kai Morgan",
+          initials: "KM",
+        },
+        title: "Kai shared updated revenue notes",
+        subtitle: "Forecast packet and risk log",
+        timestamp: "1h ago",
+        unread: true,
+      },
+      {
+        id: "audit-task",
+        source: {
+          name: "Iris Chen",
+          initials: "IC",
+          avatar: "https://assets.watermelon.sh/wm_emma.png",
+        },
+        title: "Iris moved the audit task forward",
+        subtitle: "Compliance queue",
+        timestamp: "2h ago",
+        unread: true,
+      },
+    ],
+  },
+];
+
+export default function Notification4({
+  title = "Notifications",
+  countLabel,
+  groups = defaultGroups,
+  onDismiss,
+  onSelect,
+  onMarkAllRead,
+  id,
+  className,
+}: Notification4Props) {
+  const unreadCount = groups.reduce(
+    (total, group) => total + group.items.filter((item) => item.unread).length,
+    0,
+  );
+
+  return (
+    <section
+      id={id}
+      className={cn(
+        "bg-background flex items-center justify-center",
+        className,
+      )}
+    >
+      <Card className="bg-muted w-full max-w-sm gap-0 rounded-3xl pb-2 ring-0">
+        <CardHeader className="flex flex-row items-center justify-between px-3">
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-foreground text-base font-semibold tracking-tight">
+              {title}
+            </h2>
+            <Badge
+              className="text-primary hover:text-primary rounded-full text-xs font-medium tabular-nums"
+            >
+              {countLabel ?? String(unreadCount)}
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {onMarkAllRead && unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                className="text-muted-foreground h-8 px-2 text-xs"
+                type="button"
+                onClick={onMarkAllRead}
+              >
+                Mark all read
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground rounded-full"
+              aria-label="Close notifications"
+              onClick={onDismiss}
+              type="button"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-2 px-2">
+          {groups.length ? (
+            groups.map((group) => (
+              <NotificationGroupCard key={group.id} group={group} onSelect={onSelect} />
+            ))
+          ) : (
+            <p className="text-muted-foreground px-3 py-6 text-center text-sm">
+              No notifications.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function NotificationGroupCard({
+  group,
+  onSelect,
+}: {
+  group: NotificationGroup;
+  onSelect?: (event: NotificationEvent) => void;
+}) {
+  return (
+    <section className="bg-card overflow-hidden rounded-2xl">
+      <div className="px-5 pt-4">
+        <p className="text-muted-foreground text-sm font-medium">
+          {group.label}
+        </p>
+      </div>
+
+      <div className="px-4 pt-2 pb-2">
+        {group.items.map((event) => (
+          <React.Fragment key={event.id}>
+            <NotificationEventRow event={event} onSelect={onSelect} />
+          </React.Fragment>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NotificationEventRow({
+  event,
+  onSelect,
+}: {
+  event: NotificationEvent;
+  onSelect?: (event: NotificationEvent) => void;
+}) {
+  return (
+    <button
+      className={cn(
+        "group flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted/50 sm:gap-3",
+        event.unread && "bg-muted/40",
+      )}
+      type="button"
+      onClick={() => onSelect?.(event)}
+    >
+      <Avatar className="h-10 w-10 shrink-0 border-none ring-0">
+        <AvatarImage
+          src={event.source.avatar}
+          alt={event.source.name}
+          className="border-black/5 dark:border-white/5"
+        />
+        <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
+          {event.source.initials}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="min-w-0 flex-1">
+        <h3 className="text-foreground truncate text-sm font-medium">
+          {event.title}
+        </h3>
+        <p className="text-muted-foreground mt-0.5 truncate text-xs">
+          {event.subtitle}
+        </p>
+      </div>
+
+      <div className="flex shrink-0 items-center">
+        <span className="text-muted-foreground text-xs">{event.timestamp}</span>
+      </div>
+    </button>
+  );
+}

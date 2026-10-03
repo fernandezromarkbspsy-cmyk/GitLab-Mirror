@@ -387,9 +387,22 @@ if ($RunFrontend) {
         Run-Step "Frontend E2E" {
             Set-Location "$Root\frontend"
 
-            Invoke-CommandChecked {
-                npm run test:e2e
-            } "E2E tests failed"
+            $previousCi = $env:CI
+            $env:CI = "1"
+
+            try {
+                Invoke-CommandChecked {
+                    npm run test:e2e
+                } "E2E tests failed"
+            }
+            finally {
+                if ($null -eq $previousCi) {
+                    Remove-Item Env:CI -ErrorAction SilentlyContinue
+                }
+                else {
+                    $env:CI = $previousCi
+                }
+            }
         }
 
         Run-Step "Frontend build" {

@@ -28,6 +28,26 @@ return [
         'user_url' => env('SEATALK_USER_URL'),
         'connect_timeout' => (int) env('SEATALK_CONNECT_TIMEOUT', 5),
         'timeout' => (int) env('SEATALK_TIMEOUT', 10),
+        'approval' => [
+            // Provider traffic remains disabled unless the rollout flag and
+            // every required server-side setting is present.
+            'enabled' => (bool) env('SEATALK_APPROVAL_ENABLED', false)
+                && filled(env('SEATALK_APP_ID'))
+                && filled(env('SEATALK_APP_SECRET'))
+                && filled(env('SEATALK_CALLBACK_SIGNING_SECRET'))
+                && filled(env('SEATALK_APPROVE_CALLBACK_URL'))
+                && filled(env('SEATALK_REJECT_CALLBACK_URL')),
+            'app_id' => env('SEATALK_APP_ID'),
+            'app_secret' => env('SEATALK_APP_SECRET'),
+            'callback_signing_secret' => env('SEATALK_CALLBACK_SIGNING_SECRET'),
+            'base_url' => env('SEATALK_APPROVAL_BASE_URL', 'https://openapi.seatalk.io'),
+            'approve_callback_url' => env('SEATALK_APPROVE_CALLBACK_URL'),
+            'reject_callback_url' => env('SEATALK_REJECT_CALLBACK_URL'),
+            'assignment_seconds' => (int) env('SEATALK_APPROVAL_ASSIGNMENT_SECONDS', 180),
+            'presence_active_seconds' => (int) env('SEATALK_PRESENCE_ACTIVE_SECONDS', 60),
+            'connect_timeout' => (int) env('SEATALK_HTTP_CONNECT_TIMEOUT', 5),
+            'timeout' => (int) env('SEATALK_HTTP_TIMEOUT', 10),
+        ],
     ],
     'google_sheets' => [
         'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID', '1Po3LyyOAJ8Q-EbX_807RSxrA_grwmsdlsPPP4FFFBig'),

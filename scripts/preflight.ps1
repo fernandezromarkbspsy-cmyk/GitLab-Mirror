@@ -55,57 +55,19 @@ function Invoke-FrontendNpmCi {
     }
 }
 
-function Get-LockedNativeModuleFiles {
-    param(
-        [string]$NodeModulesPath
-    )
+function Reset-FrontendDependencies {
+    Get-Process node -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
 
-    if (-not (Test-Path -LiteralPath $NodeModulesPath -PathType Container)) {
-        return @()
+    $nodeModulesPath = Join-Path $Root 'frontend\node_modules'
+    if (Test-Path -LiteralPath $nodeModulesPath -PathType Container) {
+        Remove-Item -LiteralPath $nodeModulesPath -Recurse -Force -ErrorAction Stop
     }
-
-    $lockedFiles = @(
-        Get-ChildItem -LiteralPath $NodeModulesPath -Recurse -File -Filter '*.node' -ErrorAction SilentlyContinue |
-            ForEach-Object {
-                $nativeFile = $_
-
-                try {
-                    $stream = [System.IO.File]::Open(
-                        $nativeFile.FullName,
-                        [System.IO.FileMode]::Open,
-                        [System.IO.FileAccess]::ReadWrite,
-                        [System.IO.FileShare]::None
-                    )
-                    $stream.Dispose()
-                }
-                catch {
-                    $nativeFile.FullName
-                }
-            }
-    )
-
-    return $lockedFiles
 }
 
 function Repair-FrontendDependencies {
-    $nodeModulesPath = Join-Path $Root 'frontend\node_modules'
-    $lockedNativeFiles = @(Get-LockedNativeModuleFiles -NodeModulesPath $nodeModulesPath)
-
-    if ($lockedNativeFiles.Count -eq 0) {
-        throw "Automatic frontend dependency cleanup was not attempted because no locked native module was found. Review the original npm ci output above."
-    }
-
-    Write-Host "Detected locked native frontend module(s):"
-    $lockedNativeFiles | ForEach-Object { Write-Host "  $_" }
-    Write-Host "Removing stale frontend node_modules and retrying npm ci..."
-
-    try {
-        Remove-Item -LiteralPath $nodeModulesPath -Recurse -Force -ErrorAction Stop
-    }
-    catch {
-        $paths = $lockedNativeFiles -join '; '
-        throw "Could not remove frontend node_modules because a native module is still locked: $paths. Stop the process holding the file (for example Node, Vite, Vitest, Playwright, an editor, antivirus, or OneDrive), then rerun with -Fix. Original error: $($_.Exception.Message)"
-    }
+    Write-Host "Stopping Node processes and removing frontend node_modules before retrying npm ci..."
+    Reset-FrontendDependencies
 
     Set-Location (Join-Path $Root 'frontend')
     Invoke-FrontendNpmCi
@@ -294,7 +256,7 @@ else {
 
         # Development launchers and local tunnel helpers
         if (
-            $file -eq 'start-dev.ps1' -or
+            $file -match '^scripts/launchers/.*\.ps1$' -or
             $file -eq 'scripts/preflight.ps1' -or
             $file -eq 'scripts/cloudflare-tunnel.ps1' -or
             $file -match '^scripts/tests/.*\.ps1$'
@@ -321,8 +283,9 @@ if ($RunDevScripts) {
 
     Run-Step "Development script syntax and tests" {
         $scriptFiles = @(
-            (Join-Path $Root 'start-dev.ps1'),
-            (Join-Path $Root 'start-backend.ps1'),
+            (Join-Path $Root 'scripts\launchers\setup-backend.ps1'),
+            (Join-Path $Root 'scripts\launchers\start-backend.ps1'),
+            (Join-Path $Root 'scripts\launchers\start-dev.ps1'),
             (Join-Path $Root 'scripts\preflight.ps1'),
             (Join-Path $Root 'scripts\cloudflare-tunnel.ps1')
         )
@@ -357,6 +320,9 @@ if ($RunDevScripts) {
 # ------------------------------------------------------------
 
 if ($RunFrontend) {
+
+    Set-Location (Join-Path $Root 'frontend')
+    Reset-FrontendDependencies
 
     $FrontendDependenciesReady = Run-Step "Frontend dependencies" {
         Set-Location "$Root\frontend"

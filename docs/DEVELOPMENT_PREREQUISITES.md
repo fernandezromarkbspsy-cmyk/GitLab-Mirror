@@ -41,7 +41,7 @@ supabase login
 
 # Validate the configured remote-managed tunnel and start development
 .\scripts\check-local.ps1 -RequireCloudflare
-.\start-dev.ps1
+.\scripts\launchers\start-dev.ps1
 ```
 
 If Scoop is unavailable, install the required tools manually or use the
@@ -209,7 +209,7 @@ The checker validates:
 
 ## Start development
 
-After validation, run `start-dev.ps1` from the command block at the top.
+After validation, run `scripts/launchers/start-dev.ps1` from the command block at the top.
 
 The backend runs on `http://127.0.0.1:8000`, and the Vite frontend runs on
 port `5173`. The startup script always obtains a token for the configured

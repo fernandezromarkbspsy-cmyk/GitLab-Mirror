@@ -7,10 +7,13 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 final class RequestRepository
 {
     private const COLUMNS = ['id', 'request_timestamp', 'cluster', 'region', 'dock_no', 'backlogs', 'backlogs_timestamp', 'ob_fte', 'truck_size', 'truck_type', 'plate_number', 'provide_time', 'linehaul_trip_no', 'docked_time', 'status', 'rejection_remarks', 'driver_id', 'created_by', 'created_at', 'updated_at'];
+
+    private const APPROVAL_COLUMNS = ['approval_status', 'approved_by', 'approved_at', 'approval_source', 'rejected_by', 'rejected_at', 'approval_version', 'approval_correlation_id'];
 
     public function __construct(private RequestAuthorizer $authorizer) {}
 
@@ -21,7 +24,7 @@ final class RequestRepository
                 $join->on(DB::raw('CAST(soc_pic.id AS TEXT)'), '=', 'requests.ob_fte');
             })
             ->leftJoin('profiles as creator', 'creator.id', '=', 'requests.created_by')
-            ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, self::COLUMNS), [
+            ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, $this->columns()), [
                 'soc_pic.name as ob_fte_name',
                 'creator.name as created_by_name',
             ]));
@@ -152,7 +155,7 @@ final class RequestRepository
                 $join->on(DB::raw('CAST(soc_pic.id AS TEXT)'), '=', 'requests.ob_fte');
             })
             ->leftJoin('profiles as creator', 'creator.id', '=', 'requests.created_by')
-            ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, self::COLUMNS), [
+            ->select(array_merge(array_map(fn (string $column): string => 'requests.'.$column, $this->columns()), [
                 'soc_pic.name as ob_fte_name',
                 'creator.name as created_by_name',
             ]))
@@ -197,16 +200,29 @@ final class RequestRepository
 
     private function storedStatuses(object $actor, string $status): array
     {
-        return in_array($actor->role, ['fte_mm', 'doc_officer'], true) && $status === 'PENDING'
-            ? ['PENDING', 'REROUTED']
+        return in_array($actor->role, ['fte_mm', 'doc_officer'], true) && $status === RequestStatus::Pending->value
+            ? RequestStatus::approvalPendingValues()
             : [$status];
     }
 
     private function displayStatus(object $actor, string $status): string
     {
-        return in_array($actor->role, ['fte_mm', 'doc_officer'], true) && $status === 'REROUTED'
-            ? 'PENDING'
+        return in_array($actor->role, ['fte_mm', 'doc_officer'], true) && $status === RequestStatus::Rerouted->value
+            ? RequestStatus::Pending->value
             : $status;
+    }
+
+    /**
+     * Keep reads compatible while deployments roll out approval metadata.
+     *
+     * @return list<string>
+     */
+    private function columns(): array
+    {
+        return array_merge(
+            self::COLUMNS,
+            array_values(array_filter(self::APPROVAL_COLUMNS, static fn (string $column): bool => Schema::hasColumn('requests', $column))),
+        );
     }
 
     private function forActor(object $actor, object $request): object

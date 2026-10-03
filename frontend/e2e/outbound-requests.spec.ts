@@ -100,6 +100,32 @@ async function openOutboundRequests(page: Page) {
   await expect(page.getByText('North Hub', { exact: true }).first()).toBeVisible();
 }
 
+async function overrideRequestFixture(page: Page, request: Record<string, unknown>) {
+  await page.unroute('**/api/**');
+  await page.route('**/api/**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/auth/me') {
+      await route.fulfill({ json: user });
+      return;
+    }
+    if (url.pathname === '/api/requests') {
+      await route.fulfill({
+        json: {
+          data: [request],
+          current_page: 1,
+          last_page: 1,
+          per_page: 20,
+          from: 1,
+          to: 1,
+          total: 1,
+        },
+      });
+      return;
+    }
+    await route.fulfill({ json: { data: [], current_page: 1, last_page: 1, per_page: 20, total: 0 } });
+  });
+}
+
 test('filters and sorts outbound requests', async ({ page }) => {
   await openOutboundRequests(page);
 
@@ -224,6 +250,24 @@ test('selects requests, approves them, and expands a row inline', async ({ page 
   await expect(page.getByRole('button', { name: 'Approved', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Approved', exact: true }).click();
   await expect.poll(() => approvedId).toBe('request-1');
+});
+
+test('keeps rerouted requests visible and disables stale approval actions', async ({ page }) => {
+  await overrideRequestFixture(page, { ...requestRow, status: 'REROUTED', approval_status: 'PENDING' });
+
+  await openOutboundRequests(page);
+  await expect(page.getByText('Rerouting', { exact: true }).first()).toBeVisible();
+  await expect(page.getByLabel('Select request request-1')).toBeDisabled();
+});
+
+test('derives checked and disabled approval state from backend metadata', async ({ page }) => {
+  await overrideRequestFixture(page, { ...requestRow, approval_status: 'APPROVED' });
+
+  await openOutboundRequests(page);
+  const checkbox = page.getByLabel('Select request request-1');
+  await expect(checkbox).toBeChecked();
+  await expect(checkbox).toBeDisabled();
+  await expect(page.getByText('Approved', { exact: true }).first()).toBeVisible();
 });
 
 test('bulk approves more than two selected requests', async ({ page }) => {

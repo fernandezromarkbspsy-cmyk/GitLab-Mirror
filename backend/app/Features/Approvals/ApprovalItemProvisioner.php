@@ -1,0 +1,176 @@
+<?php
+
+namespace App\Features\Approvals;
+
+use App\Integrations\SeaTalk\ApprovalItemPayload;
+use App\Integrations\SeaTalk\SeaTalkApprovalCenterGateway;
+use App\Integrations\SeaTalk\SeaTalkProviderException;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Throwable;
+
+final class ApprovalItemProvisioner
+{
+    public function __construct(private SeaTalkApprovalCenterGateway $adapter) {}
+
+    public function provisionForRequest(object $request, ?ApprovalItemPayload $payload = null): ProvisioningResult
+    {
+        if (! (bool) config('services.seatalk.approval.enabled', false)) {
+            return new ProvisioningResult('skipped');
+        }
+        if (! Schema::hasTable('seatalk_approval_items')) {
+            return new ProvisioningResult('skipped', failureReason: 'Approval Center schema is not installed.');
+        }
+
+        $itemId = $this->stableItemId((string) $request->id);
+        $item = DB::table('seatalk_approval_items')->where('request_id', $request->id)->first();
+        if ($item === null) {
+            $localItemId = (string) Str::uuid();
+            DB::table('seatalk_approval_items')->insert([
+                'id' => $localItemId,
+                'request_id' => $request->id,
+                'status' => 'PENDING',
+                'correlation_id' => (string) Str::uuid(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $item = DB::table('seatalk_approval_items')->where('id', $localItemId)->first();
+        } else {
+            DB::table('seatalk_approval_items')->where('id', $item->id)->update([
+                'status' => 'PENDING',
+                'failure_reason' => null,
+                'updated_at' => now(),
+            ]);
+        }
+
+        try {
+            $payload ??= $this->payload($request, $itemId);
+            $providerItemId = $item->provider_item_id ?: null;
+            $providerResponseId = null;
+            if ($providerItemId === null) {
+                $result = $this->adapter->createItem($payload);
+                // The provider item ID is the stable local ID sent in the
+                // request; the create response only returns a result code.
+                $providerItemId = $itemId;
+                $providerResponseId = $result->providerResponseId();
+            } else {
+                $this->adapter->updateItem((string) $providerItemId, $payload);
+            }
+            DB::table('seatalk_approval_items')->where('id', $item->id)->update(array_filter([
+                'status' => 'ACTIVE',
+                'provider_item_id' => $providerItemId,
+                'provider_response_id' => $providerResponseId,
+                'failure_reason' => null,
+                'updated_at' => now(),
+            ], static fn (mixed $value): bool => $value !== null));
+
+            return new ProvisioningResult('delivered', (string) $item->id, $providerItemId);
+        } catch (SeaTalkProviderException $exception) {
+            $this->recordFailure((string) $item->id, $exception->getMessage());
+
+            return new ProvisioningResult('failed', (string) $item->id, failureReason: $exception->getMessage());
+        } catch (Throwable $exception) {
+            $this->recordFailure((string) $item->id, 'Unexpected provider provisioning failure.');
+            Log::warning('SeaTalk approval item provisioning failed.', [
+                'request_id' => (string) $request->id,
+                'exception' => $exception::class,
+            ]);
+
+            return new ProvisioningResult('failed', (string) $item->id, failureReason: 'Unexpected provider provisioning failure.');
+        }
+    }
+
+    public function sync(string $requestId): ProvisioningResult
+    {
+        $request = DB::table('requests')->where('id', $requestId)->first();
+        if ($request !== null) {
+            return $this->provisionForRequest($request);
+        }
+
+        return new ProvisioningResult('skipped', failureReason: 'Request not found.');
+    }
+
+    public function stableItemId(string $requestId): string
+    {
+        return 'req_'.substr(str_replace('-', '', $requestId), 0, 26);
+    }
+
+    private function payload(object $request, string $itemId): ApprovalItemPayload
+    {
+        return $this->buildPayload($request, null, null, null, null, null, $itemId);
+    }
+
+    public function buildPayload(
+        object $request,
+        ?array $pendingList = null,
+        ?array $approvedList = null,
+        ?array $rejectedList = null,
+        ?array $approvalChain = null,
+        ?int $statusState = null,
+        ?string $itemId = null,
+    ): ApprovalItemPayload {
+        $itemId ??= $this->stableItemId((string) $request->id);
+        $now = now()->timestamp;
+        $createdAt = $request->created_at !== null
+            ? CarbonImmutable::parse($request->created_at)->timestamp
+            : $now;
+        $applicantName = (string) ($request->created_by ?? 'FTE OPS');
+        if (Schema::hasTable('profiles') && isset($request->created_by)) {
+            $applicantName = (string) (DB::table('profiles')->where('id', $request->created_by)->value('name') ?: $applicantName);
+        }
+
+        $pending = $pendingList ?? [];
+        if ($pendingList === null && Schema::hasTable('profiles') && Schema::hasColumn('profiles', 'seatalk_employee_code')) {
+            $pending = DB::table('profiles')
+                ->where('role', 'fte_ops')
+                ->where('is_active', true)
+                ->whereNotNull('seatalk_employee_code')
+                ->orderBy('id')
+                ->limit(100)
+                ->get(['seatalk_employee_code'])
+                ->map(fn (object $profile): array => ['employee_code' => $profile->seatalk_employee_code, 'ts' => $createdAt])
+                ->all();
+        }
+
+        $appPathTemplate = config('services.seatalk.approval.app_path');
+        $appPath = is_string($appPathTemplate) && $appPathTemplate !== ''
+            ? (str_contains($appPathTemplate, '{itemId}')
+                ? str_replace('{itemId}', rawurlencode($itemId), $appPathTemplate)
+                : rtrim($appPathTemplate, '?&').'?itemId='.rawurlencode($itemId))
+            : null;
+
+        return new ApprovalItemPayload(
+            itemId: $itemId,
+            createdAt: $createdAt,
+            updatedAt: $now,
+            applicantName: $applicantName,
+            title: 'Truck request '.$itemId,
+            pendingList: $pending,
+            approvedList: $approvedList ?? [],
+            rejectedList: $rejectedList ?? [],
+            approvalChain: $approvalChain ?? [],
+            subtitle: trim(implode(' · ', array_filter([(string) ($request->cluster ?? ''), (string) ($request->dock_no ?? '')]))) ?: null,
+            description: 'Outbound truck request requiring FTE OPS approval.',
+            itemState: 'Pending',
+            statusText: $statusState === null ? 'Pending' : match ($statusState) {
+                1 => 'Approved', 2 => 'Rejected', 4 => 'Cancelled', default => 'Pending',
+            },
+            statusState: $statusState ?? 0,
+            appPath: $appPath,
+            approveUrl: (string) config('services.seatalk.approval.approve_callback_url'),
+            rejectUrl: (string) config('services.seatalk.approval.reject_callback_url'),
+        );
+    }
+
+    private function recordFailure(string $itemId, string $reason): void
+    {
+        DB::table('seatalk_approval_items')->where('id', $itemId)->update([
+            'status' => 'FAILED',
+            'failure_reason' => mb_substr($reason, 0, 5000),
+            'updated_at' => now(),
+        ]);
+    }
+}

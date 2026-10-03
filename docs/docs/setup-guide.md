@@ -136,7 +136,7 @@ the legacy JWT-based anon key.
 Initialize Laravel from the repository root:
 
 ```powershell
-.\setup-backend.ps1
+.\scripts\launchers\setup-backend.ps1
 ```
 
 The script installs Composer packages, creates `backend/.env` when necessary,
@@ -171,7 +171,7 @@ refresh in the browser.
 Terminal 1, from the repository root:
 
 ```powershell
-.\start-backend.ps1
+.\scripts\launchers\start-backend.ps1
 ```
 
 Terminal 2:
@@ -205,15 +205,16 @@ composer --version
 ### VCRUNTIME140 version warning
 
 Use the configured user-local PHP runtime. Do not replace the DLL under
-`System32`. Run backend commands through `setup-backend.ps1` or
-`start-backend.ps1`, which activate `tools/php.ini`.
+`System32`. Run backend commands through
+`scripts/launchers/setup-backend.ps1` or
+`scripts/launchers/start-backend.ps1`, which activate `tools/php.ini`.
 
 ### OpenSSL extension missing
 
 Confirm the project configuration is active:
 
 ```powershell
-$env:PHPRC = (Resolve-Path .\tools).Path
+$env:PHPRC = (Resolve-Path .\tools\php.ini).Path
 php --ini
 php -m
 ```

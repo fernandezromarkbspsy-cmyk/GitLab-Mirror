@@ -340,10 +340,10 @@ Never claim validation that was not actually performed.
 
 # 14. CI/CD
 
-The repository may contain GitLab CI/CD.
+The repository uses Travis CI/CD.
 
 When modifying CI:
-- inspect `.gitlab-ci.yml`
+- inspect `.travis.yml`
 - inspect existing scripts
 - inspect Docker configuration
 - inspect deployment configuration
@@ -353,9 +353,9 @@ When modifying CI:
 - verify branch rules
 - verify artifacts/caches only when needed
 
-Do not assume GitHub Actions and GitLab CI are equivalent.
+Do not assume GitHub Actions and Travis CI are equivalent.
 
-If both exist, determine which one is authoritative before changing either.
+If multiple CI configurations appear, determine which one is authoritative before changing either.
 
 ---
 
@@ -389,7 +389,7 @@ Never commit local secrets.
 Use:
 - `.env.example`
 - environment variables
-- GitLab CI/CD variables
+- Travis CI/CD variables
 - Supabase secrets
 - approved secret-management systems
 

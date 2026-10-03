@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
+import {
+  getRequestRefetchInterval,
+  requestQueryKey,
+  type RequestRefreshReason,
+} from "../lib/requestRefresh";
 import { requestQueryString, type RequestPayload } from "../lib/requests";
 import { useRequestFilters } from "./useRequestFilters";
 import type { Page, RequestSort, TruckRequest } from "../types";
@@ -13,18 +18,26 @@ export function useOutboundRequests() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TruckRequest | null>(null);
   const [toast, setToast] = useState("");
+  const pendingRefreshReason = useRef<RequestRefreshReason | null>(null);
+  const [lastRefreshReason, setLastRefreshReason] =
+    useState<RequestRefreshReason>("scheduled");
   const requests = useQuery({
-    queryKey: ["requests", "outbound-all", appliedFilters],
+    queryKey: [...requestQueryKey("outbound-all"), appliedFilters],
     queryFn: () =>
       api<Page<TruckRequest>>(
         `/requests?${requestQueryString(appliedFilters)}`,
       ),
     placeholderData: (previous) => previous,
     staleTime: 30_000,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: false,
+    refetchInterval: () => getRequestRefetchInterval(),
+    refetchOnWindowFocus: true,
     refetchOnReconnect: false,
   });
+  useEffect(() => {
+    if (!requests.dataUpdatedAt) return;
+    setLastRefreshReason(pendingRefreshReason.current ?? "scheduled");
+    pendingRefreshReason.current = null;
+  }, [requests.dataUpdatedAt]);
   const rows = useMemo(() => requests.data?.data ?? [], [requests.data]);
 
   const showToast = (message: string) => {
@@ -33,7 +46,13 @@ export function useOutboundRequests() {
   };
   async function refreshData(message: string) {
     showToast(message);
-    await queryClient.invalidateQueries({ queryKey: ["requests"] });
+    pendingRefreshReason.current = "mutation";
+    await queryClient.invalidateQueries({ queryKey: requestQueryKey("outbound-all") });
+  }
+
+  function refreshManually() {
+    pendingRefreshReason.current = "manual";
+    void requests.refetch();
   }
 
   const createRequest = useMutation({
@@ -127,5 +146,8 @@ export function useOutboundRequests() {
     rejectRequest,
     updateSearch,
     sortBy,
+    refreshManually,
+    lastRefreshReason,
+    dataUpdatedAt: requests.dataUpdatedAt,
   };
 }

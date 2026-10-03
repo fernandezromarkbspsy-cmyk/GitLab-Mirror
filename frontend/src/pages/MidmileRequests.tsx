@@ -4,11 +4,9 @@ import {
   ChevronDown,
   CircleCheck,
   Clock3,
-  Download,
   Hash,
   LayoutGrid,
   ListChecks,
-  MoreHorizontal,
   Printer,
   RefreshCw,
   Table2,
@@ -17,22 +15,29 @@ import {
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { Fragment, useState } from "react";
-import { linehaulPrimaryColumnKeys } from "../components/ColumnVisibilityMenu";
-import { LinehaulFilterPanel } from "../components/LinehaulFilterPanel";
+import {
+  linehaulColumnOptions,
+  linehaulPrimaryColumnKeys,
+} from "../components/ColumnVisibilityMenu";
+import { LhTableToolbar } from "../components/LhTableToolbar";
+import { LhRowActionMenu } from "../components/LhRowActionMenu";
 import { Modal } from "../components/Modal";
 import { Pagination } from "../components/Pagination";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge } from "../components/StatusBadge";
 import { useRequestFilters } from "../hooks/useRequestFilters";
+import { useLinehaulTablePreferences } from "../hooks/useLinehaulTablePreferences";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
+import { requestQueryKey } from "../lib/requestRefresh";
 import {
   buildMidmileAssignmentPayload,
   openRequestsSheet,
   requestQueryString,
 } from "../lib/requests";
 import type { Page, RequestSort, TruckRequest, User } from "../types";
+import "../styles/pages/outbound-requests.css";
 
 type MmAction = "assign-truck" | "reject-mm";
 
@@ -153,7 +158,13 @@ export function MidmileRequests({ user }: { user: User }) {
   const [printRequest, setPrintRequest] = useState<TruckRequest | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
-  const visibleColumns = linehaulPrimaryColumnKeys;
+  const [exporting, setExporting] = useState(false);
+  const { visibleColumns, updateColumns, density, setDensity } =
+    useLinehaulTablePreferences(
+      "midmile",
+      linehaulColumnOptions.map(({ key }) => key),
+      linehaulPrimaryColumnKeys,
+    );
   const hasColumn = (key: string) =>
     (visibleColumns as readonly string[]).includes(key);
   const requests = useQuery({
@@ -205,7 +216,9 @@ export function MidmileRequests({ user }: { user: User }) {
           ? "Truck confirmed."
           : "Request returned to Outbound.",
       );
-      await queryClient.invalidateQueries({ queryKey: ["requests"] });
+      await queryClient.invalidateQueries({ queryKey: requestQueryKey("midmile-all") });
+      await queryClient.invalidateQueries({ queryKey: requestQueryKey("outbound-all") });
+      await queryClient.invalidateQueries({ queryKey: requestQueryKey("notification-queue") });
       await queryClient.invalidateQueries({ queryKey: ["request-metrics"] });
     },
   });
@@ -220,7 +233,10 @@ export function MidmileRequests({ user }: { user: User }) {
     }));
   }
   function exportSheet() {
+    if (exporting) return;
+    setExporting(true);
     openRequestsSheet();
+    window.setTimeout(() => setExporting(false), 700);
   }
   return (
     <div
@@ -238,16 +254,6 @@ export function MidmileRequests({ user }: { user: User }) {
           </p>
         )}
 
-        <LinehaulFilterPanel
-          filters={filters}
-          onChange={changeFilters}
-          onSort={sortBy}
-          onExport={exportSheet}
-          showAddNew={false}
-          showCreateNew={false}
-          onNotice={setNotice}
-        />
-
         {printRequest && (
           <PrintableTruckLabel
             request={printRequest}
@@ -256,10 +262,24 @@ export function MidmileRequests({ user }: { user: User }) {
         )}
 
         <section
-          className="lh-table-shell"
+          className={`lh-table-shell${density === "compact" ? " lh-table-shell--compact" : ""}`}
           aria-label="Midmile linehaul request records"
         >
           <div className="lh-table-toolbar">
+            <LhTableToolbar
+              filters={filters}
+              onChange={changeFilters}
+              onSort={sortBy}
+              onExport={exportSheet}
+              showCreateNew={false}
+              onNotice={setNotice}
+              visibleColumns={visibleColumns}
+              onColumnsChange={updateColumns}
+              density={density}
+              onDensityChange={setDensity}
+              exporting={exporting}
+              lastUpdated={requests.dataUpdatedAt}
+            />
             <div className="lh-view-controls">
               <button
                 className={`lh-toolbar-icon lh-refresh-button${requests.isFetching ? " is-refreshing" : ""}`}
@@ -325,14 +345,6 @@ export function MidmileRequests({ user }: { user: User }) {
                   <LayoutGrid size={16} aria-hidden="true" />
                 </button>
               </div>
-              <button
-                className="lh-table-action"
-                type="button"
-                onClick={exportSheet}
-              >
-                <Download size={15} aria-hidden="true" />
-                Export
-              </button>
             </div>
           </div>
           {view === "table" ? (
@@ -510,20 +522,13 @@ export function MidmileRequests({ user }: { user: User }) {
                       {hasColumn("opsPic") && (
                         <span>{displayValue(row.ob_fte_name ?? row.ob_fte)}</span>
                       )}
-                      <span className="lh-row-menu-wrap">
-                        <button
-                          className="lh-row-more"
-                          type="button"
-                          aria-label={`Actions for request ${row.id}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setOpenRow(openRow === row.id ? null : row.id);
-                          }}
-                        >
-                          <MoreHorizontal size={17} />
-                        </button>
-                        {openRow === row.id && (
-                          <span className="lh-row-menu">
+                      <LhRowActionMenu
+                        open={openRow === row.id}
+                        ariaLabel={`Actions for request ${row.id}`}
+                        onToggle={() =>
+                          setOpenRow(openRow === row.id ? null : row.id)
+                        }
+                      >
                             <button
                               type="button"
                               onClick={(event) => {
@@ -567,9 +572,7 @@ export function MidmileRequests({ user }: { user: User }) {
                                 </button>
                               </>
                             )}
-                          </span>
-                        )}
-                      </span>
+                      </LhRowActionMenu>
                     </div>
                     {expandedRow === row.id && (
                       <div

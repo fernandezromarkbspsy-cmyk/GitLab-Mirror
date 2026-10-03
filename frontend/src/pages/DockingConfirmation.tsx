@@ -6,6 +6,7 @@ import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
 import { api } from "../lib/api";
+import { requestQueryKey } from "../lib/requestRefresh";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
 import type { Page, TruckRequest, User } from "../types";
 
@@ -49,7 +50,9 @@ export function DockingConfirmation({ user }: { user: User }) {
     onSuccess: async (updated, variables) => {
       setSelected(null);
       if (variables.action === "mark-docked") setPrintable(updated);
-      await client.invalidateQueries({ queryKey: ["requests"] });
+      await client.invalidateQueries({ queryKey: requestQueryKey("docking") });
+      await client.invalidateQueries({ queryKey: requestQueryKey("dashboard") });
+      await client.invalidateQueries({ queryKey: requestQueryKey("notification-queue") });
     },
   });
   const rows = (queue.data?.data ?? []).filter(

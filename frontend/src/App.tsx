@@ -47,6 +47,14 @@ const defaultFailure: Failure = {
   detail: "Sign-in succeeded, but the application could not load your account.",
 };
 
+const previewUser: User = {
+  id: "preview-user",
+  name: "Operations preview",
+  role: "ops_pic",
+  is_admin: false,
+  email: "preview@soc5express.com",
+};
+
 function describeFailure(cause: unknown): Failure {
   if (!(cause instanceof ApiError)) {
     return {
@@ -85,11 +93,18 @@ function describeFailure(cause: unknown): Failure {
 
 export default function App() {
   const navigate = useNavigate();
-  const [state, setState] = useState<AppState>("loading");
+  const isBuilderPreview =
+    import.meta.env.DEV &&
+    new URLSearchParams(window.location.search).get("builderPreview") === "1";
+  const [state, setState] = useState<AppState>(
+    isBuilderPreview ? "ready" : "loading",
+  );
   const [startupAnimationComplete, setStartupAnimationComplete] =
     useState(false);
   const [failure, setFailure] = useState<Failure>(defaultFailure);
-  const [profile, setProfile] = useState<User | null>(null);
+  const [profile, setProfile] = useState<User | null>(
+    isBuilderPreview ? previewUser : null,
+  );
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
   const seatalkSession = useRef(false);
@@ -108,6 +123,8 @@ export default function App() {
 
   const resolveSession = useCallback(
     async (session: { access_token: string } | null, force = false) => {
+      if (isBuilderPreview) return;
+
       if (!session) {
         lastToken.current = null;
         requestSequence.current += 1;
@@ -173,7 +190,7 @@ export default function App() {
         setState("unauthorized");
       }
     },
-    [navigate],
+    [isBuilderPreview, navigate],
   );
 
   const retrySession = useCallback(async () => {
@@ -188,6 +205,7 @@ export default function App() {
   }, [resolveSession]);
 
   useEffect(() => {
+    let cancelled = false;
     seatalkSession.current = rememberSeatalkSession(
       window.location.search,
       sessionStorage,
@@ -207,7 +225,18 @@ export default function App() {
         window.setTimeout(() => void resolveSession(session), 0);
       }
     });
-    return () => data.subscription.unsubscribe();
+
+    void supabase.auth.getSession().then(({ data: sessionData, error }) => {
+      if (cancelled || error) return;
+      window.setTimeout(() => {
+        if (!cancelled) void resolveSession(sessionData.session);
+      }, 0);
+    });
+
+    return () => {
+      cancelled = true;
+      data.subscription.unsubscribe();
+    };
   }, [resolveSession]);
 
   if (!startupAnimationComplete) return <StartupLoading />;
@@ -232,7 +261,7 @@ export default function App() {
     return <ChangePassword onComplete={() => setState("ready")} />;
   return profile ? (
     <Suspense fallback={<StartupLoading />}>
-      <Dashboard user={profile} />
+      <Dashboard user={profile} preview={isBuilderPreview} />
     </Suspense>
   ) : (
     <StartupLoading />
@@ -263,14 +292,6 @@ function UnauthenticatedEntry() {
     const timer = window.setTimeout(() => setLoginVisible(true), 2000);
     return () => window.clearTimeout(timer);
   }, []);
-
-  const previewUser: User = {
-    id: "preview-user",
-    name: "Operations preview",
-    role: "ops_pic",
-    is_admin: false,
-    email: "preview@soc5express.com",
-  };
 
   return (
     <Fragment>

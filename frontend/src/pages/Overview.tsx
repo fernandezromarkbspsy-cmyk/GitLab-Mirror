@@ -274,7 +274,7 @@ export function Overview({
         <section className="intraday-shell" aria-label="Intraday dispatch card">
           <article className="intraday-card">
             <ChartHeader
-              title="Hourly Dispatch Volume"
+              title="Hourly Throughput"
               description={
                 <>
                   <span className="intraday-meta-dot" aria-hidden="true" />

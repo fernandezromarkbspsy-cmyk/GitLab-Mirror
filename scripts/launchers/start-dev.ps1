@@ -1,16 +1,10 @@
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$backendEnvPath = Join-Path $root 'backend\.env'
-$backendEnv = if (Test-Path -LiteralPath $backendEnvPath -PathType Leaf) { Get-Content -LiteralPath $backendEnvPath } else { @() }
-$tunnelIdLine = $backendEnv | Where-Object { $_ -match '^\s*CLOUDFLARE_TUNNEL_ID\s*=\s*(.*)\s*$' } | Select-Object -First 1
-$TunnelId = if ($tunnelIdLine) { ([regex]::Match($tunnelIdLine, '^\s*CLOUDFLARE_TUNNEL_ID\s*=\s*(.*)\s*$')).Groups[1].Value.Trim().Trim('"').Trim("'") } else { $null }
-if ([string]::IsNullOrWhiteSpace($TunnelId)) {
-    throw 'CLOUDFLARE_TUNNEL_ID is missing from backend/.env.'
-}
 $cloudflareTunnelScript = Join-Path $root 'scripts\cloudflare-tunnel.ps1'
-$jobs = @()
-$serviceStates = @{}
-$allServicesReported = $false
+$tunnelId = 'aebf91e4-acf5-4eb4-aaae-8b56a58e8035'
+$logRoot = Join-Path $root 'storage\logs\dev'
+$processes = @()
+$lastLogLines = @{}
 
 if (-not (Get-Command cloudflared -ErrorAction SilentlyContinue)) {
     throw 'cloudflared was not found on PATH.'
@@ -20,112 +14,145 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     throw 'npm was not found on PATH.'
 }
 
-function Start-DevJob {
-    param(
-        [string]$Name,
-        [scriptblock]$Command
-    )
+function Get-DescendantProcessIds {
+    param([int]$ParentId)
 
-    $job = Start-Job -Name $Name -ScriptBlock $Command
-    $script:jobs += $job
-    $serviceStates[$Name] = 'STARTING'
-    Write-Host "[$Name] STARTING (job $($job.Id))" -ForegroundColor Yellow
-    return $job
-}
-
-function Set-ServiceState {
-    param(
-        [string]$Name,
-        [ValidateSet('STARTING', 'RUNNING', 'FAILED', 'STOPPED')]
-        [string]$State
-    )
-
-    if ($serviceStates[$Name] -eq $State) { return }
-    $serviceStates[$Name] = $State
-    $color = switch ($State) {
-        'RUNNING' { 'Green' }
-        'FAILED' { 'Red' }
-        'STOPPED' { 'DarkYellow' }
-        default { 'Yellow' }
+    $children = @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $ParentId" -ErrorAction SilentlyContinue)
+    foreach ($child in $children) {
+        $child.ProcessId
+        Get-DescendantProcessIds -ParentId $child.ProcessId
     }
-    Write-Host "[$Name] $State" -ForegroundColor $color
 }
 
-$null = Start-DevJob -Name 'soc5-backend' -Command {
-    Set-Location $using:root
-    & (Join-Path $using:root 'scripts\launchers\start-backend.ps1')
+function Stop-ProcessTree {
+    param([int]$ProcessId)
+
+    $descendants = @(Get-DescendantProcessIds -ParentId $ProcessId | Sort-Object -Descending)
+    foreach ($id in $descendants + $ProcessId) {
+        if ($id -and $id -ne $PID) {
+            Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
-$null = Start-DevJob -Name 'soc5-frontend' -Command {
-    Set-Location (Join-Path $using:root 'frontend')
-    npm run dev
+function Stop-ExistingDevelopmentServers {
+    $candidateIds = @{}
+
+    $processesToStop = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessId -ne $PID -and $_.CommandLine -and (
+            $_.CommandLine -match 'start-backend\.ps1' -or
+            $_.CommandLine -match 'artisan\s+serve|server\.php' -or
+            $_.CommandLine -match 'cloudflared(\.exe)?\s+.*tunnel\s+(run|--token)'
+        )
+    })
+
+    foreach ($process in $processesToStop) {
+        $candidateIds[[int]$process.ProcessId] = $true
+    }
+
+    foreach ($port in @(8000, 5173, 4173)) {
+        $connections = @(Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)
+        foreach ($connection in $connections) {
+            if ($connection.OwningProcess -and $connection.OwningProcess -ne $PID) {
+                $candidateIds[[int]$connection.OwningProcess] = $true
+            }
+        }
+    }
+
+    foreach ($id in @($candidateIds.Keys)) {
+        Write-Host "Stopping existing development process $id..." -ForegroundColor Yellow
+        Stop-ProcessTree -ProcessId ([int]$id)
+    }
 }
 
-$null = Start-DevJob -Name 'soc5-cloudflared' -Command {
-    Set-Location $using:root
-    . $using:cloudflareTunnelScript
-    Start-CloudflareTokenTunnel -TunnelId $using:TunnelId
+function Start-DevProcess {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$FilePath,
+        [Parameter(Mandatory)][string[]]$ArgumentList,
+        [Parameter(Mandatory)][string]$WorkingDirectory
+    )
+
+    $outLog = Join-Path $logRoot "$Name.out.log"
+    $errLog = Join-Path $logRoot "$Name.err.log"
+    Set-Content -LiteralPath $outLog -Value "[$(Get-Date -Format o)] $Name starting" -Encoding utf8
+    Set-Content -LiteralPath $errLog -Value "[$(Get-Date -Format o)] $Name starting" -Encoding utf8
+    $script:lastLogLines[$Name] = @{ Out = 1; Err = 1 }
+
+    $process = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory `
+        -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru
+    $script:processes += [pscustomobject]@{
+        Name = $Name
+        Process = $process
+        OutLog = $outLog
+        ErrLog = $errLog
+    }
+    Write-Host "[$Name] STARTING (pid $($process.Id))" -ForegroundColor Yellow
 }
+
+function Write-NewLogLines {
+    foreach ($service in $processes) {
+        foreach ($kind in @('Out', 'Err')) {
+            $path = if ($kind -eq 'Out') { $service.OutLog } else { $service.ErrLog }
+            if (-not (Test-Path -LiteralPath $path)) { continue }
+            $lines = @(Get-Content -LiteralPath $path -ErrorAction SilentlyContinue)
+            $start = [int]$lastLogLines[$service.Name][$kind]
+            if ($lines.Count -gt $start) {
+                foreach ($line in $lines[$start..($lines.Count - 1)]) {
+                    if ($line) { Write-Host "[$($service.Name)] $line" }
+                }
+                $lastLogLines[$service.Name][$kind] = $lines.Count
+            }
+        }
+    }
+}
+
+Stop-ExistingDevelopmentServers
+New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
+$launcherErrorLog = Join-Path $logRoot 'launcher.err.log'
+Set-Content -LiteralPath $launcherErrorLog -Value "[$(Get-Date -Format o)] launcher starting" -Encoding utf8
+
+$powershell = Join-Path $PSHOME 'powershell.exe'
+$npm = (Get-Command npm -ErrorAction Stop).Source
+$cloudflared = (Get-Command cloudflared -ErrorAction Stop).Source
+
+$tokenOutput = & $cloudflared tunnel token $tunnelId 2>&1
+if ($LASTEXITCODE -ne 0) {
+    $message = "cloudflared tunnel token failed for tunnel $tunnelId.`n$($tokenOutput -join [Environment]::NewLine)"
+    Add-Content -LiteralPath $launcherErrorLog -Value "[$(Get-Date -Format o)] $message"
+    throw $message
+}
+. $cloudflareTunnelScript
+$token = Get-CloudflareTokenFromOutput -Output ([string[]]$tokenOutput)
+
+Start-DevProcess -Name 'soc5-backend' -FilePath $powershell -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $root 'scripts\launchers\start-backend.ps1')) -WorkingDirectory $root
+Start-DevProcess -Name 'soc5-frontend' -FilePath $npm -ArgumentList @('run', 'dev') -WorkingDirectory (Join-Path $root 'frontend')
+Start-DevProcess -Name 'soc5-cloudflared' -FilePath $cloudflared -ArgumentList @('tunnel', 'run', '--token', $token) -WorkingDirectory $root
 
 Write-Host ''
 Write-Host 'SOC 5 development stack is starting.' -ForegroundColor Cyan
 Write-Host 'Press Ctrl+C to stop the backend, frontend, and Cloudflare tunnel.' -ForegroundColor Yellow
+Write-Host "Logs: $logRoot" -ForegroundColor DarkCyan
 Write-Host ''
 
 try {
     while ($true) {
-        foreach ($job in $jobs) {
-            if ($job.State -eq 'Running') {
-                Set-ServiceState -Name $job.Name -State 'RUNNING'
-            }
-
-            Receive-Job -Job $job | ForEach-Object {
-                $line = ($_ | Out-String).TrimEnd()
-                if ($line) {
-                    Write-Host "[$($job.Name)] $line"
-                }
-            }
-
-            if ($job.State -in @('Failed', 'Stopped', 'Completed')) {
-                $jobErrors = @(
-                    $job.ChildJobs |
-                        ForEach-Object { $_.Error } |
-                        ForEach-Object { $_.ToString().Trim() } |
-                        Where-Object { $_ }
-                )
-                if ($jobErrors.Count -gt 0) {
-                    $reason = ($jobErrors | Select-Object -Last 12) -join [Environment]::NewLine
-                } elseif ($job.ChildJobs[0].JobStateInfo.Reason) {
-                    $reason = $job.ChildJobs[0].JobStateInfo.Reason.Message
-                } else {
-                    $reason = "Job ended with state $($job.State)."
-                }
-                Set-ServiceState -Name $job.Name -State 'FAILED'
-                throw "$($job.Name) failed:`n$reason"
+        Write-NewLogLines
+        foreach ($service in $processes) {
+            $service.Process.Refresh()
+            if ($service.Process.HasExited) {
+                Write-NewLogLines
+                throw "$($service.Name) exited with code $($service.Process.ExitCode). See $($service.OutLog) and $($service.ErrLog)."
             }
         }
-
-        if (-not $allServicesReported -and ($serviceStates.Values | Where-Object { $_ -eq 'RUNNING' }).Count -eq 3) {
-            $allServicesReported = $true
-            Write-Host ''
-            Write-Host 'ALL SERVICES RUNNING' -ForegroundColor Green
-            Write-Host ''
-            $serviceStates.Keys | Sort-Object | ForEach-Object {
-                Write-Host "[$_] $($serviceStates[$_])" -ForegroundColor Green
-            }
-            Write-Host ''
-        }
-
         Start-Sleep -Milliseconds 500
     }
 }
 finally {
     Write-Host ''
     Write-Host 'Stopping SOC 5 development stack...' -ForegroundColor Yellow
-    $jobs | Stop-Job -ErrorAction SilentlyContinue
-    $jobs | Remove-Job -Force -ErrorAction SilentlyContinue
-    foreach ($name in @($serviceStates.Keys)) {
-        $serviceStates[$name] = 'STOPPED'
+    foreach ($service in $processes) {
+        Stop-ProcessTree -ProcessId $service.Process.Id
     }
     Write-Host 'Development stack stopped.' -ForegroundColor Green
 }

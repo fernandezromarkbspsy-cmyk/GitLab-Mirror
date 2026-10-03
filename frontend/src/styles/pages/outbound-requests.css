@@ -36,38 +36,95 @@
   transition: border-color .15s ease, background-color .15s ease, color .15s ease;
 }
 
-.lh-filter-panel {
+.lh-table-toolbar-filters {
   display: flex;
+  flex: 1 1 auto;
   min-width: 0;
-  min-height: 52px;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid rgba(15, 42, 43, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 1px 2px rgb(15 42 43 / 3%);
+  flex-wrap: wrap;
+}
+
+.lh-table-toolbar-filters > .relative {
+  min-width: 0;
+}
+
+.lh-filter-chip,
+.lh-clear-filters,
+.lh-density-toggle {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--soc5-line);
+  border-radius: 7px;
+  color: var(--soc5-muted);
+  background: var(--soc5-panel);
+  font: 600 11px/1 var(--font-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lh-filter-chip {
+  padding: 0 8px;
+  color: #365457;
+  background: #eef8f7;
+  border-color: #cde3e0;
+}
+
+.lh-filter-chip:hover,
+.lh-clear-filters:hover,
+.lh-density-toggle:hover,
+.lh-density-toggle[aria-pressed="true"] {
+  border-color: #8bbdb8;
+  color: var(--soc5-ink);
+  background: #e4f3f0;
+}
+
+.lh-clear-filters,
+.lh-density-toggle {
+  padding: 0 9px;
+}
+
+.lh-active-filter-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+}
+
+.lh-last-updated {
+  color: var(--soc5-muted);
+  font: 500 11px/1 var(--font-body);
+  white-space: nowrap;
+}
+
+.lh-secondary-filter-control {
+  transition: none;
 }
 
 .lh-request-page .lh-filter-control:hover,
-.lh-request-page .lh-filter-panel > button:hover {
+.lh-request-page .lh-table-toolbar-filters > button:hover {
   border-color: #bfc3bb;
   color: var(--soc5-ink);
   background: #f7f8f6;
 }
 
 .lh-request-page .lh-filter-control:active,
-.lh-request-page .lh-filter-panel > button:active {
+.lh-request-page .lh-table-toolbar-filters > button:active {
   transform: translateY(1px);
 }
 
-.lh-filter-panel > .relative {
+.lh-table-toolbar-filters > .relative {
   min-width: 180px;
   max-width: 310px;
   margin-left: auto;
 }
 
-.lh-request-page .lh-filter-panel > .relative input {
+.lh-request-page .lh-table-toolbar-filters > .relative input {
   min-height: 36px;
   border-color: var(--soc5-line);
   border-radius: 7px;
@@ -76,12 +133,12 @@
   font: 400 12px/1.4 var(--font-body);
 }
 
-.lh-request-page .lh-filter-panel > .relative input::placeholder {
+.lh-request-page .lh-table-toolbar-filters > .relative input::placeholder {
   color: #737a74;
   opacity: 1;
 }
 
-.lh-filter-panel > button:nth-last-child(3) {
+.lh-table-toolbar-filters > button:nth-last-child(3) {
   width: 36px;
   min-width: 36px;
   height: 36px;
@@ -92,7 +149,7 @@
   background: var(--soc5-panel);
 }
 
-.lh-filter-panel > button:nth-last-child(2) {
+.lh-table-toolbar-filters > button:nth-last-child(2) {
   min-height: 36px;
   border: 1px solid var(--soc5-sidebar);
   border-radius: 7px;
@@ -101,13 +158,13 @@
   font: 600 12px/1 var(--font-body);
 }
 
-.lh-filter-panel > button:nth-last-child(2):hover {
+.lh-table-toolbar-filters > button:nth-last-child(2):hover {
   border-color: #39393b;
   color: #fff;
   background: #39393b;
 }
 
-.lh-filter-panel > button:last-child {
+.lh-table-toolbar-filters > button:last-child {
   min-height: 36px;
   border: 1px solid var(--soc5-lime);
   border-radius: 7px;
@@ -116,7 +173,7 @@
   font: 600 12px/1 var(--font-body);
 }
 
-.lh-filter-panel > button:last-child:hover {
+.lh-table-toolbar-filters > button:last-child:hover {
   border-color: #c6e32e;
   background: #c6e32e;
 }
@@ -322,7 +379,7 @@
   min-height: 420px;
   height: auto;
   flex: 1 1 auto;
-  grid-template-rows: 56px minmax(0, 1fr) 48px;
+  grid-template-rows: auto minmax(0, 1fr) 48px;
   margin-top: 0;
   overflow: hidden;
   border: 1px solid rgba(15, 42, 43, 0.08);
@@ -336,6 +393,7 @@
   position: relative;
   z-index: 5;
   display: flex;
+  flex-wrap: wrap;
   min-width: 0;
   align-items: center;
   justify-content: flex-start;
@@ -343,6 +401,17 @@
   padding: 9px 14px;
   border-bottom: 1px solid rgba(15, 42, 43, 0.08);
   background: linear-gradient(180deg, rgba(248, 250, 249, 0.98), rgba(245, 249, 247, 0.96));
+}
+
+.lh-table-toolbar-filters > .relative > .lh-secondary-filter-control.is-active,
+.lh-table-toolbar-filters .lh-secondary-filter-control[aria-expanded="true"] {
+  border-color: #8bbdb8;
+  color: var(--soc5-ink);
+  background: #e4f3f0;
+}
+
+.lh-density-toggle {
+  min-height: 36px;
 }
 
 .lh-view-controls,
@@ -588,10 +657,10 @@
   z-index: 4;
   min-height: 48px;
   border-bottom: 1px solid rgba(15, 42, 43, 0.08);
-  color: rgba(56, 64, 68, 0.82);
+  color: rgba(39, 49, 50, 0.92);
   background: linear-gradient(180deg, rgba(247, 249, 247, 0.98), rgba(241, 246, 245, 0.96));
   font-family: var(--font-body);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: .07em;
   line-height: 1.2;
@@ -677,8 +746,8 @@
   align-content: start;
   min-width: 0;
   min-height: 0;
-  padding-block: 8px 10px;
-  row-gap: 4px;
+  padding-block: 0;
+  row-gap: 0;
   overflow: visible;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 250, 248, 0.94));
 }
@@ -715,7 +784,8 @@
   border-bottom: 1px solid rgba(15, 42, 43, 0.06);
   color: var(--soc5-ink);
   background: rgba(255, 255, 255, 0.96);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   animation: none;
   transition: background-color .12s ease, box-shadow .12s ease, transform .12s ease;
@@ -788,7 +858,19 @@
   overflow-wrap: normal;
   word-break: normal;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.lh-table-shell--compact .lh-request-page .lh-table-row,
+.lh-table-shell--compact .lh-table-row {
+  min-height: 42px;
+}
+
+.lh-table-shell--compact .lh-request-page .lh-table-row > span,
+.lh-table-shell--compact .lh-request-page .lh-table-row > button,
+.lh-table-shell--compact .lh-request-page .lh-table-row > div {
+  padding-block: 4px;
 }
 
 .lh-request-page .lh-table-row:hover,
@@ -878,7 +960,14 @@
   box-shadow: 0 14px 28px rgb(15 42 43 / 16%), 0 2px 6px rgb(15 42 43 / 8%);
 }
 
-.lh-request-page .lh-row-menu button {
+.lh-row-menu--portal {
+  position: fixed;
+  z-index: 100002;
+  top: auto;
+  right: auto;
+}
+
+.lh-row-menu button {
   min-height: 36px;
   align-items: center;
   gap: 8px;
@@ -893,12 +982,12 @@
   transition: color .15s ease, background-color .15s ease;
 }
 
-.lh-request-page .lh-row-menu button:hover {
+.lh-row-menu button:hover {
   color: #536500;
   background: #eef6d9;
 }
 
-.lh-request-page .lh-row-menu button:focus-visible {
+.lh-row-menu button:focus-visible {
   color: #536500;
   background: #eef6d9;
   outline: 2px solid rgb(162 197 0 / 55%);
@@ -963,7 +1052,7 @@
     width: 100%;
   }
 
-  .lh-filter-panel {
+  .lh-table-toolbar-filters {
     gap: 7px;
   }
 
@@ -1003,7 +1092,7 @@
     gap: 10px;
   }
 
-  .lh-filter-panel {
+  .lh-table-toolbar-filters {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
@@ -1030,18 +1119,18 @@
     grid-row: 3;
   }
 
-  .lh-filter-panel > .relative {
+  .lh-table-toolbar-filters > .relative {
     max-width: none;
     grid-column: 1 / -1;
     grid-row: 1;
     margin: 0;
   }
 
-  .lh-filter-panel > button:last-child {
+  .lh-table-toolbar-filters > button:last-child {
     grid-column: 1 / -1;
   }
 
-  .lh-filter-panel > button:nth-last-child(3) {
+  .lh-table-toolbar-filters > button:nth-last-child(3) {
     justify-self: stretch;
   }
 
@@ -1055,6 +1144,19 @@
     flex-direction: column;
     gap: 8px;
     padding: 9px;
+  }
+
+  .lh-table-toolbar-filters {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .lh-table-toolbar-filters > .relative:has(.lh-secondary-filter-control) {
+    display: none;
+  }
+
+  .lh-active-filter-row {
+    flex-basis: auto;
   }
 
   .lh-view-controls {
@@ -1089,8 +1191,8 @@
 }
 
 @media (max-width: 420px) {
-  .lh-filter-panel > button:nth-last-child(2),
-  .lh-filter-panel > button:last-child {
+  .lh-table-toolbar-filters > button:nth-last-child(2),
+  .lh-table-toolbar-filters > button:last-child {
     grid-column: span 1;
     justify-content: center;
     padding-inline: 8px;
@@ -1195,7 +1297,7 @@
   padding-inline: 14px;
 }
 
-.lh-request-page .lh-row-menu .request-action-button {
+.lh-row-menu .request-action-button {
   width: 100%;
   min-height: 34px;
   border: 1px solid transparent;

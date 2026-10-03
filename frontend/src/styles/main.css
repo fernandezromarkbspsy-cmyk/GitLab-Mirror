@@ -331,6 +331,10 @@ pre {
   backdrop-filter: blur(8px) saturate(.86);
 }
 
+.login-modal-layer:not(.is-visible) {
+  pointer-events: none;
+}
+
 .login-modal-layer::before {
   position: absolute;
   inset: 0;

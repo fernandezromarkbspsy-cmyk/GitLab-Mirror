@@ -9,7 +9,8 @@ const user = {
 };
 
 const session = {
-  access_token: 'playwright-access-token',
+  access_token:
+    'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJwbGF5d3JpZ2h0LW9wcy11c2VyIiwiZXhwIjo0MTAyNDQ0ODAwLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQifQ.',
   token_type: 'bearer',
   expires_in: 3600,
   expires_at: 4_102_444_800,

@@ -11,8 +11,9 @@ import {
   UserCircle,
   X,
 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { api } from "../lib/api";
+import { requestQueryKey } from "../lib/requestRefresh";
 import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
 import Notification4, {
@@ -119,6 +120,7 @@ export function AppHeader({
   const mailMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLElement>(null);
   const knownNotification = useRef<number | null>(null);
+  const requestRefreshTimer = useRef<number | null>(null);
   const notificationMenuId = useId();
   const profileMenuId = useId();
   const [toast, setToast] = useState<AppNotification | null>(null);
@@ -141,6 +143,19 @@ export function AppHeader({
   const count = notifications.data?.unread ?? 0;
   const alerts = notifications.data?.data ?? [];
   const groupedNotifications = notificationGroups(alerts);
+  const refreshRequestQueries = useCallback(() => {
+    if (requestRefreshTimer.current !== null) {
+      window.clearTimeout(requestRefreshTimer.current);
+    }
+    requestRefreshTimer.current = window.setTimeout(() => {
+      void client.invalidateQueries({ queryKey: requestQueryKey("outbound-all") });
+      void client.invalidateQueries({ queryKey: requestQueryKey("notification-queue") });
+      void client.invalidateQueries({ queryKey: requestQueryKey("docking") });
+      void client.invalidateQueries({ queryKey: requestQueryKey("dashboard") });
+      void client.invalidateQueries({ queryKey: ["request-metrics"] });
+      requestRefreshTimer.current = null;
+    }, 250);
+  }, [client]);
 
   useEffect(() => {
     if (preview) return;
@@ -152,16 +167,20 @@ export function AppHeader({
         { event: "*", schema: "public", table: "notifications" },
         () => {
           void client.invalidateQueries({ queryKey: ["notifications"] });
-          void client.invalidateQueries({ queryKey: ["requests"] });
+          refreshRequestQueries();
           void client.invalidateQueries({ queryKey: ["kpi"] });
         },
       )
       .subscribe();
 
     return () => {
+      if (requestRefreshTimer.current !== null) {
+        window.clearTimeout(requestRefreshTimer.current);
+        requestRefreshTimer.current = null;
+      }
       void supabase.removeChannel(channel);
     };
-  }, [client, preview, user.id]);
+  }, [client, preview, refreshRequestQueries, user.id]);
 
   useEffect(() => {
     const latest = alerts.find((item) => !item.read_at);
@@ -174,7 +193,7 @@ export function AppHeader({
       knownNotification.current = latest.id;
       setToast(latest);
       window.setTimeout(() => setToast(null), 5000);
-      void client.invalidateQueries({ queryKey: ["requests"] });
+      refreshRequestQueries();
       void client.invalidateQueries({ queryKey: ["kpi"] });
       const AudioContextClass = window.AudioContext;
       if (AudioContextClass) {
@@ -189,7 +208,7 @@ export function AppHeader({
         oscillator.onended = () => void context.close();
       }
     }
-  }, [alerts, client]);
+  }, [alerts, client, refreshRequestQueries]);
 
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {

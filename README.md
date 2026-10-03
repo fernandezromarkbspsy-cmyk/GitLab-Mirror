@@ -122,3 +122,7 @@ See [Tunnel Setup](docs/docs/tunnel-setup.md) for the token and local tunnel
 commands.
 
 Remove-Item -Recurse -Force .\Frontend\node_modules
+
+#tunnel
+cloudflared tunnel token <TUNNEL-ID>
+cloudflared tunnel run --token <TOKEN>

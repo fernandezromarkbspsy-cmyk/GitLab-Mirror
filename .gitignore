@@ -121,3 +121,8 @@ Desktop.ini
 /frontend/playwright-report/
 /frontend/test-results/
 !frontend/.env.e2e.example
+.playwright-cli/
+.playwright-mcp/
+.taskplane/
+/output/playwright/
+/frontend/chrome_dev_elements/

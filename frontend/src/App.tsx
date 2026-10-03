@@ -7,10 +7,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import carLoadingUrl from "../assets/Car loading.svg";
 import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
+import { isKnownAppPath } from "./lib/routes";
 import {
   clearSeatalkSessionHint,
   rememberSeatalkSession,
@@ -248,7 +249,15 @@ function StartupLoading() {
 }
 
 function UnauthenticatedEntry() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [loginVisible, setLoginVisible] = useState(false);
+
+  useEffect(() => {
+    if (!isKnownAppPath(location.pathname)) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setLoginVisible(true), 2000);

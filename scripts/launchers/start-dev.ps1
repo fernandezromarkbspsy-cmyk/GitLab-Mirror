@@ -1,6 +1,12 @@
 $ErrorActionPreference = 'Stop'
-$root = (Resolve-Path $PSScriptRoot).Path
-$TunnelId = 'aebf91e4-acf5-4eb4-aaae-8b56a58e8035'
+$root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$backendEnvPath = Join-Path $root 'backend\.env'
+$backendEnv = if (Test-Path -LiteralPath $backendEnvPath -PathType Leaf) { Get-Content -LiteralPath $backendEnvPath } else { @() }
+$tunnelIdLine = $backendEnv | Where-Object { $_ -match '^\s*CLOUDFLARE_TUNNEL_ID\s*=\s*(.*)\s*$' } | Select-Object -First 1
+$TunnelId = if ($tunnelIdLine) { ([regex]::Match($tunnelIdLine, '^\s*CLOUDFLARE_TUNNEL_ID\s*=\s*(.*)\s*$')).Groups[1].Value.Trim().Trim('"').Trim("'") } else { $null }
+if ([string]::IsNullOrWhiteSpace($TunnelId)) {
+    throw 'CLOUDFLARE_TUNNEL_ID is missing from backend/.env.'
+}
 $cloudflareTunnelScript = Join-Path $root 'scripts\cloudflare-tunnel.ps1'
 $jobs = @()
 $serviceStates = @{}
@@ -47,7 +53,7 @@ function Set-ServiceState {
 
 $null = Start-DevJob -Name 'soc5-backend' -Command {
     Set-Location $using:root
-    & (Join-Path $using:root 'start-backend.ps1')
+    & (Join-Path $using:root 'scripts\launchers\start-backend.ps1')
 }
 
 $null = Start-DevJob -Name 'soc5-frontend' -Command {

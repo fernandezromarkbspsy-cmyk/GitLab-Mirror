@@ -17,7 +17,7 @@ an auditable event history.
 
 The MVP intentionally avoids microservices, Redis, Pinecone, and dedicated load
 balancers. These should only be introduced after production measurements establish
-a concrete need. The rationale is documented in [System Design](docs/system-design.md).
+a concrete need. The rationale is documented in [System Design](docs/architecture/system-design.md).
 
 ## Project structure
 
@@ -27,9 +27,7 @@ frontend/                React/Vite application
 supabase/migrations/     PostgreSQL schema and RLS policies
 docs/                    Product and architecture documents
 tools/php.ini            Project-local PHP configuration
-setup-backend.ps1        Backend installation and validation
-start-backend.ps1        Backend development server
-start-dev.ps1            Backend, frontend, and Cloudflare development launcher
+scripts/launchers/       Backend setup and development launchers
 ```
 
 ## Quick start on this Windows machine
@@ -50,13 +48,13 @@ cloudflared tunnel login
 
    ```powershell
    .\scripts\bootstrap-machine.ps1
-   .\setup-backend.ps1
+   .\scripts\launchers\setup-backend.ps1
    ```
 
 3. Start the complete development stack from the repository root:
 
    ```powershell
-   .\start-dev.ps1
+   .\scripts\launchers\start-dev.ps1
    ```
 
    This starts the Laravel backend, Vite frontend, and Cloudflare tunnel in
@@ -91,18 +89,15 @@ The publishable key may be used in the browser. Never put the service-role key i
 
 ## Validation
 
+Run the repository preflight checks from PowerShell:
 
-.\scripts\preflight.ps1 -Fix
-
-Get-Process node -ErrorAction SilentlyContinue |Stop-Process -Force
-
-Remove-Item -Recurse -Force .\Frontend\node_modules
-/frontend
-npm ci
+```powershell
+.\scripts\preflight.ps1
+```
 
 ```powershell
 # Backend
-$env:PHPRC = (Resolve-Path .\tools).Path
+$env:PHPRC = (Resolve-Path .\tools\php.ini).Path
 cd backend
 php artisan test
 .\vendor\bin\pint --test
@@ -114,45 +109,16 @@ npm run build
 
 ## Documentation
 
-- [Setup Guide](docs/setup-guide.md)
-- [Supabase Auth Setup](docs/supabase-auth-setup.md)
+- [Setup Guide](docs/docs/setup-guide.md)
+- [Supabase Auth Setup](docs/docs/supabase-auth-setup.md)
 - [Outbound Data Import](docs/outbound/IMPORT.md)
-- [Product Requirements](docs/prd.md)
-- [System Design](docs/system-design.md)
-- [Wireframes](docs/wireframes.md)
-- [Feature Breakdown](docs/feature-breakdown.md)
-- [System Blueprint](docs/system-blueprint.md)
+- [Product Requirements](docs/docs/prd.md)
+- [System Design](docs/architecture/system-design.md)
+- [System Blueprint](docs/docs/system-blueprint.md)
 
-Cloudflare command
-# PowerShell
-cloudflared tunnel token <TUNNEL-ID>
+## Cloudflare tunnel
 
-Example:
-# PowerShell
-cloudflared tunnel token 12345678-abcd-1234-abcd-1234567890ab
+See [Tunnel Setup](docs/docs/tunnel-setup.md) for the token and local tunnel
+commands.
 
-That prints the tunnel token you can use with:
-# PowerShell
-cloudflared tunnel run --token <TOKEN>
-
-
-From the new project directory, use separate PowerShell windows.
-Terminal 1 — setup once:
-cd C:\path\to\soc5-outbound
-.\setup-backend.ps1
-.\scripts\check-local.ps1
-Terminal 2 — backend:
-cd C:\path\to\soc5-outbound
-.\start-backend.ps1
-Terminal 3 — frontend:
-cd C:\path\to\soc5-outbound\frontend
-npm run build
-npm run dev
-Terminal 4 — Cloudflare tunnel:
-cloudflared tunnel run --token "<YOUR_TUNNEL_TOKEN>"
-Then verify:
-Invoke-WebRequest http://127.0.0.1:8000/up
-Invoke-WebRequest http://localhost:5173/
-If preferred, the project’s combined launcher is:
-cd C:\path\to\soc5-outbound
-.\start-dev.ps1
+Remove-Item -Recurse -Force .\Frontend\node_modules

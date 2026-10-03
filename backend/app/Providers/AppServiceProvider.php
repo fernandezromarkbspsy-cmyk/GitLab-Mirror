@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Integrations\SeaTalk\SeaTalkApprovalCenterAdapter;
+use App\Integrations\SeaTalk\SeaTalkApprovalCenterGateway;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -9,6 +11,11 @@ use Illuminate\Support\ServiceProvider;
 
 final class AppServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->bind(SeaTalkApprovalCenterGateway::class, fn ($app) => $app->make(SeaTalkApprovalCenterAdapter::class));
+    }
+
     public function boot(): void
     {
         RateLimiter::for('api-ip', fn (Request $request) => Limit::perMinute(600)->by('api-ip|'.$request->ip()));

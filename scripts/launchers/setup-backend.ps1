@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$projectRoot = (Resolve-Path $PSScriptRoot).Path
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 & (Join-Path $projectRoot 'scripts\setup-local.ps1') -SkipEnvFiles
 if ($LASTEXITCODE -ne 0) { throw 'Local environment setup failed.' }
 $env:PHPRC = Join-Path $projectRoot 'tools\php.local.ini'

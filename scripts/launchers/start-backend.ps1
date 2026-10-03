@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$projectRoot = (Resolve-Path $PSScriptRoot).Path
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $localPhpIni = Join-Path $projectRoot 'tools\php.local.ini'
 if (-not (Test-Path -LiteralPath $localPhpIni -PathType Leaf)) {
     & (Join-Path $projectRoot 'scripts\setup-local.ps1') -SkipEnvFiles

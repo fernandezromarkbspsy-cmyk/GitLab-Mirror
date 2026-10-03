@@ -50,7 +50,7 @@ will remain under `/api`.
 From the repository root:
 
 ```powershell
-.\start-backend.ps1
+.\scripts\launchers\start-backend.ps1
 ```
 
 Confirm Laravel is running on `http://127.0.0.1:8000`.
@@ -84,7 +84,7 @@ without printing the returned token.
 Start the complete local stack:
 
 ```powershell
-.\start-dev.ps1
+.\scripts\launchers\start-dev.ps1
 ```
 
 The script obtains the token for tunnel `aebf91e4-acf5-4eb4-aaae-8b56a58e8035`
@@ -124,7 +124,7 @@ Restart Laravel and the frontend so the new env values take effect:
 
 ```powershell
 # backend terminal
-.\start-backend.ps1
+.\scripts\launchers\start-backend.ps1
 
 # frontend terminal
 npm run dev
@@ -220,7 +220,7 @@ When setting this up from scratch, follow this sequence:
 2. Start the frontend.
 3. Authenticate `cloudflared tunnel login`.
 4. Validate with `scripts/check-local.ps1 -RequireCloudflare`.
-5. Start the stack with `start-dev.ps1`.
+5. Start the stack with `scripts/launchers/start-dev.ps1`.
 6. Update `frontend/.env` and `backend/.env`.
 7. Restart both apps if their env values changed.
 8. Update Supabase URLs.

@@ -20,3 +20,7 @@ export function getAppPath(view: AppView): string {
 export function getAppView(pathname: string): AppView {
   return viewsByPath[pathname] ?? "overview";
 }
+
+export function isKnownAppPath(pathname: string): boolean {
+  return pathname === "/" || pathname === "/login" || pathname in viewsByPath;
+}

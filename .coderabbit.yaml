@@ -22,7 +22,7 @@ reviews:
         Check that tests adequately cover changed behavior,
         regression cases, validation failures, and edge cases.
 
-    - path: ".gitlab-ci.yml"
+    - path: ".travis.yml"
       instructions: >
         Review CI changes for correctness, security, portability,
         caching, secrets handling, and unintended pipeline behavior.

@@ -2,13 +2,29 @@
 
 namespace App\Features\Requests;
 
+use App\Features\Approvals\ApprovalActor;
+use App\Features\Approvals\ApprovalItemProvisioner;
+use App\Features\Approvals\ApprovalService;
+use App\Features\Approvals\ApprovalSource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 final class RequestService
 {
-    public function __construct(private RequestRepository $requests, private RequestAuthorizer $authorizer) {}
+    public function __construct(
+        private RequestRepository $requests,
+        private RequestAuthorizer $authorizer,
+        ?ApprovalService $approvals = null,
+        ?ApprovalItemProvisioner $provisioner = null,
+    ) {
+        $this->approvals = $approvals ?? new ApprovalService($requests, $authorizer);
+        $this->provisioner = $provisioner;
+    }
+
+    private ApprovalService $approvals;
+
+    private ?ApprovalItemProvisioner $provisioner;
 
     public function create(object $actor, array $data): object
     {
@@ -20,6 +36,11 @@ final class RequestService
                 'lh_type_request' => $data['truck_type'] ?? null,
             ]);
             $this->notify($request->id, 'fte_ops', 'REQUEST_CREATED', 'New request', 'A truck request needs review.');
+            if ($this->provisioner !== null) {
+                DB::afterCommit(function () use ($request): void {
+                    $this->provisioner?->provisionForRequest($request);
+                });
+            }
 
             return $request;
         });
@@ -42,6 +63,20 @@ final class RequestService
 
     public function transition(string $id, object $actor, string $action, array $input): object
     {
+        if ($action === 'approve') {
+            return $this->approvals->approve($id, ApprovalActor::fromObject($actor), ApprovalSource::Web)->request;
+        }
+
+        if ($action === 'reject-mm') {
+            return $this->approvals->reject(
+                $id,
+                ApprovalActor::fromObject($actor),
+                ApprovalSource::Web,
+                null,
+                (string) ($input['rejection_remarks'] ?? ''),
+            )->request;
+        }
+
         return DB::transaction(function () use ($id, $actor, $action, $input) {
             $request = $this->requests->lock($id);
             [$from, $to, $event] = match ($action) {
@@ -95,6 +130,10 @@ final class RequestService
             }
             $updated = $this->requests->update($id, $fields);
             $this->event($id, $actor->id, $event, $request->status, $to, $fields);
+            if (in_array($to, ['CANCELLED', 'DOCKED'], true)) {
+                $this->approvals->closeAssignments($id, strtolower($event));
+                $this->approvals->synchronizeAfterCommit($id);
+            }
             $target = match ($to) {
                 'REQUESTED' => 'fte_mm', 'DOCKING' => 'doc_officer', 'REROUTED' => 'fte_mm', default => null
             };

@@ -349,7 +349,7 @@ if ($RunFrontend) {
             } "frontend lint failed"
         } {
             Set-Location "$Root\frontend"
-            Invoke-ProjectBinary -Name 'biome' -Arguments @('check', '--write', 'src', 'scripts')
+        Invoke-ProjectBinary -Name 'biome' -Arguments @('check', '--write', '--unsafe', 'src', 'scripts')
         }
 
         Run-Step "Frontend formatting" {

@@ -62,13 +62,15 @@ foreach ($port in @(8000, 5173)) {
 }
 
 $cloudflared = Get-ToolPath 'cloudflared'
-$cloudflareTunnelId = 'aebf91e4-acf5-4eb4-aaae-8b56a58e8035'
-$cloudflareCert = if ($env:TUNNEL_ORIGIN_CERT) { $env:TUNNEL_ORIGIN_CERT } else { Join-Path $env:USERPROFILE '.cloudflared\cert.pem' }
+$backendEnvPath = Join-Path $ProjectRoot 'backend\.env'
+$backendEnvContent = if (Test-Path -LiteralPath $backendEnvPath -PathType Leaf) { Get-Content -LiteralPath $backendEnvPath } else { @() }
+. (Join-Path $ProjectRoot 'scripts\cloudflare-tunnel.ps1')
+$cloudflareTunnelId = Get-DotEnvValue -Content $backendEnvContent -Name 'CLOUDFLARE_TUNNEL_ID'
+$configuredCloudflareCert = Get-DotEnvValue -Content $backendEnvContent -Name 'CLOUDFLARE_CERT_PATH'
+$cloudflareCert = if ($configuredCloudflareCert) { $configuredCloudflareCert } elseif ($env:TUNNEL_ORIGIN_CERT) { $env:TUNNEL_ORIGIN_CERT } else { Join-Path $env:USERPROFILE '.cloudflared\cert.pem' }
 if ($RequireCloudflare) {
-    . (Join-Path $ProjectRoot 'scripts\cloudflare-tunnel.ps1')
-    $backendEnvPath = Join-Path $ProjectRoot 'backend\.env'
-    $backendEnvContent = if (Test-Path -LiteralPath $backendEnvPath -PathType Leaf) { Get-Content -LiteralPath $backendEnvPath } else { @() }
     $seatalkCallback = Get-DotEnvValue -Content $backendEnvContent -Name 'SEATALK_REDIRECT_URI'
+    Check-Condition (-not [string]::IsNullOrWhiteSpace($cloudflareTunnelId)) 'Cloudflare tunnel ID is configured' 'CLOUDFLARE_TUNNEL_ID is missing from backend/.env'
     Check-Condition ($seatalkCallback -ceq (Get-ExpectedSeatalkCallbackUrl)) 'SeaTalk callback matches the Cloudflare public URL' 'SEATALK_REDIRECT_URI must equal https://soc5outboundops.app/auth/seatalk/callback'
     Check-Condition ($null -ne $cloudflared) 'cloudflared is available' 'cloudflared was not found on PATH'
     Check-Condition (Test-Path -LiteralPath $cloudflareCert -PathType Leaf) "Found Cloudflare origin certificate $cloudflareCert" "Cloudflare origin certificate not found at $cloudflareCert; run cloudflared tunnel login"

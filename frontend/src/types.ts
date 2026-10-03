@@ -7,6 +7,7 @@ export type Status =
   | "ASSIGNED"
   | "DOCKING"
   | "DOCKED";
+export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 export interface User {
   id: string;
   name: string;
@@ -36,6 +37,8 @@ export interface TruckRequest {
   linehaul_trip_no?: string | null;
   docked_time?: string | null;
   status: Status;
+  approval_status?: ApprovalStatus | null;
+  approval_source?: "WEB" | "SEATALK" | null;
   rejection_remarks?: string | null;
   driver_id?: string | null;
   created_by: string;

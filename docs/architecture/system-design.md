@@ -58,7 +58,7 @@ flowchart TD
 | Scheduler | Google Sheets sync, idempotency pruning, audit retry | Laravel `schedule:work` |
 | NGINX | Static asset serving and API reverse proxy | Docker deployment |
 | Sentry | Exception reporting | Laravel and React integrations |
-| GitLab CI | Frontend, backend, edge-function, and deployment-config checks | `.gitlab-ci.yml` |
+| Travis CI | Frontend, backend, edge-function, and deployment-config checks | `.travis.yml` |
 
 No `appwrite/` directory is present in the inspected checkout. Existing
 Appwrite migration compatibility must therefore be treated as a protected
@@ -230,7 +230,7 @@ configuration, builds the application images, applies Laravel migrations,
 verifies production configuration, starts the containers, and checks API and
 scheduler health.
 
-GitLab CI currently validates frontend source/encoding/robots rules, lint,
+Travis CI currently validates frontend source/encoding/robots rules, lint,
 accessibility, formatting, unit tests, Playwright tests, and builds. Backend
 jobs run Pint and SQLite tests, with a separate PostgreSQL test job. Edge
 functions run Deno type checks and tests. Deployment configuration validates

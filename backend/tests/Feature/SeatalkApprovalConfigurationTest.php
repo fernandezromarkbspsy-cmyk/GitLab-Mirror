@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Env;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -112,7 +113,7 @@ final class SeatalkApprovalConfigurationTest extends TestCase
         }
 
         try {
-            \Illuminate\Support\Env::enablePutenv();
+            Env::enablePutenv();
             $services = require base_path('config/services.php');
 
             return $services['seatalk']['approval'];
@@ -137,7 +138,7 @@ final class SeatalkApprovalConfigurationTest extends TestCase
                 }
             }
 
-            \Illuminate\Support\Env::enablePutenv();
+            Env::enablePutenv();
         }
     }
 

@@ -27,6 +27,7 @@ import { Pagination } from "../components/Pagination";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge } from "../components/StatusBadge";
+import { ApprovalStateBadge, approvalStateFor } from "../components/approval/ApprovalStateBadge";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { useOutboundRequests } from "../hooks/useOutboundRequests";
 import { openRequestsSheet } from "../lib/requests";
@@ -177,6 +178,10 @@ export function OutboundRequests({
   const canEdit = _user.role === "fte_ops";
   const selectedCount = selectedIds.size;
   const approvalLabel = selectedCount > 2 ? "Bulk Approved" : "Approved";
+  const canActOnApproval = (row: TruckRequest) =>
+    canApprove &&
+    (row.status === "PENDING" || row.status === "REROUTED") &&
+    approvalStateFor(row.status, row.approval_status) === "pending";
 
   function toggleSelected(id: string) {
     setSelectedIds((current) => {
@@ -441,12 +446,17 @@ export function OutboundRequests({
                                   type="checkbox"
                                   className="request-row-checkbox"
                                   aria-label={`Select request ${row.id}`}
-                                  checked={selectedIds.has(row.id)}
+                                  checked={row.approval_status === "APPROVED" || selectedIds.has(row.id)}
+                                  disabled={
+                                    approvalStateFor(row.status, row.approval_status) !== "pending" ||
+                                    approveRequests.isPending
+                                  }
                                   onChange={() => toggleSelected(row.id)}
                                   onClick={(event) => event.stopPropagation()}
                                 />
                               )}
                               <StatusBadge status={row.status} uppercase />
+                              <ApprovalStateBadge status={row.status} approvalStatus={row.approval_status} />
                             </span>
                           )}
                           {hasColumn("requestTime") && (
@@ -535,7 +545,7 @@ export function OutboundRequests({
                                   <Printer size={14} />
                                   Print
                                 </button>
-                                {canApprove && (row.status === "PENDING" || row.status === "REROUTED") && (
+                                {canActOnApproval(row) && (
                                   <button
                                     role="menuitem"
                                     className="request-action-button request-action-reject"
@@ -548,7 +558,7 @@ export function OutboundRequests({
                                     Reject
                                   </button>
                                 )}
-                                {canEdit && (row.status === "PENDING" || row.status === "REROUTED") && (
+                                {canEdit && canActOnApproval(row) && (
                                   <button
                                     role="menuitem"
                                     type="button"
@@ -633,6 +643,7 @@ export function OutboundRequests({
                       </strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
                       <StatusBadge status={row.status} uppercase />
+                      <ApprovalStateBadge status={row.status} approvalStatus={row.approval_status} />
                       <button
                         type="button"
                         className="text-button"
@@ -700,7 +711,10 @@ export function OutboundRequests({
                 <strong>{selectedRequest.cluster}</strong>
                 <span>{selectedRequest.region} · Dock {selectedRequest.dock_no}</span>
               </div>
-              <StatusBadge status={selectedRequest.status} uppercase />
+              <div className="flex flex-wrap justify-end gap-2">
+                <StatusBadge status={selectedRequest.status} uppercase />
+                <ApprovalStateBadge status={selectedRequest.status} approvalStatus={selectedRequest.approval_status} />
+              </div>
             </div>
             <dl className="lh-drawer-fields">
               <div><dt>Request time</dt><dd>{formatDetailDateTime(selectedRequest.request_timestamp)}</dd></div>

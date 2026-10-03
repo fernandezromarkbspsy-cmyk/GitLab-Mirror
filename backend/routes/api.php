@@ -1,5 +1,7 @@
 <?php
 
+use App\Features\Approvals\PresenceController;
+use App\Features\Approvals\SeaTalkApprovalCallbackController;
 use App\Features\Auth\BackroomController;
 use App\Features\Auth\SeatalkController;
 use App\Features\Dispatch\DispatchController;
@@ -42,6 +44,11 @@ $registerApiRoutes = static function (string $prefix): void {
         Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
         Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
+        Route::middleware('seatalk.callback')->group(function (): void {
+            Route::post('/integrations/seatalk/approval/approve', [SeaTalkApprovalCallbackController::class, 'approve']);
+            Route::post('/integrations/seatalk/approval/reject', [SeaTalkApprovalCallbackController::class, 'reject']);
+        });
+
         Route::middleware([StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
             Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
             Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
@@ -53,6 +60,7 @@ $registerApiRoutes = static function (string $prefix): void {
             Route::get('/notifications', [NotificationController::class, 'index']);
             Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
             Route::patch('/notifications/{id}/read', [NotificationController::class, 'read']);
+            Route::post('/presence/heartbeat', [PresenceController::class, 'heartbeat']);
             Route::get('/clusters', function (Request $request) {
                 $data = $request->validate(['search' => 'required|string|min:3|max:80']);
                 $search = strtolower($data['search']);

@@ -2,6 +2,7 @@
 
 use App\Console\Commands\ProvisionBackroomUsers;
 use App\Console\Commands\PruneIdempotencyKeys;
+use App\Console\Commands\ReconcileSeaTalkApprovals;
 use App\Console\Commands\RetryUserEvents;
 use App\Console\Commands\SentryTest;
 use App\Console\Commands\SyncRequestsToGoogleSheet;
@@ -9,6 +10,8 @@ use App\Console\Commands\VerifyProductionConfig;
 use App\Http\Middleware\AuthenticateSupabase;
 use App\Http\Middleware\IdempotencyMiddleware;
 use App\Http\Middleware\RequestTelemetry;
+use App\Http\Middleware\VerifySeaTalkCallback;
+use App\Jobs\ExpireSeaTalkAssignments;
 use App\Jobs\SyncRequestsToGoogleSheetJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -36,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         ProvisionBackroomUsers::class,
         PruneIdempotencyKeys::class,
+        ReconcileSeaTalkApprovals::class,
         RetryUserEvents::class,
         SyncRequestsToGoogleSheet::class,
         VerifyProductionConfig::class,
@@ -47,12 +51,15 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
         $schedule->command('idempotency:prune')->hourly()->withoutOverlapping();
         $schedule->command('audit:retry-user-events')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->job(new ExpireSeaTalkAssignments)->everyMinute()->withoutOverlapping();
+        $schedule->command('seatalk:reconcile-approvals --repair')->everyFiveMinutes()->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(RequestTelemetry::class);
         $middleware->alias([
             'supabase.auth' => AuthenticateSupabase::class,
             'idempotency' => IdempotencyMiddleware::class,
+            'seatalk.callback' => VerifySeaTalkCallback::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

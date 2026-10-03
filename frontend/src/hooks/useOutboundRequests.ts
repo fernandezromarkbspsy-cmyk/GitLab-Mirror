@@ -21,7 +21,7 @@ export function useOutboundRequests() {
       ),
     placeholderData: (previous) => previous,
     staleTime: 30_000,
-    refetchInterval: false,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });

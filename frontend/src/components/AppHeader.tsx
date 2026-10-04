@@ -11,9 +11,13 @@ import {
   UserCircle,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { api } from "../lib/api";
-import { requestQueryKey } from "../lib/requestRefresh";
+import { toastBodyClass, toastClass, toastContentClass, toastTitleClass } from "../lib/uiClasses";
+import {
+  createRealtimeRecoveryTracker,
+  type RealtimeSubscriptionStatus,
+} from "../hooks/useRequestRealtime";
 import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
 import Notification4, {
@@ -30,6 +34,7 @@ import type {
 type Props = {
   user: User;
   preview?: boolean;
+  builderPreview?: boolean;
   view: AppView;
   onRoleChange: (role: Role) => void;
   onSearch: () => void;
@@ -48,6 +53,28 @@ const page = {
   kpi: { name: "KPI Analytics", section: "Performance" },
   users: { name: "User Management", section: "Administration" },
 };
+
+const topbarIconButtonClass =
+  "relative grid size-[1.9rem] place-items-center rounded-lg bg-transparent text-[#687078] transition-[color,background,transform] duration-200 hover:-translate-y-px hover:bg-[#f1f2f2] hover:text-soc5-ink aria-expanded:bg-[#f1f2f2] aria-expanded:text-soc5-ink max-[480px]:size-[1.7rem]";
+const topbarMenuWrapClass = "relative min-w-0";
+const topbarPopoverClass =
+  "absolute top-[2.3rem] right-0 z-50 min-w-[8.75rem] rounded-[.6rem] border border-[#e4e5e5] bg-white p-[.55rem] text-xs text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30_/_14%)]";
+const filterOptionClass =
+  "flex w-full items-center justify-between gap-[.4rem] border-t border-[#f0f0f0] bg-transparent py-[.4rem] text-left text-[#666] first:border-t-0 hover:text-soc5-ink";
+const notificationBadgeClass =
+  "absolute -top-[.15rem] -right-[.15rem] grid min-h-[.8rem] min-w-[.8rem] place-items-center rounded-[.45rem] bg-[#ef6b78] px-[.2rem] text-xs font-semibold tabular-nums text-white";
+const mailDotClass =
+  "absolute top-[.4rem] right-[.4rem] size-[.35rem] rounded-full border-[.075rem] border-white bg-[#ef6b78]";
+const mailPopoverClass =
+  "absolute top-[2.3rem] right-0 z-50 w-[min(18rem,calc(100vw_-_1.2rem))] max-h-[min(23rem,calc(100dvh_-_3.6rem))] overflow-hidden rounded-[.6rem] border border-[#e4e5e5] bg-white text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30_/_14%)] max-[600px]:right-1";
+const messageListClass =
+  "grid max-h-[min(19rem,calc(100dvh_-_7rem))] gap-1 overflow-y-auto overscroll-contain p-1";
+const messageItemClass =
+  "grid w-full min-w-0 grid-cols-[auto_1fr] items-center gap-[.15rem] rounded-[.45rem] border border-[#f0f0f0] border-l-2 border-l-transparent bg-white px-[.55rem] py-2 text-left text-[#333] transition-[background-color,border-color] duration-150 hover:border-[#e4e8d4] hover:bg-[#f7f9eb] focus-visible:outline-[.1rem] focus-visible:outline-[#71820e] focus-visible:outline-offset-[.1rem] active:bg-[#eff3dc] [&.is-unread]:border-l-[#91a61b] [&.is-unread]:bg-[#f7f9eb] [&_svg]:row-span-2 [&_svg]:text-[#8aa80f] [&_span]:min-w-0 [&_span]:text-xs [&_span]:font-semibold [&_small]:text-xs [&_small]:leading-snug [&_small]:text-[#696c70]";
+const profileButtonClass =
+  "flex min-h-[1.9rem] max-w-[min(11rem,22vw)] min-w-0 items-center gap-[.35rem] rounded-lg bg-transparent px-2 py-0 text-left text-[#77787c] hover:bg-[#f1f2f2] max-[960px]:max-w-[1.9rem] max-[600px]:max-w-[1.9rem] [&>div]:grid [&>div]:min-w-0 [&>div]:gap-[.05rem] max-[600px]:[&>div]:hidden max-[600px]:[&>svg:last-child]:hidden [&_strong]:max-w-[5.5rem] [&_strong]:overflow-hidden [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap [&_strong]:text-xs [&_strong]:text-[#343538] [&_small]:text-xs [&_small]:capitalize [&_small]:text-[#999] [&>svg:last-child]:ml-[.15rem]";
+const profileMenuClass =
+  "absolute top-[2.3rem] right-0 z-50 w-48 overflow-hidden rounded-[.6rem] border border-[#e4e5e5] bg-white p-1 text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30_/_14%)] max-[600px]:right-1";
 
 function formatDate(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
@@ -99,6 +126,7 @@ function notificationGroups(alerts: AppNotification[]): NotificationGroup[] {
 export function AppHeader({
   user,
   preview = false,
+  builderPreview = false,
   view,
   onRoleChange,
   onSearch,
@@ -120,7 +148,6 @@ export function AppHeader({
   const mailMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLElement>(null);
   const knownNotification = useRef<number | null>(null);
-  const requestRefreshTimer = useRef<number | null>(null);
   const notificationMenuId = useId();
   const profileMenuId = useId();
   const [toast, setToast] = useState<AppNotification | null>(null);
@@ -128,7 +155,7 @@ export function AppHeader({
     queryKey: ["notifications", user.role],
     queryFn: () =>
       api<{ data: AppNotification[]; unread: number }>("/notifications"),
-    refetchInterval: 30_000,
+    refetchInterval: false,
     enabled: !preview,
   });
   const read = useMutation({
@@ -143,22 +170,11 @@ export function AppHeader({
   const count = notifications.data?.unread ?? 0;
   const alerts = notifications.data?.data ?? [];
   const groupedNotifications = notificationGroups(alerts);
-  const refreshRequestQueries = useCallback(() => {
-    if (requestRefreshTimer.current !== null) {
-      window.clearTimeout(requestRefreshTimer.current);
-    }
-    requestRefreshTimer.current = window.setTimeout(() => {
-      void client.invalidateQueries({ queryKey: requestQueryKey("outbound-all") });
-      void client.invalidateQueries({ queryKey: requestQueryKey("notification-queue") });
-      void client.invalidateQueries({ queryKey: requestQueryKey("docking") });
-      void client.invalidateQueries({ queryKey: requestQueryKey("dashboard") });
-      void client.invalidateQueries({ queryKey: ["request-metrics"] });
-      requestRefreshTimer.current = null;
-    }, 250);
-  }, [client]);
-
   useEffect(() => {
     if (preview) return;
+    const recoverAfterReconnect = createRealtimeRecoveryTracker(() =>
+      client.invalidateQueries({ queryKey: ["notifications"] }),
+    );
 
     const channel = supabase
       .channel(`notifications:${user.id}`)
@@ -167,20 +183,19 @@ export function AppHeader({
         { event: "*", schema: "public", table: "notifications" },
         () => {
           void client.invalidateQueries({ queryKey: ["notifications"] });
-          refreshRequestQueries();
-          void client.invalidateQueries({ queryKey: ["kpi"] });
         },
       )
-      .subscribe();
+      .subscribe((status) =>
+        recoverAfterReconnect(
+          "notifications",
+          status as RealtimeSubscriptionStatus,
+        ),
+      );
 
     return () => {
-      if (requestRefreshTimer.current !== null) {
-        window.clearTimeout(requestRefreshTimer.current);
-        requestRefreshTimer.current = null;
-      }
       void supabase.removeChannel(channel);
     };
-  }, [client, preview, refreshRequestQueries, user.id]);
+  }, [client, preview, user.id]);
 
   useEffect(() => {
     const latest = alerts.find((item) => !item.read_at);
@@ -193,8 +208,6 @@ export function AppHeader({
       knownNotification.current = latest.id;
       setToast(latest);
       window.setTimeout(() => setToast(null), 5000);
-      refreshRequestQueries();
-      void client.invalidateQueries({ queryKey: ["kpi"] });
       const AudioContextClass = window.AudioContext;
       if (AudioContextClass) {
         const context = new AudioContextClass();
@@ -208,7 +221,7 @@ export function AppHeader({
         oscillator.onended = () => void context.close();
       }
     }
-  }, [alerts, client, refreshRequestQueries]);
+  }, [alerts]);
 
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
@@ -281,31 +294,31 @@ export function AppHeader({
       : `Search ${page[view].section.toLowerCase()} requests, then press Enter`;
 
   return (
-    <header className="app-topbar">
+    <header className={`${preview && !builderPreview ? "hidden" : "fixed top-0 right-0 left-[9.5rem] z-[99999] flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255_/_94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-[9rem] max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"}`}>
       {toast && (
-        <div className="app-toast" role="status">
+        <div className={toastClass} role="status">
           <Bell size={17} />
-          <div>
-            <strong>{toast.title}</strong>
-            <span>{toast.body}</span>
+          <div className={toastContentClass}>
+            <strong className={toastTitleClass}>{toast.title}</strong>
+            <span className={toastBodyClass}>{toast.body}</span>
           </div>
         </div>
       )}
-      <div className="topbar-page">
-        <div className="topbar-page-copy">
-          <h1>{page[view].name}</h1>
-          <nav className="topbar-breadcrumbs" aria-label="Breadcrumb">
-            <span className="breadcrumb-root">Operations</span>
-            <ChevronRight size={12} aria-hidden="true" />
-            <span className="breadcrumb-current" aria-current="page">
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="grid min-w-0 gap-[.1rem]">
+          <h1 className="m-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-semibold leading-tight tracking-tight text-[#242427] max-[600px]:text-xl">{page[view].name}</h1>
+          <nav className="flex min-h-[.7rem] items-center gap-[.3rem] text-xs leading-none text-[#a1a2a6] max-[960px]:hidden" aria-label="Breadcrumb">
+            <span className="font-semibold text-[#687078]">Operations</span>
+            <ChevronRight className="text-[#c4c5c7]" size={12} aria-hidden="true" />
+            <span className="font-bold text-soc5-lime-deep" aria-current="page">
               {page[view].section}
             </span>
           </nav>
         </div>
       </div>
-      <div className="topbar-tools">
+      <div className="flex min-w-0 flex-[0_1_auto] items-center gap-[.35rem] max-[960px]:gap-[.2rem]">
         <form
-          className="topbar-search"
+          className="group flex h-[1.9rem] w-[clamp(7rem,22vw,12.5rem)] max-w-full min-w-0 items-center gap-[.35rem] rounded-lg border border-[#e7e7e7] bg-[#f5f5f5] px-2 text-[#686a6e] max-[1100px]:w-[clamp(6rem,20vw,10rem)] max-[960px]:w-[8.5rem] max-[600px]:w-[1.9rem] max-[600px]:justify-center max-[600px]:px-0 focus-within:max-[600px]:w-[6.75rem] focus-within:max-[600px]:justify-start focus-within:max-[600px]:px-[.4rem]"
           onSubmit={(event) => {
             event.preventDefault();
             if (search.trim()) onSearch();
@@ -313,6 +326,7 @@ export function AppHeader({
         >
           <Search size={17} />
           <input
+            className="w-full min-w-0 border-0 bg-transparent text-xs text-[#343538] outline-none placeholder:text-[#b0b1b5] max-[600px]:hidden group-focus-within:max-[600px]:block"
             ref={searchRef}
             aria-label={`Search requests in ${page[view].section}`}
             placeholder={searchPlaceholder}
@@ -320,11 +334,11 @@ export function AppHeader({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <kbd>Ctrl F</kbd>
+          <kbd className="shrink-0 rounded-[.2rem] border border-[#ddd] bg-white px-[.2rem] py-[.1rem] text-xs text-[#999] max-[960px]:hidden">Ctrl F</kbd>
         </form>
-        <div ref={filterMenuRef} className="topbar-menu-wrap">
+        <div ref={filterMenuRef} className={topbarMenuWrapClass}>
           <button
-            className={`top-icon-button ${filterOpen ? "selected" : ""}`}
+            className={topbarIconButtonClass}
             type="button"
             onClick={() => setFilterOpen((value) => !value)}
             aria-label="Filter dashboard"
@@ -334,11 +348,12 @@ export function AppHeader({
           </button>
           {filterOpen && (
             <section
-              className="topbar-popover filter-popover"
+              className={topbarPopoverClass}
               aria-label="Dashboard filters"
             >
-              <strong>Quick filters</strong>
+              <strong className="mb-[.3rem] block text-xs">Quick filters</strong>
               <button
+                className={filterOptionClass}
                 type="button"
                 onClick={() => {
                   const end = new Date();
@@ -351,6 +366,7 @@ export function AppHeader({
                 Last 30 days <span>✓</span>
               </button>
               <button
+                className={filterOptionClass}
                 type="button"
                 onClick={() => {
                   resetDateRange();
@@ -360,6 +376,7 @@ export function AppHeader({
                 All requests <span>✓</span>
               </button>
               <button
+                className={filterOptionClass}
                 type="button"
                 onClick={() => {
                   setSearch("");
@@ -372,10 +389,10 @@ export function AppHeader({
             </section>
           )}
         </div>
-        <div ref={notificationMenuRef} className="notification-menu">
+        <div ref={notificationMenuRef} className="relative min-w-0">
           <button
             ref={notificationButtonRef}
-            className="top-icon-button notification-button"
+            className={topbarIconButtonClass}
             type="button"
             title="Notifications"
             aria-label={`Open notifications, ${count} unread`}
@@ -388,11 +405,14 @@ export function AppHeader({
             }}
           >
             <Bell size={19} />
-            {count > 0 && <span>{count > 99 ? "99+" : count}</span>}
+            {count > 0 && (
+              <span className={notificationBadgeClass}>
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
           </button>
           {open && (
             <Notification4
-              className="notification-popover notification-panel"
               countLabel={String(count)}
               groups={groupedNotifications}
               id={notificationMenuId}
@@ -411,9 +431,9 @@ export function AppHeader({
             />
           )}
         </div>
-        <div ref={mailMenuRef} className="topbar-menu-wrap">
+        <div ref={mailMenuRef} className={topbarMenuWrapClass}>
           <button
-            className="top-icon-button mail-button"
+            className={topbarIconButtonClass}
             type="button"
             onClick={() => {
               setMailOpen((value) => !value);
@@ -424,23 +444,23 @@ export function AppHeader({
             aria-expanded={mailOpen}
           >
             <Mail size={19} />
-            {count > 0 && <i className="badge-dot mail-dot" />}
+            {count > 0 && <i className={mailDotClass} />}
           </button>
           {mailOpen && (
             <section
-              className="notification-popover mail-popover"
+              className={mailPopoverClass}
               aria-label="Messages"
             >
-              <div>
-                <strong>Messages</strong>
-                <span className="popover-count">{count} new</span>
+              <div className="flex items-center justify-between border-b border-[#f0f0f0] px-[.6rem] py-[.6rem]">
+                <strong className="text-xs">Messages</strong>
+                <span className="text-xs text-[#6b7a00]">{count} new</span>
               </div>
               {alerts.length ? (
-                <div className="notification-list">
+                <div className={messageListClass}>
                   {alerts.slice(0, 6).map((item) => (
                     <button
                       key={item.id}
-                      className={item.read_at ? "" : "unread"}
+                      className={`${messageItemClass}${item.read_at ? "" : " is-unread"}`}
                       type="button"
                       onClick={() => {
                         if (!item.read_at) read.mutate(item.id);
@@ -454,11 +474,11 @@ export function AppHeader({
                   ))}
                 </div>
               ) : (
-                <p>No new messages.</p>
+                <p className="p-4 text-center text-xs text-[#696c70]">No new messages.</p>
               )}
               {count > 0 && (
                 <button
-                  className="text-button popover-footer-action"
+                  className="w-full rounded-none bg-[#fafafa] px-2 py-2 text-center text-xs font-semibold text-[#6b7a00] outline-offset-2 focus-visible:outline-[.1rem] focus-visible:outline-[#71820e]"
                   type="button"
                   onClick={() => {
                     readAll.mutate();
@@ -472,10 +492,10 @@ export function AppHeader({
           )}
         </div>
         {user.is_admin && (
-          <div className="profile-switcher">
+          <div className="relative min-w-0">
             <button
               ref={profileButtonRef}
-              className="topbar-user"
+              className={profileButtonClass}
               type="button"
               aria-expanded={profileOpen}
               aria-controls={profileMenuId}
@@ -490,26 +510,27 @@ export function AppHeader({
                     : user.role.replaceAll("_", " ")}
                 </small>
               </div>
-              <ChevronDown size={14} className="topbar-user-chevron" />
+              <ChevronDown size={14} className="ml-[.15rem] max-[600px]:hidden" />
             </button>
             {profileOpen && (
               <section
                 ref={profileMenuRef}
                 id={profileMenuId}
-                className="profile-menu"
+                className={profileMenuClass}
                 aria-label="Profile"
               >
-                <header>
+                <header className="flex items-center gap-[.4rem] border-b border-[#eee] p-2">
                   <ShieldCheck size={18} />
-                  <div>
-                    <strong>Test role view</strong>
-                    <small>Admin access remains enabled</small>
+                  <div className="grid gap-[.1rem]">
+                    <strong className="text-xs">Test role view</strong>
+                    <small className="text-xs text-[#999]">Admin access remains enabled</small>
                   </div>
                 </header>
                 {user.is_admin ? (
                   roles.map((role) => (
                     <button
                       key={role.value}
+                      className="flex w-full items-center justify-between rounded-[.35rem] bg-transparent px-2 py-[.45rem] text-left text-xs text-[#666] hover:bg-[#f2f5df] hover:text-soc5-ink"
                       type="button"
                       onClick={() => {
                         setProfileOpen(false);
@@ -522,7 +543,7 @@ export function AppHeader({
                     </button>
                   ))
                 ) : (
-                  <p>Signed in as {user.role.replaceAll("_", " ")}</p>
+                  <p className="p-2 text-xs text-[#777]">Signed in as {user.role.replaceAll("_", " ")}</p>
                 )}
               </section>
             )}

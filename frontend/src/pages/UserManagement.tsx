@@ -17,6 +17,7 @@ import { Modal } from "../components/Modal";
 import { Skeleton } from "../components/Skeleton";
 import { Skiper87 } from "../components/ui/skiper-ui/skiper87";
 import { api } from "../lib/api";
+import { compactFormDialogClass, dialogActionsClass, dialogFormClass, dialogHeadClass, dialogInputClass, dialogLabelClass, formErrorClass, genericTableScrollClass, genericTableWrapClass, iconButtonClass, secondaryButtonClass, tableActionClass, usersActiveStatusClass, usersAvatarClass, usersDialogClass, usersDialogCopyClass, usersDisabledStatusClass, usersIdentityClass, usersLoadingClass, usersLoadingRowClass, usersPageClass, usersPageKickerClass, usersPrimaryActionClass, usersResetConfirmClass, usersResetCopyClass, usersResetIconClass, usersResetIdentityClass, usersResetLabelClass, usersRoleSelectClass, usersSearchClass, usersSummaryCardClass, usersSummaryClass, usersSummaryIconClass, usersTableCellClass, usersTableClass, usersTableHeadCellClass, usersTablePanelClass, usersTableStateClass, usersToolbarActionsClass, usersToolbarClass } from "../lib/uiClasses";
 import type { ManagedUser, Role } from "../types";
 
 const roles: Role[] = ["ops_pic", "fte_ops", "fte_mm", "doc_officer"];
@@ -130,54 +131,54 @@ export function UserManagement() {
   const roleCount = new Set(allUsers.map((user) => user.role)).size;
 
   return (
-    <div className="workspace-view user-management-view">
-      <section className="users-summary" aria-label="User account summary">
-        <div className="users-summary-card">
-          <span className="users-summary-icon">
+    <div className={usersPageClass}>
+      <section className={usersSummaryClass} aria-label="User account summary">
+        <div className={usersSummaryCardClass}>
+          <span className={usersSummaryIconClass}>
             <Users size={17} />
           </span>
-          <span>
-            <small>Total users</small>
-            <strong>{allUsers.length}</strong>
+          <span className="grid gap-[.05rem]">
+            <small className="text-xs font-medium text-[#7d8a8c]">Total users</small>
+            <strong className="text-base leading-tight font-semibold tabular-nums text-[#233335]">{allUsers.length}</strong>
           </span>
         </div>
-        <div className="users-summary-card">
-          <span className="users-summary-icon users-summary-icon--lime">
+        <div className={usersSummaryCardClass}>
+          <span className={`${usersSummaryIconClass} bg-[#f0f9c9] text-[#718b00]`}>
             <ShieldCheck size={17} />
           </span>
-          <span>
-            <small>Active accounts</small>
-            <strong>{activeUsers}</strong>
+          <span className="grid gap-[.05rem]">
+            <small className="text-xs font-medium text-[#7d8a8c]">Active accounts</small>
+            <strong className="text-base leading-tight font-semibold tabular-nums text-[#233335]">{activeUsers}</strong>
           </span>
         </div>
-        <div className="users-summary-card">
-          <span className="users-summary-icon users-summary-icon--blue">
+        <div className={usersSummaryCardClass}>
+          <span className={`${usersSummaryIconClass} bg-[#eaf2ff] text-[#386eb3]`}>
             <UserRound size={17} />
           </span>
-          <span>
-            <small>Role groups</small>
-            <strong>{roleCount}</strong>
+          <span className="grid gap-[.05rem]">
+            <small className="text-xs font-medium text-[#7d8a8c]">Role groups</small>
+            <strong className="text-base leading-tight font-semibold tabular-nums text-[#233335]">{roleCount}</strong>
           </span>
         </div>
       </section>
 
       {(update.error || disable.error || reset.error) && (
-        <p className="notice error users-notice text-[var(--color-danger)]">
+        <p className="notice error mx-auto mb-2 w-full max-w-[74rem] text-[var(--color-danger)]">
           {(update.error || disable.error || reset.error)?.message}
         </p>
       )}
-      <section className="panel data-panel users-table-panel">
-        <div className="users-table-toolbar">
+      <section className={usersTablePanelClass}>
+        <div className={usersToolbarClass}>
           <div>
-            <h2>Directory</h2>
-            <p>
+            <h2 className="m-0 text-sm font-semibold tracking-tight text-[#203638]">Directory</h2>
+            <p className="mt-[.2rem] text-xs text-[#7b8b8c]">
               {query
                 ? `${filteredUsers.length} matching accounts`
                 : "All provisioned accounts"}
             </p>
           </div>
-          <div className="users-toolbar-actions">
-            <label className="users-search">
+          <div className={usersToolbarActionsClass}>
+            <label className={usersSearchClass}>
               <Search size={16} />
               <span className="sr-only">Search users</span>
               <input
@@ -187,7 +188,7 @@ export function UserManagement() {
               />
             </label>
             <button
-              className="users-primary-action"
+              className={usersPrimaryActionClass}
               type="button"
               onClick={() => setCreating(true)}
             >
@@ -199,12 +200,12 @@ export function UserManagement() {
         {users.isPending ? (
           <UserTableLoading />
         ) : users.error ? (
-          <div className="users-table-state">
+          <div className={usersTableStateClass}>
             <strong>Unable to load users</strong>
             <p>{users.error.message}</p>
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="users-table-state">
+          <div className={usersTableStateClass}>
             <strong>{query ? "No matching users" : "No users yet"}</strong>
             <p>
               {query
@@ -213,17 +214,17 @@ export function UserManagement() {
             </p>
           </div>
         ) : (
-          <div className="table-wrap request-table-wrap">
-            <Skiper87 className="request-table-scroll">
-              <table className="request-table users-table">
+          <div className={genericTableWrapClass}>
+            <Skiper87 className={genericTableScrollClass}>
+              <table className={usersTableClass}>
                 <thead>
                   <tr>
-                    <th>User</th>
-                    <th>Identifier</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Joined</th>
-                    <th>
+                    <th className={usersTableHeadCellClass}>User</th>
+                    <th className={usersTableHeadCellClass}>Identifier</th>
+                    <th className={usersTableHeadCellClass}>Role</th>
+                    <th className={usersTableHeadCellClass}>Status</th>
+                    <th className={usersTableHeadCellClass}>Joined</th>
+                    <th className={usersTableHeadCellClass}>
                       <span className="sr-only">Actions</span>
                     </th>
                   </tr>
@@ -231,14 +232,14 @@ export function UserManagement() {
                 <tbody>
                   {filteredUsers.map((user) => (
                     <tr key={user.id}>
-                      <td>
-                        <div className="user-identity">
-                          <span className="user-avatar">
+                      <td className={usersTableCellClass}>
+                        <div className={usersIdentityClass}>
+                          <span className={usersAvatarClass}>
                             {initials(user.name)}
                           </span>
-                          <span>
-                            <strong>{user.name}</strong>
-                            <small>
+                          <span className="grid min-w-0 gap-[.15rem]">
+                            <strong className="overflow-hidden text-xs text-[#263638] text-ellipsis whitespace-nowrap">{user.name}</strong>
+                            <small className="text-xs text-[#8a9798]">
                               {user.is_active
                                 ? "Account enabled"
                                 : "Account disabled"}
@@ -246,14 +247,14 @@ export function UserManagement() {
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <span className="user-identifier">
+                      <td className={usersTableCellClass}>
+                        <span className="text-xs text-[#657476]">
                           {user.email || user.ops_id || "-"}
                         </span>
                       </td>
-                      <td>
+                      <td className={usersTableCellClass}>
                         <select
-                          className="user-role-select"
+                          className={usersRoleSelectClass}
                           aria-label={`Role for ${user.name}`}
                           value={user.role}
                           onChange={(event) =>
@@ -273,25 +274,25 @@ export function UserManagement() {
                           ))}
                         </select>
                       </td>
-                      <td>
+                      <td className={usersTableCellClass}>
                         <span
-                          className={`user-status ${user.is_active ? "user-status--active" : "user-status--disabled"}`}
+                          className={user.is_active ? usersActiveStatusClass : usersDisabledStatusClass}
                         >
-                          <i />
+                            <i className={`size-[.3rem] rounded-full ${user.is_active ? "bg-[#55aa7b] shadow-[0_0_0_.15rem_rgb(85_170_123_/_14%)]" : "bg-[#aeb7b7]"}`} />
                           {user.is_active ? "Active" : "Disabled"}
                         </span>
                       </td>
-                      <td>
-                        <span className="user-joined">
+                      <td className={usersTableCellClass}>
+                        <span className="whitespace-nowrap text-[#7b898a]">
                           {formatJoinedDate(user.created_at)}
                         </span>
                       </td>
-                      <td className="users-actions">
+                      <td className={`${usersTableCellClass} whitespace-nowrap`}>
                         {user.is_active && (
                           <>
                             {user.role === "ops_pic" && (
                               <button
-                                className="table-action"
+                                className={tableActionClass}
                                 type="button"
                                 aria-label={`Reset password for ${user.name}`}
                                 onClick={() => setResetUser(user)}
@@ -301,7 +302,7 @@ export function UserManagement() {
                               </button>
                             )}
                             <button
-                              className="table-action reject"
+                              className={`${tableActionClass} border-[#a83240] text-[#a83240] hover:bg-[#fff5f6]`}
                               type="button"
                               aria-label={`Disable ${user.name}`}
                               onClick={() => disable.mutate(user.id)}
@@ -332,15 +333,15 @@ export function UserManagement() {
         open={resetUser !== null}
         onClose={() => !reset.isPending && setResetUser(null)}
         ariaLabel="Reset user password"
-        className="form-dialog compact users-dialog"
+        className={`${compactFormDialogClass} ${usersDialogClass}`}
       >
-        <div className="dialog-head">
+        <div className={dialogHeadClass}>
           <div>
-            <p className="users-page-kicker">Account recovery</p>
+            <p className={usersPageKickerClass}>Account recovery</p>
             <h2>Reset password</h2>
           </div>
           <button
-            className="icon-button"
+            className={iconButtonClass}
             type="button"
             disabled={reset.isPending}
             onClick={() => !reset.isPending && setResetUser(null)}
@@ -349,16 +350,16 @@ export function UserManagement() {
             <X size={18} />
           </button>
         </div>
-        <div className="users-reset-identity">
-          <span className="users-reset-icon" aria-hidden="true">
+        <div className={usersResetIdentityClass}>
+          <span className={usersResetIconClass} aria-hidden="true">
             <KeyRound size={20} />
           </span>
           <div>
-            <span className="users-reset-label">Account access</span>
+            <span className={usersResetLabelClass}>Account access</span>
             <strong>{resetUser?.name}</strong>
           </div>
         </div>
-        <p className="users-reset-copy">
+        <p className={usersResetCopyClass}>
           This will invalidate the current password and issue a one-time
           password. {resetUser?.name} must create a new password at the next
           sign-in.
@@ -368,10 +369,10 @@ export function UserManagement() {
             {reset.error.message}
           </p>
         )}
-        <div className="dialog-actions">
+        <div className={dialogActionsClass}>
           <button
             type="button"
-            className="secondary-button"
+            className={secondaryButtonClass}
             disabled={reset.isPending}
             onClick={() => setResetUser(null)}
           >
@@ -379,7 +380,7 @@ export function UserManagement() {
           </button>
           <button
             type="button"
-            className="users-reset-confirm"
+            className={usersResetConfirmClass}
             disabled={reset.isPending}
             aria-busy={reset.isPending}
             onClick={() => resetUser && reset.mutate(resetUser.id)}
@@ -392,15 +393,15 @@ export function UserManagement() {
         open={issuedCredential !== null}
         onClose={closeIssuedCredential}
         ariaLabel="One-time password issued"
-        className="form-dialog compact users-dialog"
+        className={`${compactFormDialogClass} ${usersDialogClass}`}
       >
-        <div className="dialog-head">
+        <div className={dialogHeadClass}>
           <div>
-            <p className="users-page-kicker">Share securely</p>
+            <p className={usersPageKickerClass}>Share securely</p>
             <h2>One-time password for {issuedCredential?.name}</h2>
           </div>
           <button
-            className="icon-button"
+            className={iconButtonClass}
             type="button"
             onClick={closeIssuedCredential}
             aria-label="Close"
@@ -408,16 +409,16 @@ export function UserManagement() {
             <X size={18} />
           </button>
         </div>
-        <p>
+        <p className={usersDialogCopyClass}>
           This password is shown only once. Share it with{" "}
           {issuedCredential?.name} through a secure channel — it will not be
           shown again.
         </p>
-        <div className="user-issued-password">
+        <div className="mx-[1.1rem] mt-4 flex items-center justify-between gap-2 rounded-[.55rem] border border-dashed border-[#cfe5e0] bg-[#f3faf8] p-[.7rem] max-[640px]:mx-3">
           <code>{issuedCredential?.password}</code>
           <button
             type="button"
-            className="secondary-button"
+            className={secondaryButtonClass}
             onClick={() => void copyIssuedCredential()}
             aria-label="Copy one-time password"
           >
@@ -425,7 +426,7 @@ export function UserManagement() {
             {credentialCopied ? "Copied" : "Copy"}
           </button>
         </div>
-        <div className="dialog-actions">
+        <div className={dialogActionsClass}>
           <button type="button" onClick={closeIssuedCredential}>
             Done
           </button>
@@ -437,9 +438,9 @@ export function UserManagement() {
 
 function UserTableLoading() {
   return (
-    <div className="users-loading" role="status" aria-label="Loading users">
+    <div className={usersLoadingClass} role="status" aria-label="Loading users" aria-busy="true">
       {Array.from({ length: 4 }).map((_, index) => (
-        <div className="users-loading-row" key={index}>
+        <div className={usersLoadingRowClass} key={index}>
           <Skeleton width="72%" />
           <Skeleton />
           <Skeleton />
@@ -474,13 +475,13 @@ function CreateUser({
     <Modal
       open
       onClose={onClose}
-      className="form-dialog compact users-dialog"
+      className={`${compactFormDialogClass} ${usersDialogClass}`}
       ariaLabel="Add backroom user"
     >
-      <div className="dialog-head">
+      <div className={dialogHeadClass}>
         <h2>Add backroom user</h2>
         <button
-          className="icon-button"
+          className={iconButtonClass}
           type="button"
           aria-label="Close"
           onClick={onClose}
@@ -488,21 +489,22 @@ function CreateUser({
           <X />
         </button>
       </div>
-      <form onSubmit={submit}>
-        <label>
+      <form className={dialogFormClass} onSubmit={submit}>
+        <label className={dialogLabelClass}>
           Name
-          <input name="name" required />
+          <input className={dialogInputClass} name="name" required />
         </label>
-        <label>
+        <label className={dialogLabelClass}>
           Role
-          <select name="role" defaultValue="ops_pic">
+          <select className={dialogInputClass} name="role" defaultValue="ops_pic">
             <option value="ops_pic">Ops PIC</option>
             <option value="doc_officer">DOC Officer</option>
           </select>
         </label>
-        <label>
+        <label className={dialogLabelClass}>
           OPS ID
           <input
+            className={dialogInputClass}
             name="ops_id"
             required
             pattern="ops[0-9]+"
@@ -510,10 +512,10 @@ function CreateUser({
           />
         </label>
         {error && (
-          <p className="notice error text-[var(--color-danger)]">{error}</p>
+          <p className={formErrorClass}>{error}</p>
         )}
-        <div className="dialog-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
+        <div className={dialogActionsClass}>
+          <button type="button" className={secondaryButtonClass} onClick={onClose}>
             Cancel
           </button>
           <button type="submit" disabled={busy}>

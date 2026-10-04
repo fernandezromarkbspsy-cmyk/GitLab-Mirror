@@ -38,7 +38,7 @@ final class SeaTalkApprovalCallbackTest extends TestCase
 
     public function test_valid_callback_is_authenticated_replay_safe_and_updates_shared_state(): void
     {
-        $payload = $this->payload('event-1');
+        $payload = $this->payload();
         $controller = new SeaTalkApprovalCallbackController(new ApprovalService(new RequestRepository(new RequestAuthorizer), new RequestAuthorizer));
 
         $first = $controller->approve($this->request($payload));
@@ -55,7 +55,7 @@ final class SeaTalkApprovalCallbackTest extends TestCase
 
     public function test_wrong_employee_is_acknowledged_without_mutating_request(): void
     {
-        $payload = $this->payload('event-2');
+        $payload = $this->payload();
         $payload['employee']['employee_code'] = 'wrong-user';
         $controller = new SeaTalkApprovalCallbackController(new ApprovalService(new RequestRepository(new RequestAuthorizer), new RequestAuthorizer));
 
@@ -89,12 +89,10 @@ final class SeaTalkApprovalCallbackTest extends TestCase
         );
     }
 
-    private function payload(string $eventId): array
+    private function payload(): array
     {
         return [
             'item_id' => 'provider-item-1',
-            'event_id' => $eventId,
-            'timestamp' => now()->timestamp,
             'employee' => ['employee_code' => 'employee-1'],
         ];
     }

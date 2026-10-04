@@ -18,6 +18,20 @@ import { Fragment, type ReactNode, useState } from "react";
 import type { RequestSort, SortDirection, TruckRequest } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { Skiper87 } from "./ui/skiper-ui/skiper87";
+import {
+  genericRequestDetailCardClass,
+  genericRequestDetailGridClass,
+  genericRequestDetailLabelClass,
+  genericRequestDetailValueClass,
+  genericRequestHeaderLabelClass,
+  genericRequestSortButtonClass,
+  genericRequestTableCellClass,
+  genericRequestTableClass,
+  genericRequestTableHeadCellClass,
+  genericRequestTableRowClass,
+  genericTableScrollClass,
+  genericTableWrapClass,
+} from "../lib/uiClasses";
 
 type Props = {
   rows: TruckRequest[];
@@ -28,6 +42,8 @@ type Props = {
   direction?: SortDirection;
   onSort?: (sort: RequestSort) => void;
   visibleColumns?: string[];
+  tableWrapperClassName?: string;
+  emptyStateClassName?: string;
 };
 
 type Column = {
@@ -140,11 +156,13 @@ export function RequestTable({
   direction,
   onSort,
   visibleColumns,
+  tableWrapperClassName = "",
+  emptyStateClassName = "",
 }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   if (!rows.length)
     return (
-      <div className="empty-state">
+      <div className={`empty-state ${emptyStateClassName}`.trim()}>
         <strong>No requests</strong>
         <p>{emptyMessage}</p>
         {emptyAction && (
@@ -159,7 +177,7 @@ export function RequestTable({
 
   function heading(column: Column) {
     const content = (
-      <span className="table-header-label">
+      <span className={genericRequestHeaderLabelClass}>
         <column.icon size={14} />
         {column.label}
       </span>
@@ -173,7 +191,7 @@ export function RequestTable({
       : ChevronsUpDown;
     return (
       <button
-        className={`sort-button ${active ? "is-active" : ""}`}
+        className={genericRequestSortButtonClass}
         type="button"
         onClick={() => onSort(column.sortKey!)}
       >
@@ -184,24 +202,24 @@ export function RequestTable({
   }
 
   return (
-    <div className="table-wrap request-table-wrap">
-      <Skiper87 className="request-table-scroll">
-        <table className="request-table">
+    <div className={`${genericTableWrapClass} ${tableWrapperClassName}`.trim()}>
+      <Skiper87 className={genericTableScrollClass}>
+        <table className={genericRequestTableClass}>
           <thead>
             <tr>
-              <th>
+              <th className={genericRequestTableHeadCellClass}>
                 <span className="sr-only">Expand</span>
               </th>
               {renderedColumns.map((column) => (
                 <th
                   key={column.key}
-                  className={`request-column request-column--${column.key}`}
+                  className={`${genericRequestTableHeadCellClass} request-column request-column--${column.key}`}
                 >
                   {heading(column)}
                 </th>
               ))}
               {actions && (
-                <th>
+                <th className={genericRequestTableHeadCellClass}>
                   <span className="sr-only">Actions</span>
                 </th>
               )}
@@ -213,14 +231,14 @@ export function RequestTable({
               const detailId = `request-detail-${request.id}`;
               return (
                 <Fragment key={request.id}>
-                  <tr className="request-row" aria-expanded={expanded}>
+                  <tr className={`request-row ${genericRequestTableRowClass}`} aria-expanded={expanded}>
                     <td
-                      className="request-column request-column--expand"
+                      className={`${genericRequestTableCellClass} request-column request-column--expand`}
                       data-label="Expand"
                     >
                       <button
                         type="button"
-                        className="expand-button"
+                        className="inline-flex min-h-7 cursor-pointer items-center justify-center border-0 bg-transparent p-1 text-soc5-muted hover:text-soc5-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-soc5-lime-deep"
                         aria-expanded={expanded}
                         aria-controls={detailId}
                         aria-label={`${expanded ? "Collapse" : "Expand"} request ${request.id}`}
@@ -236,7 +254,7 @@ export function RequestTable({
                     {renderedColumns.map((column) => (
                       <td
                         key={column.key}
-                        className={`request-column request-column--${column.key}`}
+                         className={`${genericRequestTableCellClass} request-column request-column--${column.key} max-w-[9rem] text-ellipsis whitespace-nowrap`}
                         data-label={column.label}
                       >
                         {column.render(request)}
@@ -244,7 +262,7 @@ export function RequestTable({
                     ))}
                     {actions && (
                       <td
-                        className="request-column request-column--actions"
+                        className={`${genericRequestTableCellClass} request-column request-column--actions`}
                         data-label="Actions"
                       >
                         <div className="row-actions">{actions(request)}</div>
@@ -253,7 +271,7 @@ export function RequestTable({
                   </tr>
                   {expanded && (
                     <tr className="request-detail-row" id={detailId}>
-                      <td colSpan={renderedColumns.length + (actions ? 2 : 1)}>
+                      <td className="p-0" colSpan={renderedColumns.length + (actions ? 2 : 1)}>
                         <RequestDetails request={request} />
                       </td>
                     </tr>
@@ -334,11 +352,11 @@ function RequestDetails({ request }: { request: TruckRequest }) {
   ];
 
   return (
-    <div className="request-detail-grid">
+    <div className={genericRequestDetailGridClass}>
       {fields.map(([label, value]) => (
-        <div key={label}>
-          <span>{label}</span>
-          <strong>{value}</strong>
+        <div className={genericRequestDetailCardClass} key={label}>
+          <span className={genericRequestDetailLabelClass}>{label}</span>
+          <strong className={genericRequestDetailValueClass}>{value}</strong>
         </div>
       ))}
     </div>

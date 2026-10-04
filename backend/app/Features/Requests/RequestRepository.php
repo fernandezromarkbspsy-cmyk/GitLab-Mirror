@@ -6,6 +6,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -219,9 +220,22 @@ final class RequestRepository
      */
     private function columns(): array
     {
+        $approvalColumns = Cache::remember(
+            'requests:approval-columns:v1',
+            now()->addMinutes(5),
+            static function (): array {
+                $columns = array_flip(Schema::getColumnListing('requests'));
+
+                return array_values(array_filter(
+                    self::APPROVAL_COLUMNS,
+                    static fn (string $column): bool => isset($columns[$column]),
+                ));
+            },
+        );
+
         return array_merge(
             self::COLUMNS,
-            array_values(array_filter(self::APPROVAL_COLUMNS, static fn (string $column): bool => Schema::hasColumn('requests', $column))),
+            $approvalColumns,
         );
     }
 

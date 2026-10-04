@@ -19,7 +19,7 @@ function Icon24() {
         x="12"
         y="15.6"
         textAnchor="middle"
-        fontSize="8.6"
+        fontSize="12"
         fontWeight="700"
         fill="currentColor"
         stroke="none"
@@ -58,10 +58,10 @@ export function FooterBar() {
               {item.icon}
             </span>
             <div>
-              <p className="font-display text-[12.5px] font-semibold text-ink">
+              <p className="font-display text-xs font-semibold text-ink">
                 {item.title}
               </p>
-              <p className="mt-0.5 text-[11.5px] text-faint">{item.sub}</p>
+              <p className="mt-0.5 text-xs text-faint">{item.sub}</p>
             </div>
           </div>
         </Reveal>

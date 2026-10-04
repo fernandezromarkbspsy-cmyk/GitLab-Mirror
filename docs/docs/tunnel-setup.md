@@ -16,9 +16,9 @@ The project runs these services locally:
 - Frontend: `http://localhost:5173`
 - Backend: `http://127.0.0.1:8000`
 
-If you use Docker instead of the Vite dev server, the web container is on
-`http://127.0.0.1:8080`, but this guide focuses on the standard frontend plus
-backend split.
+For production, use the Docker web container on `http://127.0.0.1:5173`. It
+serves the built frontend through NGINX and proxies `/api` to Laravel. The
+Vite server is for local development only.
 
 ## What you need
 
@@ -55,7 +55,7 @@ From the repository root:
 
 Confirm Laravel is running on `http://127.0.0.1:8000`.
 
-## Step 2: Start the frontend
+## Step 2: Start the frontend (local development only)
 
 Open a second terminal in `frontend/`:
 
@@ -65,6 +65,14 @@ npm run dev
 ```
 
 Confirm Vite is running on `http://localhost:5173`.
+
+For the production tunnel, build and start the Docker stack instead:
+
+```powershell
+docker compose up --build -d
+```
+
+This runs `npm ci`, `npm run build`, and serves `frontend/dist` from NGINX.
 
 ## Step 3: Validate the remote-managed tunnel
 
@@ -85,6 +93,12 @@ Start the complete local stack:
 
 ```powershell
 .\scripts\launchers\start-dev.ps1
+```
+
+For production, use the production launcher instead:
+
+```powershell
+.\scripts\launchers\start-production.ps1
 ```
 
 The script obtains the token for tunnel `aebf91e4-acf5-4eb4-aaae-8b56a58e8035`
@@ -128,6 +142,12 @@ Restart Laravel and the frontend so the new env values take effect:
 
 # frontend terminal
 npm run dev
+```
+
+For production, restart the Docker stack instead:
+
+```powershell
+docker compose up --build -d
 ```
 
 If you already had the tunnels open, you do not need to recreate them unless
@@ -196,7 +216,7 @@ value. Recheck `frontend/.env` and restart Vite.
 
 Confirm each tunnel points to the correct local port:
 
-- `5173` for the frontend
+- `5173` for the production NGINX frontend origin (or Vite during local development)
 - `8000` for the backend
 
 ### `cloudflared tunnel token` fails

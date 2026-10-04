@@ -130,18 +130,18 @@ export default function Notification4({
     <section
       id={id}
       className={cn(
-        "bg-background flex items-center justify-center",
+        "absolute top-[2.3rem] right-0 z-50 flex w-[min(18rem,calc(100vw_-_1.2rem))] max-h-[min(23rem,calc(100dvh_-_3.6rem))] items-center justify-center overflow-hidden rounded-[.6rem] border border-[#e4e5e5] bg-white text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30_/_14%)] max-[600px]:right-1",
         className,
       )}
     >
-      <Card className="bg-muted w-full max-w-sm gap-0 rounded-3xl pb-2 ring-0">
-        <CardHeader className="flex flex-row items-center justify-between px-3">
+      <Card className="w-full max-w-none gap-0 rounded-none border-0 bg-[#fbfcf7] pb-[.4rem] shadow-none">
+        <CardHeader className="flex min-h-[2.4rem] flex-row items-center justify-between gap-[.6rem] border-b border-[#f0f0f0] px-[.6rem] py-2">
           <div className="flex items-center gap-1.5">
-            <h2 className="text-foreground text-base font-semibold tracking-tight">
+            <h2 className="text-xs font-semibold tracking-tight text-[#393a3c]">
               {title}
             </h2>
             <Badge
-              className="text-primary hover:text-primary rounded-full text-xs font-medium tabular-nums"
+              className="rounded-full text-xs font-medium tabular-nums text-[#6b7a00] hover:text-[#536500]"
             >
               {countLabel ?? String(unreadCount)}
             </Badge>
@@ -151,7 +151,7 @@ export default function Notification4({
             {onMarkAllRead && unreadCount > 0 && (
               <Button
                 variant="ghost"
-                className="text-muted-foreground h-8 px-2 text-xs"
+                className="h-8 rounded-md px-2 text-xs text-[#696c70] hover:bg-[#f7f9eb]"
                 type="button"
                 onClick={onMarkAllRead}
               >
@@ -161,7 +161,7 @@ export default function Notification4({
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground rounded-full"
+              className="rounded-full text-[#696c70] hover:bg-[#f7f9eb] focus-visible:outline-[.1rem] focus-visible:outline-[#71820e] focus-visible:outline-offset-[.1rem]"
               aria-label="Close notifications"
               onClick={onDismiss}
               type="button"
@@ -171,13 +171,13 @@ export default function Notification4({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-2 px-2">
+        <CardContent className="max-h-[min(19rem,calc(100dvh_-_7rem))] space-y-2 overflow-y-auto overscroll-contain px-2 py-[.4rem]">
           {groups.length ? (
             groups.map((group) => (
               <NotificationGroupCard key={group.id} group={group} onSelect={onSelect} />
             ))
           ) : (
-            <p className="text-muted-foreground px-3 py-6 text-center text-sm">
+            <p className="px-3 py-6 text-center text-sm text-[#696c70]">
               No notifications.
             </p>
           )}
@@ -195,9 +195,9 @@ function NotificationGroupCard({
   onSelect?: (event: NotificationEvent) => void;
 }) {
   return (
-    <section className="bg-card overflow-hidden rounded-2xl">
+    <section className="overflow-hidden rounded-[.6rem] bg-white">
       <div className="px-5 pt-4">
-        <p className="text-muted-foreground text-sm font-medium">
+        <p className="text-sm font-medium text-[#696c70]">
           {group.label}
         </p>
       </div>
@@ -223,8 +223,8 @@ function NotificationEventRow({
   return (
     <button
       className={cn(
-        "group flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted/50 sm:gap-3",
-        event.unread && "bg-muted/40",
+        "group flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-[#f7f9eb] focus-visible:outline-[.1rem] focus-visible:outline-[#71820e] focus-visible:outline-offset-[.1rem] sm:gap-3",
+        event.unread && "bg-[#f7f9eb]",
       )}
       type="button"
       onClick={() => onSelect?.(event)}
@@ -233,24 +233,24 @@ function NotificationEventRow({
         <AvatarImage
           src={event.source.avatar}
           alt={event.source.name}
-          className="border-black/5 dark:border-white/5"
+          className="border-black/5"
         />
-        <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
+        <AvatarFallback className="bg-[#f2f6f5] text-xs font-semibold text-[#696c70]">
           {event.source.initials}
         </AvatarFallback>
       </Avatar>
 
       <div className="min-w-0 flex-1">
-        <h3 className="text-foreground truncate text-sm font-medium">
+        <h3 className="truncate text-sm font-medium text-[#393a3c]">
           {event.title}
         </h3>
-        <p className="text-muted-foreground mt-0.5 truncate text-xs">
+        <p className="mt-0.5 truncate text-xs text-[#696c70]">
           {event.subtitle}
         </p>
       </div>
 
       <div className="flex shrink-0 items-center">
-        <span className="text-muted-foreground text-xs">{event.timestamp}</span>
+        <span className="text-xs text-[#696c70]">{event.timestamp}</span>
       </div>
     </button>
   );

@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useRequestRealtime } from "../hooks/useRequestRealtime";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppHeader } from "../components/AppHeader";
@@ -7,6 +8,21 @@ import { Skeleton } from "../components/Skeleton";
 import { SkeletonTable } from "../components/SkeletonTable";
 import { useQueueNotifications } from "../hooks/useQueueNotifications";
 import { getAppPath, getAppView } from "../lib/routes";
+import {
+  dashboardGridClass,
+  dashboardViewClass,
+  dashboardTripsPanelClass,
+  intradayCardClass,
+  intradayFiltersClass,
+  intradayShellClass,
+  lineChartClass,
+  dashboardListClass,
+  loadingChipClass,
+  loadingShellClass,
+  loadingToolbarClass,
+  overviewMetricsClass,
+  workspaceViewClass,
+} from "../lib/uiClasses";
 import { api } from "../lib/api";
 import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
@@ -42,10 +58,14 @@ const UserManagement = lazy(() =>
 export function Dashboard({
   user,
   preview = false,
+  builderPreview = false,
 }: {
   user: User;
   preview?: boolean;
+  builderPreview?: boolean;
 }) {
+  useRequestRealtime();
+
   const queryClient = useQueryClient();
   const location = useLocation();
   const routerNavigate = useNavigate();
@@ -102,7 +122,7 @@ export function Dashboard({
   }, [location.pathname, routerNavigate, view]);
 
   return (
-    <div className="app-shell">
+    <div className={`${preview && !builderPreview ? "dashboard-preview" : ""} min-h-[100dvh]`}>
       <AppSidebar
         user={activeUser}
         activeView={view}
@@ -112,11 +132,12 @@ export function Dashboard({
         onSignOut={() => void signOut()}
         pendingCount={queue.count}
       />
-      <main className="app-content" aria-label="Primary content">
-        <div className="app-content-inner">
+      <main className={`relative z-0 isolate flex h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-soc5-page ${preview && !builderPreview ? "ml-0 w-full pt-0" : "w-[calc(100%_-_9.5rem)] ml-[9.5rem] pt-[3.8rem] max-[1100px]:ml-[9rem] max-[1100px]:w-[calc(100%_-_9rem)] max-[960px]:ml-0 max-[960px]:min-h-[100dvh] max-[960px]:w-full max-[960px]:pt-[3.4rem] max-[600px]:pt-[3.1rem]"}`} aria-label="Primary content">
+        <div className="relative z-[1] flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-clip">
           <AppHeader
             user={activeUser}
             preview={preview}
+            builderPreview={builderPreview}
             view={view}
             onRoleChange={switchRole}
             onSearch={() =>
@@ -125,7 +146,7 @@ export function Dashboard({
               )
             }
           />
-          <section className="app-workspace" aria-live="polite">
+          <section className="relative z-[2] flex min-h-0 max-h-full min-w-0 w-full max-w-full flex-1 flex-col overflow-y-auto overscroll-y-contain" aria-live="polite">
             <Suspense fallback={<ViewLoading view={view} />}>
               {view === "overview" && (
                 <Overview
@@ -154,8 +175,8 @@ export function Dashboard({
 function ViewLoading({ view }: { view: AppView }) {
   if (view === "overview") {
     return (
-      <div className="workspace-view dashboard-view">
-        <section className="overview-metrics" aria-hidden="true">
+      <div className={dashboardViewClass}>
+        <section className={`${overviewMetricsClass} min-[1024px]:grid-cols-4`} aria-hidden="true">
           {Array.from({ length: 4 }).map((_, index) => (
             <div
               key={index}
@@ -170,7 +191,7 @@ function ViewLoading({ view }: { view: AppView }) {
                     variant="head"
                   />
                 </span>
-                <span className="skeleton-chip" />
+                <span className={loadingChipClass} />
               </span>
               <span className="flex min-h-0 flex-col items-start justify-center gap-1.5">
                 <Skeleton width={88} variant="head" className="mb-2.5" />
@@ -182,55 +203,55 @@ function ViewLoading({ view }: { view: AppView }) {
             </div>
           ))}
         </section>
-        <section className="intraday-shell" aria-hidden="true">
-          <article className="intraday-card">
-            <div className="intraday-head">
+        <section className={intradayShellClass} aria-hidden="true">
+          <article className={intradayCardClass}>
+            <div className="flex items-center justify-between gap-3.5 mb-2 max-[600px]:flex-col max-[600px]:items-start">
               <div>
                 <Skeleton width={150} variant="head" />
                 <Skeleton width={220} className="mt-2.5" />
               </div>
-              <div className="intraday-filters">
-                <span className="skeleton-chip" />
-                <span className="skeleton-chip" />
-                <span className="skeleton-chip" />
+              <div className={intradayFiltersClass}>
+                <span className={loadingChipClass} />
+                <span className={loadingChipClass} />
+                <span className={loadingChipClass} />
               </div>
             </div>
-            <div className="line-chart top-dispatch-line-chart">
+            <div className={lineChartClass}>
               <SkeletonTable columns={2} rows={3} compact />
             </div>
           </article>
         </section>
-        <section className="dashboard-grid">
-          <article className="panel chart-panel truck-mix-panel">
-            <div className="panel-head compact">
+        <section className={dashboardGridClass}>
+          <article className="dashboard-panel chart-panel truck-mix-panel">
+            <div className="flex items-start justify-between gap-3 px-3.5 pt-3.5">
               <div>
                 <Skeleton width={110} variant="head" />
                 <Skeleton width={160} className="mt-2.5" />
               </div>
             </div>
-            <div className="table-loading-shell">
+            <div className={loadingShellClass}>
               <SkeletonTable columns={2} rows={3} compact />
             </div>
           </article>
-          <article className="panel dashboard-list-panel dashboard-list-panel--trips">
-            <div className="panel-head compact">
+          <article className={`min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}>
+            <div className="flex items-start justify-between gap-3 px-3.5 pt-3.5">
               <div>
                 <Skeleton width={120} variant="head" />
                 <Skeleton width={180} className="mt-2.5" />
               </div>
             </div>
-            <div className="dashboard-list">
+            <div className={dashboardListClass}>
               <SkeletonTable columns={4} rows={4} compact />
             </div>
           </article>
-          <article className="panel dashboard-list-panel">
-            <div className="panel-head compact">
+          <article className="min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card">
+            <div className="flex items-start justify-between gap-3 px-3.5 pt-3.5">
               <div>
                 <Skeleton width={120} variant="head" />
                 <Skeleton width={180} className="mt-2.5" />
               </div>
             </div>
-            <div className="dashboard-list">
+            <div className={dashboardListClass}>
               <SkeletonTable columns={4} rows={4} compact />
             </div>
           </article>
@@ -240,12 +261,12 @@ function ViewLoading({ view }: { view: AppView }) {
   }
 
   return (
-    <div className="workspace-view">
-      <div className="table-loading-shell">
-        <div className="table-loading-toolbar">
-          <span className="skeleton-chip" />
-          <span className="skeleton-chip" />
-          <span className="skeleton-chip" />
+    <div className={workspaceViewClass}>
+      <div className={loadingShellClass}>
+        <div className={loadingToolbarClass}>
+          <span className={loadingChipClass} />
+          <span className={loadingChipClass} />
+          <span className={loadingChipClass} />
         </div>
         <SkeletonTable columns={14} rows={5} />
       </div>

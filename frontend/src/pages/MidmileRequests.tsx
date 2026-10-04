@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { Fragment, useState } from "react";
+import { iconButtonClass, textButtonClass } from "../lib/uiClasses";
+import { compactFormDialogClass, compactRequestRowClass, dialogActionsClass, dialogFormClass, dialogHeadClass, dialogInputClass, dialogLabelClass, dialogTextareaClass, formErrorClass, recordsScrollClass, recordsTableClass, requestAssignClass, requestCheckboxClass, requestExpandedRowClass, requestPageClass, requestRejectClass, requestRowClass, requestSelectedRowClass, requestTableBodyClass, requestTableHeadClass, requestToolbarIconClass, requestViewToggleClass, requestWorkspaceClass, selectedRequestActionsClass, selectedRequestLabelClass, tableShellClass, secondaryButtonClass } from "../lib/uiClasses";
 import {
   linehaulColumnOptions,
   linehaulPrimaryColumnKeys,
@@ -37,7 +39,6 @@ import {
   requestQueryString,
 } from "../lib/requests";
 import type { Page, RequestSort, TruckRequest, User } from "../types";
-import "../styles/pages/outbound-requests.css";
 
 type MmAction = "assign-truck" | "reject-mm";
 
@@ -240,15 +241,15 @@ export function MidmileRequests({ user }: { user: User }) {
   }
   return (
     <div
-      className={`workspace-view lh-request-page${selected ? " lh-drawer-open" : ""}`}
+      className={`${requestPageClass}${selected ? " lh-drawer-open" : ""}`}
     >
       <section
-        className="lh-request-workspace"
+        className={requestWorkspaceClass}
         aria-label="Midmile linehaul requests"
       >
         {(notice || transition.error) && (
           <p
-            className={`notice${transition.error || notice.includes("failed") ? " error text-[var(--color-danger)]" : " success-notice"}`}
+            className={`notice${transition.error || notice.includes("failed") ? " error text-(--color-danger)" : " success-notice"}`}
           >
             {transition.error?.message || notice}
           </p>
@@ -262,10 +263,10 @@ export function MidmileRequests({ user }: { user: User }) {
         )}
 
         <section
-          className={`lh-table-shell${density === "compact" ? " lh-table-shell--compact" : ""}`}
+          className={tableShellClass}
           aria-label="Midmile linehaul request records"
         >
-          <div className="lh-table-toolbar">
+          <div className="relative z-20 flex min-w-0 flex-wrap items-center justify-start gap-2 border-b border-[rgb(15_42_43/8%)] bg-[linear-gradient(180deg,rgb(248_250_249/98%),rgb(245_249_247/96%))] px-2.5 py-1.5 max-[680px]:flex-col max-[680px]:items-stretch max-[680px]:gap-1.5 max-[680px]:p-[.45rem]">
             <LhTableToolbar
               filters={filters}
               onChange={changeFilters}
@@ -280,9 +281,9 @@ export function MidmileRequests({ user }: { user: User }) {
               exporting={exporting}
               lastUpdated={requests.dataUpdatedAt}
             />
-            <div className="lh-view-controls">
+            <div className="flex min-w-0 items-center gap-1.5">
               <button
-                className={`lh-toolbar-icon lh-refresh-button${requests.isFetching ? " is-refreshing" : ""}`}
+                className={`${requestToolbarIconClass}${requests.isFetching ? " animate-spin" : ""}`}
                 type="button"
                 aria-label={requests.isFetching ? "Refreshing records" : "Refresh records"}
                 title={requests.isFetching ? "Refreshing records" : "Refresh records"}
@@ -293,12 +294,12 @@ export function MidmileRequests({ user }: { user: User }) {
                 <RefreshCw size={16} aria-hidden="true" />
               </button>
             </div>
-            <div className="lh-table-toolbar-actions">
+            <div className="flex shrink-0 items-center gap-1.5">
               {selectedRequest && (
-                <div className="lh-request-toolbar-actions" aria-label="Selected request actions">
-                  <span className="lh-request-toolbar-label">Selected request</span>
+                <fieldset className={`${selectedRequestActionsClass} m-0 border-0 p-0`} aria-label="Selected request actions">
+                  <span className={selectedRequestLabelClass}>Selected request</span>
                   <button
-                    className="request-action-button request-action-assign"
+                    className={requestAssignClass}
                     type="button"
                     onClick={() =>
                       setSelected({
@@ -310,7 +311,7 @@ export function MidmileRequests({ user }: { user: User }) {
                     Assign
                   </button>
                   <button
-                    className="request-action-button request-action-reject"
+                    className={requestRejectClass}
                     type="button"
                     onClick={() =>
                       setSelected({
@@ -321,11 +322,11 @@ export function MidmileRequests({ user }: { user: User }) {
                   >
                     Reject
                   </button>
-                </div>
+                </fieldset>
               )}
-              <div className="lh-view-toggle" role="group" aria-label="Request view">
+              <fieldset className={`${requestViewToggleClass} m-0 border-0 p-0`} aria-label="Request view">
                 <button
-                  className="lh-toolbar-icon"
+                  className={requestToolbarIconClass}
                   type="button"
                   aria-label="Table view"
                   title="Table view"
@@ -335,7 +336,7 @@ export function MidmileRequests({ user }: { user: User }) {
                   <Table2 size={16} aria-hidden="true" />
                 </button>
                 <button
-                  className="lh-toolbar-icon"
+                  className={requestToolbarIconClass}
                   type="button"
                   aria-label="Card view"
                   title="Card view"
@@ -344,18 +345,18 @@ export function MidmileRequests({ user }: { user: User }) {
                 >
                   <LayoutGrid size={16} aria-hidden="true" />
                 </button>
-              </div>
+              </fieldset>
             </div>
           </div>
           {view === "table" ? (
-              <div className="lh-records-table-scroll">
+              <div className={recordsScrollClass}>
                 <div
-                  className="lh-records-table"
+                  className={recordsTableClass}
                   style={{
                     gridTemplateColumns: `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
                   }}
                 >
-              <div className="lh-table-head lh-table-grid">
+              <div className={requestTableHeadClass}>
                 {hasColumn("status") && (
                   <span className="flex items-center gap-2">
                     <CircleCheck size={14} />
@@ -422,12 +423,12 @@ export function MidmileRequests({ user }: { user: User }) {
                 {hasColumn("opsPic") && <span>OPS/PIC</span>}
                 <span />
               </div>
-              <div className="lh-table-body">
+              <div className={requestTableBodyClass}>
                 {requests.isPending && (
                   <SkeletonRequestTable rows={6} columns={visibleColumns.length + 1} />
                 )}
                 {requests.error && (
-                  <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
+                  <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
                     {requests.error.message}
                   </div>
                 )}
@@ -435,8 +436,9 @@ export function MidmileRequests({ user }: { user: User }) {
                   !requests.error &&
                   (requests.data?.data ?? []).map((row, index) => (
                     <Fragment key={row.id}>
+                    {/* biome-ignore lint/a11y/useSemanticElements: The row contains nested action buttons, so it cannot be converted to a native button. */}
                     <div
-                      className={`lh-table-row lh-table-grid ${expandedRow === row.id ? "is-expanded" : ""} ${selectedIds.has(row.id) ? "is-selected" : ""}`}
+                      className={`${requestRowClass} ${density === "compact" ? compactRequestRowClass : ""} ${expandedRow === row.id ? requestExpandedRowClass : ""} ${selectedIds.has(row.id) ? requestSelectedRowClass : ""}`}
                       key={row.id}
                       style={{ "--row-index": index } as React.CSSProperties}
                       role="button"
@@ -462,7 +464,7 @@ export function MidmileRequests({ user }: { user: User }) {
                         {row.status === "REQUESTED" && (
                           <input
                             type="checkbox"
-                            className="request-row-checkbox"
+                            className={requestCheckboxClass}
                             aria-label={`Select request ${row.id}`}
                             checked={selectedIds.has(row.id)}
                             onChange={() => toggleSelected(row.id)}
@@ -543,7 +545,7 @@ export function MidmileRequests({ user }: { user: User }) {
                             {row.status === "REQUESTED" && (
                               <>
                                 <button
-                                  className="request-action-button request-action-assign"
+                                  className={requestAssignClass}
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
@@ -557,7 +559,7 @@ export function MidmileRequests({ user }: { user: User }) {
                                   Assign
                                 </button>
                                 <button
-                                  className="request-action-button request-action-reject"
+                                  className={requestRejectClass}
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
@@ -575,7 +577,7 @@ export function MidmileRequests({ user }: { user: User }) {
                       </LhRowActionMenu>
                     </div>
                     {expandedRow === row.id && (
-                      <div
+                      <section
                         className="col-span-full min-w-0 w-full border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
                         aria-label={`Expanded details for request ${row.id}`}
                       >
@@ -584,8 +586,8 @@ export function MidmileRequests({ user }: { user: User }) {
                         >
                           <dl>
                             <div className="border-b border-[#e9eeea] pb-3">
-                              <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">Cluster</dt>
-                              <dd className="break-words text-base font-bold leading-6 tracking-[0.01em] text-[#26352d]">{formatCluster(row.cluster)}</dd>
+                              <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">Cluster</dt>
+                              <dd className="wrap-break-word text-base font-bold leading-6 tracking-normal text-[#26352d]">{formatCluster(row.cluster)}</dd>
                             </div>
                           </dl>
                           <div className="grid grid-cols-1 gap-4 pt-3 md:grid-cols-3">
@@ -594,8 +596,8 @@ export function MidmileRequests({ user }: { user: User }) {
                                 <dl className="grid gap-2">
                                   {fields.map(({ key, label, value }) => (
                                     <div className="min-w-0 border-b border-[#e9eeea] pb-2" key={key}>
-                                      <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">{label}</dt>
-                                      <dd className="break-words text-xs font-medium leading-4 text-[#33423a]">{value}</dd>
+                                      <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">{label}</dt>
+                                      <dd className="wrap-break-word text-xs font-medium leading-4 text-[#33423a]">{value}</dd>
                                     </div>
                                   ))}
                                 </dl>
@@ -603,14 +605,14 @@ export function MidmileRequests({ user }: { user: User }) {
                             ))}
                           </div>
                         </div>
-                      </div>
+                      </section>
                     )}
                     </Fragment>
                   ))}
                 {!requests.isPending &&
                   !requests.error &&
                   (requests.data?.data ?? []).length === 0 && (
-                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
+                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
                       No live requests match the current filters.
                     </div>
                   )}
@@ -623,27 +625,27 @@ export function MidmileRequests({ user }: { user: User }) {
                 <SkeletonCardList rows={4} />
               ) : (
                 (requests.data?.data ?? []).map((row) => (
-                  <article className="flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39_/_4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39_/_7%)] hover:transform-none max-[680px]:flex-wrap" key={row.id}>
+                  <article className="flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39/4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39/7%)] hover:transform-none max-[680px]:flex-wrap" key={row.id}>
                     <div>
-                      <small className="text-soc5-muted text-[11px]">
+                      <small className="text-soc5-muted text-xs">
                         {row.id}
                       </small>
-                      <h3 className="mt-2 mb-1 text-soc5-ink text-[14px] font-semibold">
+                      <h3 className="mt-2 mb-1 text-soc5-ink text-sm font-semibold">
                         {row.cluster}
                       </h3>
-                      <p className="m-0 text-soc5-muted text-[11px]">
+                      <p className="m-0 text-soc5-muted text-xs">
                         {row.region} · Dock {row.dock_no}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2 max-[760px]:items-start">
-                      <strong className="text-soc5-ink text-[12px]">
+                      <strong className="text-soc5-ink text-xs">
                         {row.truck_size}
                       </strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
                       <StatusBadge status={row.status} uppercase />
                       <button
                         type="button"
-                        className="text-button"
+                        className={textButtonClass}
                         onClick={() => setPrintRequest(row)}
                       >
                         <Printer size={14} />
@@ -708,13 +710,13 @@ function MidmileActionDialog({
     <Modal
       open
       onClose={onClose}
-      className="form-dialog compact"
+      className={compactFormDialogClass}
       role="dialog"
       ariaLabelledBy="action-title"
     >
-      <div className="dialog-head">
+      <div className={dialogHeadClass}>
         <div>
-          <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">
+          <p className="mb-[0.35rem] text-soc5-lime-deep text-xs font-bold tracking-wider uppercase">
             {selection.request.cluster}
           </p>
           <h2 id="action-title">
@@ -722,7 +724,7 @@ function MidmileActionDialog({
           </h2>
         </div>
         <button
-          className="icon-button"
+          className={iconButtonClass}
           type="button"
           title="Close"
           aria-label="Close"
@@ -731,16 +733,17 @@ function MidmileActionDialog({
           <X size={19} />
         </button>
       </div>
-      <form onSubmit={submit}>
+      <form className={dialogFormClass} onSubmit={submit}>
         {confirming ? (
           <>
-            <label>
+            <label className={dialogLabelClass}>
               Plate number
-              <input name="plate_number" required maxLength={30} />
+              <input className={dialogInputClass} name="plate_number" required maxLength={30} />
             </label>
-            <label>
+            <label className={dialogLabelClass}>
               Truck size
               <select
+                className={dialogInputClass}
                 name="truck_size"
                 defaultValue={selection.request.truck_size}
               >
@@ -750,9 +753,10 @@ function MidmileActionDialog({
                 <option>6WF</option>
               </select>
             </label>
-            <label>
+            <label className={dialogLabelClass}>
               Truck type
               <select
+                className={dialogInputClass}
                 name="truck_type"
                 defaultValue={selection.request.truck_type}
               >
@@ -762,16 +766,16 @@ function MidmileActionDialog({
             </label>
           </>
         ) : (
-          <label>
+          <label className={dialogLabelClass}>
             Rejection remarks
-            <textarea name="rejection_remarks" required rows={4} />
+            <textarea className={dialogTextareaClass} name="rejection_remarks" required rows={4} />
           </label>
         )}
         {error && (
-          <p className="error notice text-[var(--color-danger)]">{error}</p>
+          <p className={formErrorClass}>{error}</p>
         )}
-        <div className="dialog-actions">
-          <button className="secondary-button" type="button" onClick={onClose}>
+        <div className={dialogActionsClass}>
+          <button className={secondaryButtonClass} type="button" onClick={onClose}>
             Cancel
           </button>
           <button type="submit" disabled={busy}>

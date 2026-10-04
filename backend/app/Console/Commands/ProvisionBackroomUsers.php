@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Integrations\SupabaseAdminClient;
+use App\Support\AuthenticatedProfileCache;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -109,6 +110,7 @@ final class ProvisionBackroomUsers extends Command
                     'imported_at' => now(),
                 ]);
             });
+            AuthenticatedProfileCache::forget($authUserId);
 
             $this->info($opsId.': ready');
         }

@@ -13,11 +13,16 @@ use App\Http\Middleware\RequestTelemetry;
 use App\Http\Middleware\VerifySeaTalkCallback;
 use App\Jobs\ExpireSeaTalkAssignments;
 use App\Jobs\SyncRequestsToGoogleSheetJob;
+use App\Support\ApiRequestConsoleLogger;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Sentry\Laravel\Integration;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable as ThrowableType;
 
 // This application uses direct outbound TLS connections. Prevent inherited
 // machine proxy variables from routing Google, Supabase, or other HTTP calls
@@ -64,5 +69,30 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         Integration::handles($exceptions);
+        $exceptions->report(function (ThrowableType $exception): ?bool {
+            if (request()->is('api', 'api/*')) {
+                Log::channel('single')->error('API request exception', [
+                    'exception' => $exception,
+                ]);
+
+                return false;
+            }
+
+            return null;
+        });
+        $exceptions->respond(function (Response $response, ThrowableType $exception, Request $request): Response {
+            $consoleLogger = app(ApiRequestConsoleLogger::class);
+
+            if ($consoleLogger->isApiRequest($request)) {
+                $startedAt = $request->attributes->get('request_started_at');
+                $durationMs = is_numeric($startedAt)
+                    ? round((microtime(true) - (float) $startedAt) * 1000, 2)
+                    : 0.0;
+
+                $consoleLogger->log($request, $response->getStatusCode(), $durationMs);
+            }
+
+            return $response;
+        });
     })
     ->create();

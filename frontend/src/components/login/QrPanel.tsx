@@ -17,7 +17,7 @@ interface QrPanelProps {
 }
 
 export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
-  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetRef = useRef<HTMLFieldSetElement>(null);
   const sdkContainerRef = useRef<HTMLDivElement>(null);
   const renderLoginOnce = useRef<(() => Promise<void>) | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -91,7 +91,7 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
     <section className="relative hidden lg:flex flex-col overflow-hidden px-5 pb-24 pt-6 sm:px-7">
       <div
         aria-hidden
-        className="dot-grid absolute right-2 top-28 h-48 w-36 opacity-60 [mask-image:radial-gradient(closest-side,black,transparent)]"
+        className="absolute right-2 top-28 h-48 w-36 bg-[radial-gradient(rgb(214_228_255_/_34%)_.055rem,transparent_.055rem)] bg-[length:.75rem_.75rem] opacity-60 [mask-image:radial-gradient(closest-side,black,transparent)]"
       />
       <div
         aria-hidden
@@ -107,10 +107,10 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
             className="h-[52px] w-[52px] shrink-0 rounded-xl object-cover shadow-lg shadow-accent/30"
           />
           <div>
-            <p className="font-display text-[17px] font-bold tracking-tight leading-snug text-ink">
+            <p className="font-display text-base font-semibold tracking-tight leading-snug text-ink">
               SOC 5 OUTBOUND
             </p>
-            <p className="text-[11.5px] font-medium text-faint leading-snug">
+            <p className="text-xs font-medium text-faint leading-snug">
               Operations Management System
             </p>
           </div>
@@ -119,29 +119,29 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
 
       {/* heading */}
       <Reveal delay={90} className="mt-5">
-        <h1 className="font-display text-[22px] font-bold leading-tight tracking-tight text-ink">
+        <h1 className="font-display text-xl font-semibold leading-tight tracking-tight text-ink">
           Login to continue
         </h1>
-        <p className="mt-2 text-[12.5px] text-muted leading-relaxed">
+        <p className="mt-2 text-xs text-muted leading-relaxed">
           Use your work email or Ops ID to sign in below.
         </p>
       </Reveal>
 
       <Reveal delay={180} className="mt-6">
         <div className="rounded-2xl border border-line bg-white/[0.03] p-4 text-center">
-          <div ref={widgetRef} className="mx-auto flex min-h-[176px] items-center justify-center rounded-xl bg-white p-3" aria-label="SeaTalk login">
+          <fieldset ref={widgetRef} aria-label="SeaTalk login" className="mx-auto flex min-h-[176px] items-center justify-center rounded-xl border-0 bg-white p-3">
             <div ref={sdkContainerRef} />
             {status === "loading" && <Loader2 className="h-6 w-6 animate-spin text-accent" />}
-          </div>
+          </fieldset>
           {status === "error" && (
-            <div className="mt-3 text-[12px] leading-relaxed text-danger">
+            <div className="mt-3 text-xs leading-relaxed text-danger">
               <p>{error}</p>
               <button type="button" onClick={() => void renderSeaTalkLogin().catch(() => undefined)} className="mt-2 inline-flex items-center gap-1.5 font-semibold text-link hover:underline">
                 <RefreshCw className="h-3.5 w-3.5" /> Retry SeaTalk login
               </button>
             </div>
           )}
-          {status !== "error" && <p className="mt-3 text-[12px] leading-relaxed text-muted">Continue with SeaTalk to sign in.</p>}
+          {status !== "error" && <p className="mt-3 text-xs leading-relaxed text-muted">Continue with SeaTalk to sign in.</p>}
         </div>
       </Reveal>
 
@@ -157,8 +157,8 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-deep-2/60 via-transparent to-transparent" />
         <div className="absolute bottom-[42%] left-[27%]">
-          <span className="ping-soft absolute inset-0 rounded-full bg-accent/50" />
-          <span className="floaty relative grid h-7 w-7 place-items-center rounded-full bg-accent shadow-lg shadow-accent/50 ring-4 ring-accent/25">
+          <span className="absolute inset-0 animate-login-ping rounded-full bg-accent/50 motion-reduce:animate-none" />
+          <span className="relative grid h-7 w-7 animate-login-float place-items-center rounded-full bg-accent shadow-lg shadow-accent/50 ring-4 ring-accent/25 motion-reduce:animate-none">
             <MapPin className="h-3.5 w-3.5 text-white" fill="currentColor" />
           </span>
         </div>

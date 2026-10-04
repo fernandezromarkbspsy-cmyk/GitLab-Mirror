@@ -1,6 +1,7 @@
 import { MoreHorizontal } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { requestToolbarIconClass, rowMenuClass, rowMenuWrapClass } from "../lib/uiClasses";
 
 const MENU_WIDTH = 148;
 const VIEWPORT_EDGE = 8;
@@ -18,7 +19,7 @@ export function LhRowActionMenu({
   open,
   onToggle,
   ariaLabel,
-  className = "lh-row-more",
+  className = requestToolbarIconClass,
   title = "More actions",
   children,
 }: Props) {
@@ -67,10 +68,10 @@ export function LhRowActionMenu({
   }, [open]);
 
   return (
-    <span className="lh-row-menu-wrap">
+    <span className={rowMenuWrapClass}>
       <button
         ref={triggerRef}
-        className={`${className}${open ? " is-open" : ""}`}
+        className={`${className}${open ? " border-[#a2c500] bg-[#eef6d9] text-soc5-lime-deep shadow-[0_0_0_.15rem_rgb(162_197_0_/_12%)]" : ""}`}
         type="button"
         aria-label={ariaLabel}
         aria-haspopup="menu"
@@ -87,7 +88,7 @@ export function LhRowActionMenu({
         createPortal(
           <span
             ref={menuRef}
-            className="lh-row-menu lh-row-menu--portal"
+            className={rowMenuClass}
             role="menu"
             style={
               position

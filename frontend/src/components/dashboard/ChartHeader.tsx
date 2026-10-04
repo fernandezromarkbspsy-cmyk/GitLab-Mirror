@@ -1,4 +1,10 @@
 import type { ReactNode } from "react";
+import {
+  dashboardPanelKickerClass,
+  intradayDescriptionClass,
+  intradayHeadClass,
+  intradayTitleClass,
+} from "../../lib/uiClasses";
 
 type ChartHeaderProps = {
   kicker?: string;
@@ -14,11 +20,11 @@ export function ChartHeader({
   controls,
 }: ChartHeaderProps) {
   return (
-    <div className="intraday-head">
+    <div className={intradayHeadClass}>
       <div>
-        {kicker ? <p className="panel-kicker">{kicker}</p> : null}
-        <h2>{title}</h2>
-        <p>{description}</p>
+        {kicker ? <p className={dashboardPanelKickerClass}>{kicker}</p> : null}
+        <h2 className={intradayTitleClass}>{title}</h2>
+        <p className={intradayDescriptionClass}>{description}</p>
       </div>
       {controls}
     </div>

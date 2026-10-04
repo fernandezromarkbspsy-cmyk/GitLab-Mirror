@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
-import { getRequestRefetchInterval, requestQueryKey } from "../lib/requestRefresh";
+import { requestQueryKey } from "../lib/requestRefresh";
 import type { Page, Status, TruckRequest, User } from "../types";
 
 let notificationAudioContext: AudioContext | null = null;
@@ -98,8 +98,7 @@ export function useQueueNotifications(user: User): QueueSnapshot {
         `/requests?status=${status}&per_page=100&sort=created_at&direction=desc`,
       ),
     enabled: status !== null,
-    refetchInterval: () => (status ? getRequestRefetchInterval() : false),
-    refetchIntervalInBackground: false,
+    refetchInterval: false,
     refetchOnWindowFocus: true,
   });
 

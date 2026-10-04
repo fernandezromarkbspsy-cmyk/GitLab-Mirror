@@ -34,14 +34,14 @@ export function MetricCard({
         <span className="hidden">{chip}</span>
       </span>
       <span className="flex min-h-0 flex-col items-start justify-center gap-1">
-        <small className="font-[var(--font-display)] text-[12.5px] leading-tight font-[750] tracking-[.02em] text-[#4b4e52]">
+        <small className="text-xs leading-snug font-medium text-[#4b4e52]">
           {label}
         </small>
-        <strong className="font-mono text-[23px] leading-[1.08] font-[650] tracking-[-.35px] text-[#242528]">
+        <strong className="font-sans text-2xl leading-tight font-semibold tracking-tight tabular-nums text-[#242528]">
           {value}
         </strong>
       </span>
-      <span className="mt-1 flex items-center justify-between gap-1.5 text-[10.5px] leading-[1.35] text-soc5-muted">
+      <span className="mt-1 flex items-center justify-between gap-1.5 text-xs leading-snug text-soc5-muted">
         <span>{footnote}</span>
         <ArrowUpRight
           className="shrink-0 text-[#8aa80f] opacity-70 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:-translate-y-0.5 group-focus-visible:translate-x-0.5 group-focus-visible:opacity-100"

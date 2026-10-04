@@ -1,5 +1,62 @@
 import { useQuery } from "@tanstack/react-query";
 import {
+  avatarClass,
+  chartGridLineClass,
+  chartHoverStateClass,
+  chartPointGroupClass,
+  chartXLabelClass,
+  chartYLabelClass,
+  dashboardGridClass,
+  dashboardPanelBodyClass,
+  dashboardPanelHeadClass,
+  dashboardPanelKickerClass,
+  dashboardTripsPanelClass,
+  dashboardViewClass,
+  donutCenterClass,
+  donutCenterLabelClass,
+  donutCenterValueClass,
+  donutClass,
+  donutLayoutClass,
+  donutLegendClass,
+  donutLegendItemClass,
+  donutLegendSwatchClass,
+  donutLegendTextClass,
+  donutLegendValueClass,
+  dialogHeadClass,
+  iconButtonClass,
+  intradayCardClass,
+  intradayDateIconClass,
+  intradayFiltersClass,
+  intradayKpiAccentClass,
+  intradayKpiClass,
+  intradayKpiLabelClass,
+  intradayKpiSuffixClass,
+  intradayKpiValueClass,
+  intradayLiveDotClass,
+  intradayLiveLabelClass,
+  intradayLiveStatusClass,
+  intradayMetaDotClass,
+  intradayShellClass,
+  loadingChipClass,
+  loadingShellClass,
+  loadingToolbarClass,
+  overviewMetricsClass,
+  scorecardsLayoutClass,
+  lineChartClass,
+  lineChartSvgClass,
+  lineAreaClass,
+  lineStrokeClass,
+  linehaulRowClass,
+  queueRowGroupClass,
+  requestDetailContentClass,
+  requestDetailCopyClass,
+  requestDetailDialogClass,
+  requestDetailTitleClass,
+  textButtonClass,
+  truckDotClass,
+  tripsPanelBodyClass,
+} from "../lib/uiClasses";
+import {
   CalendarDays,
   CheckCircle2,
   ClipboardList,
@@ -80,19 +137,19 @@ export function Overview({
         "/requests?per_page=100&sort=created_at&direction=desc",
       ),
     placeholderData: (previous) => previous,
-    refetchInterval: 15_000,
+    refetchInterval: false,
     enabled: !preview,
   });
   const metrics = useQuery({
     queryKey: ["request-metrics", from, to],
     queryFn: () => api<RequestMetrics>(`/requests/metrics?${range}`),
-    refetchInterval: 15_000,
+    refetchInterval: false,
     enabled: !preview,
   });
   const analytics = useQuery({
     queryKey: ["request-analytics", from, to],
     queryFn: () => api<RequestAnalytics>(`/requests/analytics?${range}`),
-    refetchInterval: 15_000,
+    refetchInterval: false,
     enabled: !preview,
   });
   const intraday = useQuery({
@@ -101,7 +158,7 @@ export function Overview({
       api<{ data: Array<{ hour: number; orderQty: number }> }>(
         `/dispatch/intraday?date=${intradayDate}`,
       ),
-    refetchInterval: 15_000,
+    refetchInterval: false,
     staleTime: 10_000,
     enabled: !preview,
   });
@@ -231,14 +288,14 @@ export function Overview({
     ? "Loading live dispatch data."
     : intraday.error
       ? "Dispatch feed unavailable."
-      : "Live dispatch data. Updates every 15 seconds.";
+      : "Live dispatch data via realtime.";
   const formatHour = useCallback(
     (hour: number) => `${hour % 12 || 12} ${hour >= 12 ? "PM" : "AM"}`,
     [],
   );
 
   return (
-    <div className="workspace-view dashboard-view dashboard-overview">
+    <div className={`${dashboardViewClass} dashboard-overview`}>
       {(requests.error ||
         metrics.error ||
         analytics.error ||
@@ -248,8 +305,8 @@ export function Overview({
           details.
         </p>
       )}
-      <section className="scorecards-layout" aria-label="Dashboard metrics">
-        <section className="overview-metrics" aria-label="Request metrics">
+      <section className={scorecardsLayoutClass} aria-label="Dashboard metrics">
+        <section className={overviewMetricsClass} aria-label="Request metrics">
           {cards.map((card) => (
             <MetricCard
               key={card.status}
@@ -271,13 +328,13 @@ export function Overview({
             />
           ))}
         </section>
-        <section className="intraday-shell" aria-label="Intraday dispatch card">
-          <article className="intraday-card">
+        <section className={intradayShellClass} aria-label="Intraday dispatch card">
+          <article className={intradayCardClass}>
             <ChartHeader
               title="Hourly Throughput"
               description={
                 <>
-                  <span className="intraday-meta-dot" aria-hidden="true" />
+                  <span className={intradayMetaDotClass} aria-hidden="true" />
                   <span>Live operational feed</span>
                   <span aria-hidden="true">·</span>
                   <time dateTime={intradayDate}>{intradayDate}</time>
@@ -290,7 +347,7 @@ export function Overview({
                 />
               }
             />
-            <div className="intraday-summary">
+            <div className="grid grid-cols-[minmax(7.5rem,max-content)_minmax(7.5rem,max-content)_minmax(10.5rem,1fr)] items-center gap-[clamp(.7rem,2vw,1.1rem)] max-[820px]:grid-cols-3 max-[600px]:grid-cols-1 max-[600px]:gap-[.7rem]">
               <IntradayKpi
                 label="Total dispatched"
                 loading={intraday.isPending}
@@ -322,35 +379,35 @@ export function Overview({
           </article>
         </section>
       </section>
-      <section className="dashboard-grid">
+      <section className={dashboardGridClass}>
         <Panel
           className="chart-panel truck-mix-panel"
           kicker="Distribution"
           title="Truck mix"
           description="Selected date range"
         >
-          <div className="donut-layout">
+          <div className={donutLayoutClass}>
             <div
-              className="donut"
+              className={donutClass}
               style={{
                 background: sizeTotal
                   ? `conic-gradient(${gradients})`
                   : "var(--color-bg-base)",
               }}
             >
-              <span>
-                <strong>{sizeTotal}</strong>
-                <small>Total</small>
+              <span className={donutCenterClass}>
+                <strong className={donutCenterValueClass}>{sizeTotal}</strong>
+                <small className={donutCenterLabelClass}>Total</small>
               </span>
             </div>
-            <section className="donut-legend" aria-label="Truck size breakdown">
+            <section className={donutLegendClass} aria-label="Truck size breakdown">
               {sizes.map((size, index) => {
                 const count = analytics.data?.truck_sizes[size] ?? 0;
                 return (
-                  <div key={size}>
-                    <i style={{ background: `#${palette[index]}` }} />
-                    <span>{size}</span>
-                    <strong>
+                  <div className={donutLegendItemClass} key={size}>
+                    <i className={donutLegendSwatchClass} style={{ background: `#${palette[index]}` }} />
+                    <span className={donutLegendTextClass}>{size}</span>
+                    <strong className={donutLegendValueClass}>
                       {count}{" "}
                       <small>
                         ({sizeTotal ? Math.round((count / sizeTotal) * 100) : 0}
@@ -363,46 +420,46 @@ export function Overview({
             </section>
           </div>
         </Panel>
-        <article className="panel dashboard-list-panel dashboard-list-panel--trips">
-          <div className="panel-head">
+        <article className={`min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}>
+          <div className={`${dashboardPanelHeadClass} border-b border-[#087f7c]/[.24] pb-[.65rem]`}>
             <div>
-              <p className="panel-kicker">Live dispatch board</p>
-              <h2>Recent linehaul trips</h2>
-              <p>Latest trips with driver assignments</p>
+              <p className={dashboardPanelKickerClass}>Live dispatch board</p>
+              <h2 className="m-0 text-sm font-semibold text-card-heading">Recent linehaul trips</h2>
+              <p className="mt-1 mb-0 text-xs leading-normal text-soc5-muted">Latest trips with driver assignments</p>
             </div>
             <span className="trips-live-status">
               <i aria-hidden="true" /> Live
             </span>
             <button
-              className="text-button"
+              className={textButtonClass}
               type="button"
               onClick={() => onNavigate("docking")}
             >
               View All
             </button>
           </div>
-          <div className="panel-body">
+          <div className={tripsPanelBodyClass}>
             <QueuePreview
               items={linehaulTrips}
               emptyMessage="No linehaul trips have been created yet."
               renderItem={(request) => (
-                <div className="linehaul-row" key={request.id}>
-                  <span className="avatar">
+                <div className={linehaulRowClass} key={request.id}>
+                  <span className={avatarClass}>
                     {(request.driver_id || request.created_by)
                       .slice(0, 1)
                       .toUpperCase()}
                   </span>
-                  <div>
+                  <div className={queueRowGroupClass}>
                     <strong>
                       {request.linehaul_trip_no || "Trip pending"}
                     </strong>
                     <small>Doc Officer: {request.created_by}</small>
                   </div>
-                  <span className="linehaul-driver">
+                  <span className={`${queueRowGroupClass} min-w-0`}>
                     <b>{request.driver_id || "Driver pending"}</b>
                     <small>Assigned driver</small>
                   </span>
-                  <span className="linehaul-cluster">
+                  <span className={`${queueRowGroupClass} justify-items-end text-right`}>
                     <b>{request.cluster}</b>
                     <small>Cluster</small>
                   </span>
@@ -411,32 +468,32 @@ export function Overview({
             />
           </div>
         </article>
-        <article className="panel dashboard-list-panel">
-          <div className="panel-head">
+        <article className="min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card">
+          <div className={dashboardPanelHeadClass}>
             <div>
-              <p className="panel-kicker">Docking queue</p>
-              <h2>Trucks awaiting docking</h2>
-              <p>Assigned trucks ready for dock confirmation</p>
+              <p className={dashboardPanelKickerClass}>Docking queue</p>
+              <h2 className="m-0 text-sm font-semibold text-card-heading">Trucks awaiting docking</h2>
+              <p className="mt-1 mb-0 text-xs leading-normal text-soc5-muted">Assigned trucks ready for dock confirmation</p>
             </div>
             <button
-              className="text-button"
+              className={textButtonClass}
               type="button"
               onClick={() => onNavigate("docking")}
             >
               View All
             </button>
           </div>
-          <div className="panel-body">
+          <div className={`${dashboardPanelBodyClass} bg-[linear-gradient(135deg,#fbfdec,#f5f9e5)]`}>
             <QueuePreview
               items={assignedTrucks}
               className="truck-list"
               emptyMessage="No assigned trucks are ready for docking."
               renderItem={(request) => (
-                <div className="truck-row" key={request.id}>
-                  <span className="truck-dot">
+                <div className={`${linehaulRowClass} border-[#dce7b5] bg-white shadow-[0_.25rem_.7rem_rgb(83_104_13_/_8%)]`} key={request.id}>
+                  <span className={truckDotClass}>
                     <Truck size={15} />
                   </span>
-                  <div>
+                  <div className={queueRowGroupClass}>
                     <strong>{request.cluster}</strong>
                     <small>{request.status.replaceAll("_", " ")}</small>
                   </div>
@@ -451,20 +508,20 @@ export function Overview({
       <Modal
         open={detailStatus !== null}
         onClose={() => setDetailStatus(null)}
-        className="form-dialog request-detail-dialog"
+        className={requestDetailDialogClass}
         ariaLabelledBy="request-details-title"
       >
-        <div className="dialog-head">
+        <div className={dialogHeadClass}>
           <div>
-            <h2 id="request-details-title">
+            <h2 className={requestDetailTitleClass} id="request-details-title">
               {cards.find((card) => card.status === detailStatus)?.label}
             </h2>
-            <p>
+            <p className={requestDetailCopyClass}>
               {from} to {to} - {details.data?.total ?? 0} requests
             </p>
           </div>
           <button
-            className="icon-button"
+            className={iconButtonClass}
             type="button"
             aria-label="Close"
             onClick={() => setDetailStatus(null)}
@@ -473,16 +530,20 @@ export function Overview({
           </button>
         </div>
         {details.isPending ? (
-          <div className="table-loading-shell">
-            <div className="table-loading-toolbar">
-              <span className="skeleton-chip" />
-              <span className="skeleton-chip" />
-              <span className="skeleton-chip" />
+          <div className={loadingShellClass}>
+            <div className={loadingToolbarClass}>
+              <span className={loadingChipClass} />
+              <span className={loadingChipClass} />
+              <span className={loadingChipClass} />
             </div>
             <SkeletonTable columns={14} rows={4} compact />
           </div>
         ) : (
-          <RequestTable rows={details.data?.data ?? []} />
+          <RequestTable
+            rows={details.data?.data ?? []}
+            tableWrapperClassName={requestDetailContentClass}
+            emptyStateClassName={requestDetailContentClass}
+          />
         )}
       </Modal>
     </div>
@@ -497,15 +558,16 @@ function IntradayDateSelector({
   onChange: (value: string) => void;
 }) {
   return (
-    <fieldset className="intraday-filters" aria-label="Intraday dispatch date">
+    <fieldset className={intradayFiltersClass} aria-label="Intraday dispatch date">
       <label className="sr-only" htmlFor="intraday-date-filter">
         Intraday dispatch date
       </label>
-      <span className="intraday-date-icon" aria-hidden="true">
+      <span className={intradayDateIconClass} aria-hidden="true">
         <CalendarDays size={16} strokeWidth={2.1} />
       </span>
       <input
         id="intraday-date-filter"
+        className={"min-w-0 flex-1 rounded-[.5rem] border border-transparent bg-transparent px-1 text-xs font-bold text-[#162538] outline-none focus:border-[#9bd7cf] focus:bg-white focus:ring-[.2rem] focus:ring-[rgb(20_184_166_/_14%)] max-[600px]:w-full"}
         type="date"
         value={value}
         onChange={(event) => {
@@ -530,15 +592,15 @@ function IntradayKpi({
   accent?: boolean;
 }) {
   return (
-    <div className={`intraday-kpi${accent ? " intraday-kpi--accent" : ""}`}>
-      <span>{label}</span>
-      <strong>
+    <div className={intradayKpiClass}>
+      <span className={intradayKpiLabelClass}>{label}</span>
+      <strong className={`${intradayKpiValueClass}${accent ? ` ${intradayKpiAccentClass}` : ""}`}>
         {loading ? (
           <Skeleton width={118} height={36} />
         ) : (
           <>
             {value}
-            {suffix ? <small>{suffix}</small> : null}
+            {suffix ? <small className={intradayKpiSuffixClass}>{suffix}</small> : null}
           </>
         )}
       </strong>
@@ -559,12 +621,12 @@ function IntradayLiveStatus({
 }) {
   return (
     <span
-      className={`intraday-live-status${error ? " is-error" : ""}${refreshing ? " is-refreshing" : ""}${refreshed ? " is-refreshed" : ""}`}
+      className={`${intradayLiveStatusClass}${error ? " text-[#a8523d]" : ""}`}
       aria-live="polite"
     >
-      <i aria-hidden="true" />
+      <i className={intradayLiveDotClass} aria-hidden="true" />
       <span>{text}</span>
-      <b>{refreshing ? "Refreshing" : refreshed ? "Updated" : "Live"}</b>
+      <b className={intradayLiveLabelClass}>{refreshing ? "Refreshing" : refreshed ? "Updated" : "Live"}</b>
     </span>
   );
 }
@@ -594,10 +656,11 @@ function IntradayLineChart({
   const tooltipY = activePoint ? Math.max(18, activePoint.y - 58) : 0;
 
   return (
-    <div className="line-chart top-dispatch-line-chart">
+    <div className={lineChartClass}>
       <svg
+        className={lineChartSvgClass}
         viewBox="0 0 700 200"
-        role="group"
+        role="img"
         aria-label="Intraday dispatch volume over a 24-hour period"
       >
         <desc>
@@ -607,12 +670,12 @@ function IntradayLineChart({
           <linearGradient id="lineAreaTop" x1="0" x2="0" y1="0" y2="1">
             <stop
               offset="0%"
-              stopColor="var(--dispatch-accent)"
+              stopColor="#b5d93f"
               stopOpacity=".16"
             />
             <stop
               offset="100%"
-              stopColor="var(--dispatch-accent)"
+              stopColor="#b5d93f"
               stopOpacity="0"
             />
           </linearGradient>
@@ -620,34 +683,36 @@ function IntradayLineChart({
         {[160, 112, 64].map((y) => (
           <line
             key={y}
-            className="chart-grid-line"
+            className={chartGridLineClass}
             x1="46"
             y1={y}
             x2="654"
             y2={y}
           />
         ))}
-        <text className="chart-y-label" x="38" y="163">
+        <text className={chartYLabelClass} x="38" y="163">
           0
         </text>
-        <text className="chart-y-label" x="38" y="115">
+        <text className={chartYLabelClass} x="38" y="115">
           {Math.round(maximum / 2).toLocaleString()}
         </text>
-        <text className="chart-y-label" x="38" y="67">
+        <text className={chartYLabelClass} x="38" y="67">
           {maximum.toLocaleString()}
         </text>
-        {area && <path className="line-area" d={area} />}
-        <path className="line-stroke" d={line} />
+        {area && <path className={lineAreaClass} d={area} />}
+        <path className={lineStrokeClass} d={line} />
         {points.map((point, index) => {
           const active = activePoint?.hour === point.hour;
           const timeLabel = formatHour(point.hour);
           return (
+            // biome-ignore lint/a11y/useSemanticElements: SVG data points need keyboard interaction but cannot be native buttons.
             <g
               key={point.label}
               role="button"
               tabIndex={0}
               aria-label={`${timeLabel}: ${point.count.toLocaleString()} dispatched orders`}
-              className={active ? "is-active" : undefined}
+              className={chartPointGroupClass}
+              data-active={active || undefined}
               onBlur={() => onActivePointChange(null)}
               onFocus={() => onActivePointChange(point)}
               onKeyDown={(event) => {
@@ -662,7 +727,7 @@ function IntradayLineChart({
             >
               <circle cx={point.x} cy={point.y} r="4.2" />
               {index % 3 === 0 && (
-                <text className="chart-x-label" x={point.x} y="184">
+                <text className={chartXLabelClass} x={point.x} y="184">
                   {timeLabel}
                 </text>
               )}
@@ -670,7 +735,7 @@ function IntradayLineChart({
           );
         })}
         {activePoint ? (
-          <g className="chart-hover-state" aria-hidden="true">
+          <g className={chartHoverStateClass}>
             <line x1={activePoint.x} y1="44" x2={activePoint.x} y2="160" />
             <circle cx={activePoint.x} cy={activePoint.y} r="5.2" />
             <rect x={tooltipX} y={tooltipY} width="118" height="44" rx="10" />

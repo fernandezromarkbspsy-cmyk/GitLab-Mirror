@@ -3,11 +3,11 @@ export function AmbientGlows() {
     <>
       <div
         aria-hidden
-        className="drift absolute -top-32 left-[12%] h-[360px] w-[360px] rounded-full bg-accent/25 blur-[100px]"
+        className="absolute -top-32 left-[12%] h-[360px] w-[360px] animate-login-drift rounded-full bg-accent/25 blur-[100px] motion-reduce:animate-none"
       />
       <div
         aria-hidden
-        className="drift-slow absolute -bottom-36 right-[8%] h-[380px] w-[380px] rounded-full bg-[#82a9ff]/20 blur-[110px]"
+        className="absolute -bottom-36 right-[8%] h-[380px] w-[380px] animate-login-drift-slow rounded-full bg-[#82a9ff]/20 blur-[110px] motion-reduce:animate-none"
       />
       <div
         aria-hidden

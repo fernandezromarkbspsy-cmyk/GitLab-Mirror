@@ -1,13 +1,6 @@
-export const REQUEST_REFRESH_INTERVAL_MS = 30_000;
+export const REQUEST_REALTIME_REFRESH_EVENT = "request-realtime-refresh";
 
-export type RequestRefreshReason = "manual" | "mutation" | "scheduled";
-
-export function getRequestRefetchInterval(
-  visibilityState: DocumentVisibilityState =
-    typeof document === "undefined" ? "visible" : document.visibilityState,
-) {
-  return visibilityState === "visible" ? REQUEST_REFRESH_INTERVAL_MS : false;
-}
+export type RequestRefreshReason = "initial" | "manual" | "mutation" | "realtime";
 
 export function requestQueryKey(scope: string) {
   return ["requests", scope] as const;

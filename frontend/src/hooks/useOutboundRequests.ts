@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
 import {
-  getRequestRefetchInterval,
+  REQUEST_REALTIME_REFRESH_EVENT,
   requestQueryKey,
   type RequestRefreshReason,
 } from "../lib/requestRefresh";
@@ -20,7 +20,7 @@ export function useOutboundRequests() {
   const [toast, setToast] = useState("");
   const pendingRefreshReason = useRef<RequestRefreshReason | null>(null);
   const [lastRefreshReason, setLastRefreshReason] =
-    useState<RequestRefreshReason>("scheduled");
+    useState<RequestRefreshReason>("initial");
   const requests = useQuery({
     queryKey: [...requestQueryKey("outbound-all"), appliedFilters],
     queryFn: () =>
@@ -29,15 +29,27 @@ export function useOutboundRequests() {
       ),
     placeholderData: (previous) => previous,
     staleTime: 30_000,
-    refetchInterval: () => getRequestRefetchInterval(),
+    refetchInterval: false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: false,
   });
   useEffect(() => {
     if (!requests.dataUpdatedAt) return;
-    setLastRefreshReason(pendingRefreshReason.current ?? "scheduled");
+    setLastRefreshReason(pendingRefreshReason.current ?? "initial");
     pendingRefreshReason.current = null;
   }, [requests.dataUpdatedAt]);
+  useEffect(() => {
+    const markRealtimeRefresh = () => {
+      pendingRefreshReason.current = "realtime";
+    };
+    window.addEventListener(REQUEST_REALTIME_REFRESH_EVENT, markRealtimeRefresh);
+
+    return () =>
+      window.removeEventListener(
+        REQUEST_REALTIME_REFRESH_EVENT,
+        markRealtimeRefresh,
+      );
+  }, []);
   const rows = useMemo(() => requests.data?.data ?? [], [requests.data]);
 
   const showToast = (message: string) => {

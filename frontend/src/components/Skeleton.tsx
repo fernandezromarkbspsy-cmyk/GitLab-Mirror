@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { requestSkeletonCellClass, requestSkeletonClass, requestSkeletonRowClass } from "../lib/uiClasses";
 
 type SkeletonProps = {
   width?: number | string;
@@ -9,11 +10,11 @@ type SkeletonProps = {
 };
 
 const variantClasses = {
-  head: "min-h-3",
-  subtle: "opacity-[.72]",
+  head: "min-h-3 rounded-[.3rem]",
+  subtle: "opacity-[.62]",
   short: "max-w-[72px]",
   pill: "rounded-[99px]",
-  avatar: "flex-none",
+  avatar: "flex-none rounded-[.6rem]",
 } as const;
 
 export function Skeleton({
@@ -31,7 +32,7 @@ export function Skeleton({
 
   return (
     <span
-      className={`block min-h-2.5 rounded-[5px] bg-[linear-gradient(90deg,var(--color-skeleton-base)_0%,var(--color-skeleton-highlight)_48%,var(--color-skeleton-base)_100%)] bg-[length:220%_100%] animate-[skeleton-shimmer_1.8s_ease-in-out_infinite] motion-reduce:animate-none${variant ? ` ${variantClasses[variant]}` : ""}${className ? ` ${className}` : ""}`}
+      className={`block min-h-2.5 rounded-[5px] bg-[linear-gradient(90deg,var(--color-skeleton-base)_0%,var(--color-skeleton-highlight)_48%,var(--color-skeleton-base)_100%)] bg-[length:220%_100%] animate-skeleton-shimmer motion-reduce:animate-none${variant ? ` ${variantClasses[variant]}` : ""}${className ? ` ${className}` : ""}`}
       style={style}
       aria-hidden="true"
     />
@@ -40,7 +41,7 @@ export function Skeleton({
 
 export function SkeletonList({ rows = 4 }: { rows?: number }) {
   return (
-    <div className="grid gap-0" role="status" aria-label="Loading list">
+    <div className="grid gap-0" role="status" aria-label="Loading list" aria-busy="true">
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
         <div
           className="flex min-h-[62px] items-center gap-3 border-b border-soc5-line py-2.5"
@@ -64,6 +65,7 @@ export function SkeletonCardList({ rows = 3 }: { rows?: number }) {
       className="grid gap-3"
       role="status"
       aria-label="Loading cards"
+      aria-busy="true"
     >
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
         <article
@@ -85,7 +87,7 @@ export function SkeletonCardList({ rows = 3 }: { rows?: number }) {
 
 export function SkeletonStatus({ children }: { children?: ReactNode }) {
   return (
-    <div className="min-h-px" role="status" aria-live="polite">
+    <div className="min-h-px" role="status" aria-live="polite" aria-busy="true">
       <span className="sr-only">{children ?? "Loading content"}</span>
     </div>
   );
@@ -103,18 +105,19 @@ export function SkeletonRequestTable({
 
   return (
     <div
-      className="lh-table-skeleton [&_.lh-table-row]:pointer-events-none [&_.lh-table-row>span]:self-center"
+      className={requestSkeletonClass}
       role="status"
       aria-label="Loading requests"
+      aria-busy="true"
     >
       {Array.from({ length: Math.max(1, rows) }).map((_, rowIndex) => (
-        <div className="lh-table-row lh-table-grid lh-skeleton-row" key={rowIndex}>
+        <div className={requestSkeletonRowClass} key={rowIndex}>
           {Array.from({ length: columnCount }).map((_, columnIndex) => {
             const width = columnWidths[(rowIndex + columnIndex) % columnWidths.length];
             const isActionsColumn = columnIndex === columnCount - 1;
 
             return (
-              <span className="lh-skeleton-cell" key={columnIndex}>
+              <span className={requestSkeletonCellClass} key={columnIndex}>
                 {isActionsColumn ? (
                   <Skeleton width={20} height={20} radius={5} />
                 ) : columnIndex === 0 ? (

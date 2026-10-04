@@ -68,6 +68,40 @@ cloudflared tunnel login
 4. Open `http://localhost:5173`, or the Cloudflare hostname when the tunnel is
    running.
 
+## Staging and production deployment
+
+For the full staging provisioning, environment, migration, rollout, smoke-test,
+and rollback procedure, see the
+[Staging Deployment Setup Guide](docs/deployment/staging-deployment.md).
+
+Before any staging or production rollout, verify the deployment profile:
+
+```powershell
+cd backend
+php artisan system:verify-config --staging
+# or
+php artisan system:verify-config --production
+```
+
+The public `soc5outboundops.app` tunnel must use the production Docker web
+container, not the local Vite server. Deploy the stack with:
+
+```powershell
+docker compose up --build -d
+```
+
+The frontend image runs `npm ci`, `npm run build`, and then serves the resulting
+`frontend/dist` files from NGINX. The named-tunnel helper is available for a
+host-managed tunnel:
+
+```powershell
+.\scripts\launchers\start-production.ps1
+```
+
+The production origin is `127.0.0.1:5173` so the existing named tunnel route
+does not need to change. SPA routes fall back to `index.html`, and `/api` is
+proxied to Laravel by the frontend NGINX configuration.
+
 Laravel runs on `http://127.0.0.1:8000`; Vite proxies browser `/api` requests to
 that address. To validate the local services from another PowerShell window:
 
@@ -131,3 +165,5 @@ Get-Process playwright -ErrorAction SilentlyContinue | Stop-Process -Force
 Remove-Item -Recurse -Force .\node_modules
 Remove-Item -Recurse -Force .\Frontend\node_modules
 npm ci
+php artisan optimize:clear
+netstat -ano | findstr ":3000 :5173 :4173 :8080"

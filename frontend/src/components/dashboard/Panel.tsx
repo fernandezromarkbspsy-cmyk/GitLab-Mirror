@@ -23,13 +23,13 @@ export function Panel({
     >
       <div className="flex items-start justify-between gap-3 px-3.5 pt-3.5">
         <div>
-          <p className="mb-[3px] text-card-kicker font-bold tracking-[var(--card-kicker-tracking)] text-soc5-lime-deep uppercase">
+          <p className="mb-[3px] text-xs font-semibold tracking-wide text-soc5-lime-deep uppercase">
             {kicker}
           </p>
-          <h2 className="m-0 text-card-title font-[750] text-card-heading">
+          <h2 className="m-0 text-sm font-semibold text-card-heading">
             {title}
           </h2>
-          <p className="mt-1 mb-0 text-card-description text-soc5-muted">
+          <p className="mt-1 mb-0 text-xs leading-normal text-soc5-muted">
             {description}
           </p>
         </div>

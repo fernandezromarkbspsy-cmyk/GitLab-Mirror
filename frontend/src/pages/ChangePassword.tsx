@@ -1,5 +1,13 @@
 import { FormEvent, useState } from "react";
 import { api } from "../lib/api";
+import {
+  changePasswordCardClass,
+  changePasswordFormClass,
+  changePasswordInputClass,
+  changePasswordLabelClass,
+  changePasswordPageClass,
+  changePasswordSubmitClass,
+} from "../lib/uiClasses";
 export function ChangePassword({ onComplete }: { onComplete: () => void }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -35,17 +43,18 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
     }
   }
   return (
-    <main className="login">
-      <section>
-        <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">FIRST LOGIN</p>
-        <h1>Secure your account</h1>
-        <p>Set a permanent password before continuing.</p>
+    <main className={changePasswordPageClass}>
+      <section className={changePasswordCardClass}>
+        <p className="mb-[.35rem] text-xs font-semibold text-soc5-lime-deep">First login</p>
+        <h1 className="text-[clamp(1.35rem,4vw,1.8rem)] font-bold tracking-tight text-[#0b1d2d]">Secure your account</h1>
+        <p className="mt-2 text-xs leading-normal text-soc5-muted">Set a permanent password before continuing.</p>
       </section>
-      <form onSubmit={submit}>
-        <h2>Change password</h2>
-        <label>
+      <form className={`${changePasswordCardClass} ${changePasswordFormClass}`} onSubmit={submit}>
+        <h2 className="text-base font-bold text-[#203638]">Change password</h2>
+        <label className={changePasswordLabelClass}>
           New password
           <input
+            className={changePasswordInputClass}
             type="password"
             autoComplete="new-password"
             required
@@ -53,9 +62,10 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>
-        <label>
+        <label className={changePasswordLabelClass}>
           Confirm password
           <input
+            className={changePasswordInputClass}
             type="password"
             autoComplete="new-password"
             required
@@ -64,11 +74,11 @@ export function ChangePassword({ onComplete }: { onComplete: () => void }) {
           />
         </label>
         {error && (
-          <p className="error text-[var(--color-danger)]" role="alert">
+          <p className="rounded-[.5rem] border border-[rgb(194_54_70_/_20%)] bg-[#fff5f6] px-3 py-2 text-xs leading-snug text-[#a4283c]" role="alert">
             {error}
           </p>
         )}
-        <button type="submit" disabled={busy}>
+        <button className={changePasswordSubmitClass} type="submit" disabled={busy}>
           {busy ? "Saving…" : "Change password"}
         </button>
       </form>

@@ -37,8 +37,7 @@ export function ApprovalStateBadge({
 
   return (
     <span
-      className={`inline-block min-h-[22px] rounded-full border px-2 py-[3px] text-[10px] leading-[13px] font-bold ${classes[state]}`}
-      aria-label={`Approval state: ${labels[state]}`}
+      className={`inline-block min-h-[22px] rounded-full border px-2 py-[3px] text-xs leading-4 font-semibold ${classes[state]}`}
     >
       {labels[state]}
     </span>

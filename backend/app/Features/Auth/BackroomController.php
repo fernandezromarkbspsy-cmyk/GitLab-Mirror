@@ -3,6 +3,7 @@
 namespace App\Features\Auth;
 
 use App\Integrations\SupabaseHttpOptions;
+use App\Support\AuthenticatedProfileCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -93,6 +94,7 @@ final class BackroomController
                 'updated_at' => now(),
             ]);
         abort_unless($updated, 409, 'Password change could not be recorded.');
+        AuthenticatedProfileCache::forget($actor->id);
 
         return response()->json(['ok' => true]);
     }

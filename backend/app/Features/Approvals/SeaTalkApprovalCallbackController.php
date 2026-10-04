@@ -29,21 +29,28 @@ final class SeaTalkApprovalCallbackController
     {
         $data = $request->validate([
             'item_id' => ['required', 'string', 'max:100'],
-            'event_id' => ['required', 'string', 'max:255'],
-            'timestamp' => ['required', 'integer'],
+            'event_id' => ['nullable', 'string', 'max:255'],
+            'timestamp' => ['nullable', 'integer'],
             'employee.employee_code' => ['required', 'string', 'max:255'],
             'reason' => [$action === 'reject' ? 'required' : 'nullable', 'string', 'max:500'],
         ]);
 
-        $eventId = (string) $data['event_id'];
-        $item = $this->resolveItem((string) $data['item_id']);
-        $assignment = $this->resolveAssignment($item, (string) data_get($data, 'employee.employee_code'));
+        $itemId = (string) $data['item_id'];
+        $employeeCode = (string) data_get($data, 'employee.employee_code');
+        $eventId = (string) ($data['event_id'] ?? hash('sha256', implode("\n", [
+            $action,
+            $request->getContent(),
+            $itemId,
+            $employeeCode,
+        ])));
+        $item = $this->resolveItem($itemId);
+        $assignment = $this->resolveAssignment($item, $employeeCode);
 
         $inserted = DB::table('seatalk_callback_events')->insertOrIgnore([
             'event_id' => $eventId,
-            'provider_item_id' => (string) $data['item_id'],
+            'provider_item_id' => $itemId,
             'request_id' => $item->request_id,
-            'employee_code' => (string) data_get($data, 'employee.employee_code'),
+            'employee_code' => $employeeCode,
             'action' => $action,
             'status' => $assignment === null ? 'ignored' : 'received',
             'received_at' => now(),
@@ -59,7 +66,7 @@ final class SeaTalkApprovalCallbackController
         }
 
         $profile = DB::table('profiles')->where('id', $assignment->fte_user_id)->first(['id', 'role', 'seatalk_employee_code']);
-        if ($profile === null || (string) $profile->seatalk_employee_code !== (string) data_get($data, 'employee.employee_code')) {
+        if ($profile === null || (string) $profile->seatalk_employee_code !== $employeeCode) {
             return $this->acknowledge('ignored');
         }
 

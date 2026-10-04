@@ -9,6 +9,7 @@ import {
 } from "../lib/requests";
 import { api } from "../lib/api";
 import type { ClusterLookup, TruckRequest } from "../types";
+import { inlineActionsClass, inlineCreateFormClass, inlineCreateInputClass, inlineCreateLabelClass, inlinePrimaryButtonClass, inlineSuggestionClass, inlineSuggestionsClass, secondaryButtonClass } from "../lib/uiClasses";
 
 export function InlineCreateRow({
   busy,
@@ -52,11 +53,13 @@ export function InlineCreateRow({
   }
 
   return (
-    <form className="inline-create-row" onSubmit={submit}>
-      <label className="cluster-lookup-field">
+    <form className={inlineCreateFormClass} onSubmit={submit}>
+      <label className={inlineCreateLabelClass} htmlFor="cluster-input">
         Cluster
         <Combobox value={selected} by="id" onChange={pick} nullable>
           <Combobox.Input
+            id="cluster-input"
+            className={inlineCreateInputClass}
             name="cluster"
             required
             maxLength={120}
@@ -67,7 +70,7 @@ export function InlineCreateRow({
             }}
             placeholder="Type 3 chars"
           />
-          <Combobox.Options as="div" className="cluster-suggestions">
+          <Combobox.Options as="div" className={inlineSuggestionsClass}>
             {searchIsCurrent &&
               clusterSearch.length >= 3 &&
               lookup.isFetching &&
@@ -78,7 +81,8 @@ export function InlineCreateRow({
             {searchIsCurrent && lookup.data && !lookup.isFetching && (
               lookup.data.data.length ? (
                 lookup.data.data.map((cluster) => (
-                  <Combobox.Option
+                    <Combobox.Option
+                      className={inlineSuggestionClass}
                     key={cluster.id}
                     value={cluster}
                     as="button"
@@ -104,13 +108,14 @@ export function InlineCreateRow({
           </Combobox.Options>
         </Combobox>
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Region
-        <input name="region" required readOnly value={selected?.region ?? ""} />
+        <input className={inlineCreateInputClass} name="region" required readOnly value={selected?.region ?? ""} />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Dock No
         <input
+          className={inlineCreateInputClass}
           name="dock_no"
           required
           maxLength={50}
@@ -118,9 +123,10 @@ export function InlineCreateRow({
           key={selected?.id ?? "dock"}
         />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Backlogs
         <input
+          className={inlineCreateInputClass}
           name="backlogs"
           type="number"
           required
@@ -129,9 +135,10 @@ export function InlineCreateRow({
           value={selected?.backlogs ?? 0}
         />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Backlogs Timestamp
-        <input
+          <input
+          className={inlineCreateInputClass}
           readOnly
           value={
             selected?.backlogs_ts
@@ -145,9 +152,9 @@ export function InlineCreateRow({
           value={selected?.backlogs_ts ?? ""}
         />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Truck Size
-        <select name="truck_size" defaultValue="6W">
+        <select className={inlineCreateInputClass} name="truck_size" defaultValue="6W">
           <option>4W</option>
           <option>6W</option>
           <option>10W</option>
@@ -157,12 +164,12 @@ export function InlineCreateRow({
       {error && (
         <p className="error notice text-[var(--color-danger)]">{error}</p>
       )}
-      <div className="inline-create-actions">
-        <button className="secondary-button" type="button" onClick={onCancel}>
+      <div className={inlineActionsClass}>
+        <button className={secondaryButtonClass} type="button" onClick={onCancel}>
           <X size={15} />
           Cancel
         </button>
-        <button type="submit" disabled={busy || !selected}>
+        <button className={inlinePrimaryButtonClass} type="submit" disabled={busy || !selected}>
           <Save size={15} />
           {busy ? "Saving..." : "Save"}
         </button>
@@ -190,37 +197,41 @@ export function InlineEditRow({
   }
 
   return (
-    <form className="inline-create-row" onSubmit={submit}>
-      <label>
+    <form className={inlineCreateFormClass} onSubmit={submit}>
+      <label className={inlineCreateLabelClass}>
         Cluster
         <input
+          className={inlineCreateInputClass}
           name="cluster"
           required
           maxLength={120}
           defaultValue={request.cluster}
         />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Region
         <input
+          className={inlineCreateInputClass}
           name="region"
           required
           maxLength={120}
           defaultValue={request.region}
         />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Dock No
         <input
+          className={inlineCreateInputClass}
           name="dock_no"
           required
           maxLength={50}
           defaultValue={request.dock_no}
         />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Backlogs
         <input
+          className={inlineCreateInputClass}
           name="backlogs"
           type="number"
           required
@@ -228,18 +239,18 @@ export function InlineEditRow({
           defaultValue={request.backlogs}
         />
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Truck Size
-        <select name="truck_size" defaultValue={request.truck_size}>
+        <select className={inlineCreateInputClass} name="truck_size" defaultValue={request.truck_size}>
           <option>4W</option>
           <option>6W</option>
           <option>10W</option>
           <option>6WF</option>
         </select>
       </label>
-      <label>
+      <label className={inlineCreateLabelClass}>
         Truck Type
-        <select name="truck_type" defaultValue={request.truck_type}>
+        <select className={inlineCreateInputClass} name="truck_type" defaultValue={request.truck_type}>
           <option>WETLEASE</option>
           <option>DRYLEASE</option>
         </select>
@@ -247,12 +258,12 @@ export function InlineEditRow({
       {error && (
         <p className="error notice text-[var(--color-danger)]">{error}</p>
       )}
-      <div className="inline-create-actions">
-        <button className="secondary-button" type="button" onClick={onCancel}>
+      <div className={inlineActionsClass}>
+        <button className={secondaryButtonClass} type="button" onClick={onCancel}>
           <X size={15} />
           Cancel
         </button>
-        <button type="submit" disabled={busy}>
+        <button className={inlinePrimaryButtonClass} type="submit" disabled={busy}>
           <Save size={15} />
           {busy ? "Saving..." : "Save"}
         </button>

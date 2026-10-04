@@ -61,7 +61,7 @@ Always preserve unless explicitly instructed otherwise:
 
 # UI Modernization Rules
 
-When redesigning UI:
+When redesigning UI, always use Tailwind
 
 Allowed:
 

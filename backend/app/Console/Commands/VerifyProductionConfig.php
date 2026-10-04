@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 final class VerifyProductionConfig extends Command
 {
-    protected $signature = 'system:verify-config {--production : Apply production-only requirements}';
+    protected $signature = 'system:verify-config {--production : Apply production-only requirements} {--staging : Apply staging-only requirements}';
 
     protected $description = 'Verify required application configuration before startup or deployment';
 
@@ -52,26 +52,38 @@ final class VerifyProductionConfig extends Command
             }
         }
 
+        $deploymentMode = null;
+        if ($this->option('production') && $this->option('staging')) {
+            $this->error('Choose either --production or --staging, not both.');
+            return self::FAILURE;
+        }
         if ($this->option('production')) {
-            if (config('app.env') !== 'production') {
-                $this->error('APP_ENV must be production for a production deployment.');
+            $deploymentMode = 'production';
+        }
+        if ($this->option('staging')) {
+            $deploymentMode = 'staging';
+        }
+
+        if ($deploymentMode !== null) {
+            if (config('app.env') !== $deploymentMode) {
+                $this->error("APP_ENV must be {$deploymentMode} for a {$deploymentMode} deployment.");
                 $failed = true;
             }
             if (config('app.debug')) {
-                $this->error('APP_DEBUG must be false in production.');
+                $this->error("APP_DEBUG must be false in {$deploymentMode}.");
                 $failed = true;
             }
             if (! in_array(config('database.connections.pgsql.sslmode'), ['require', 'verify-ca', 'verify-full'], true)) {
-                $this->error('DB_SSLMODE must enforce TLS in production.');
+                $this->error("DB_SSLMODE must enforce TLS in {$deploymentMode}.");
                 $failed = true;
             }
             if (! str_starts_with((string) config('app.url'), 'https://')) {
-                $this->error('APP_URL must use HTTPS in production.');
+                $this->error("APP_URL must use HTTPS in {$deploymentMode}.");
                 $failed = true;
             }
             foreach (['user_events', 'idempotency_keys'] as $table) {
                 if (! Schema::hasTable($table)) {
-                    $this->error("Required production table is missing: {$table}");
+                    $this->error("Required {$deploymentMode} table is missing: {$table}");
                     $failed = true;
                 }
             }

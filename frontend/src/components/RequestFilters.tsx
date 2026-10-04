@@ -1,4 +1,5 @@
 import { CalendarDays, Download, RefreshCw, Search } from "lucide-react";
+import { iconButtonClass, requestControlActionsClass, requestControlsClass, requestExportButtonClass, requestFilterClass, requestSearchClass, requestStatusBadgeActiveClass, requestStatusBadgeClass, requestStatusTabActiveClass, requestStatusTabClass, requestStatusTabsClass, requestToolbarClass } from "../lib/uiClasses";
 import type { RequestFilters as Filters, Status } from "../types";
 
 export const statuses: Array<Status | "ALL"> = [
@@ -42,9 +43,9 @@ export function RequestFilters({
   const selectedDate = filters.dateFrom || today;
 
   return (
-    <section className="request-controls" aria-label="Request filters">
+    <section className={requestControlsClass} aria-label="Request filters">
       <div
-        className="request-status-tabs"
+        className={requestStatusTabsClass}
         role="tablist"
         aria-label="Request status tabs"
       >
@@ -53,20 +54,20 @@ export function RequestFilters({
           return (
             <button
               key={tab.value}
-              className={`status-tab ${active ? "active" : ""}`}
+              className={`${requestStatusTabClass} ${active ? requestStatusTabActiveClass : ""}`}
               type="button"
               onClick={() => change({ status: tab.value as Status | "ALL" })}
             >
               <span>
                 {tab.value === "ALL" ? "All" : tab.value.replaceAll("_", " ")}
               </span>
-              <span className="status-tab-badge">{tab.count}</span>
+              <span className={`${requestStatusBadgeClass} ${active ? requestStatusBadgeActiveClass : ""}`}>{tab.count}</span>
             </button>
           );
         })}
       </div>
-      <div className="request-toolbar">
-        <label className="search-field" htmlFor="request-search">
+      <div className={requestToolbarClass}>
+        <label className={requestSearchClass} htmlFor="request-search">
           <Search size={16} />
           <input
             id="request-search"
@@ -76,7 +77,7 @@ export function RequestFilters({
             onChange={(event) => change({ search: event.target.value })}
           />
         </label>
-        <label className="filter-field date-field" htmlFor="request-date">
+        <label className={requestFilterClass} htmlFor="request-date">
           <CalendarDays size={16} />
           <input
             id="request-date"
@@ -91,7 +92,7 @@ export function RequestFilters({
           />
         </label>
         {!hideStatusFilter && (
-          <label className="filter-field status-filter">
+          <label className={requestFilterClass}>
             <span>Status</span>
             <select
               value={filters.status}
@@ -107,9 +108,9 @@ export function RequestFilters({
             </select>
           </label>
         )}
-        <div className="control-actions">
+        <div className={requestControlActionsClass}>
           <button
-            className="toolbar-button icon-button"
+            className={`${iconButtonClass} min-h-[1.9rem]`}
             type="button"
             title="Refresh requests"
             aria-label="Refresh requests"
@@ -118,7 +119,7 @@ export function RequestFilters({
             <RefreshCw size={16} />
           </button>
           <button
-            className="toolbar-button export-button"
+            className={requestExportButtonClass}
             type="button"
             disabled={exporting}
             onClick={onExport}

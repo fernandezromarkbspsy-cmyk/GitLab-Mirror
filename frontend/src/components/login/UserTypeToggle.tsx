@@ -36,7 +36,7 @@ export function UserTypeToggle({ value, onChange }: UserTypeToggleProps) {
             role="tab"
             aria-selected={active}
             onClick={() => onChange(o.key)}
-            className={`relative z-10 flex h-9 items-center justify-center gap-1.5 rounded-lg font-display text-[13px] font-semibold transition-colors duration-200 ${
+            className={`relative z-10 flex h-9 items-center justify-center gap-1.5 rounded-lg font-display text-xs font-semibold transition-colors duration-200 ${
               active ? "text-white" : "text-faint hover:text-ink"
             }`}
           >

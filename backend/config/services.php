@@ -18,6 +18,9 @@ return [
         // Cache a validated access token for this many seconds to avoid a
         // Supabase round-trip on every request. Set to 0 to disable caching.
         'token_cache_ttl' => (int) env('SUPABASE_TOKEN_CACHE_TTL', 30),
+        // Keep authorization data fresh while avoiding a remote profile lookup
+        // on every API request. Profile writes explicitly invalidate this entry.
+        'profile_cache_ttl' => (int) env('SUPABASE_PROFILE_CACHE_TTL', 5),
     ],
     'seatalk' => [
         'app_id' => env('SEATALK_APP_ID'),

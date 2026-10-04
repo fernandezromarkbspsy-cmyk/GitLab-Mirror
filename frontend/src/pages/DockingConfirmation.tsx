@@ -7,6 +7,7 @@ import { RequestTable } from "../components/RequestTable";
 import { SkeletonTable } from "../components/SkeletonTable";
 import { api } from "../lib/api";
 import { requestQueryKey } from "../lib/requestRefresh";
+import { compactFormDialogClass, dialogActionsClass, dialogFormClass, dialogHeadClass, dialogInputClass, dialogLabelClass, iconButtonClass, loadingChipClass, loadingShellClass, loadingToolbarClass, operationalPanelClass, operationalPanelCopyClass, operationalPanelHeadClass, operationalPanelTitleClass, primaryTableActionClass, secondaryButtonClass, tableActionClass, workspaceViewClass } from "../lib/uiClasses";
 import { buildIdempotencyHeaders } from "../lib/idempotency";
 import type { Page, TruckRequest, User } from "../types";
 
@@ -65,7 +66,7 @@ export function DockingConfirmation({ user }: { user: User }) {
     <>
       <button
         type="button"
-        className="table-action"
+        className={tableActionClass}
         onClick={() => setPrintable(request)}
       >
         <Printer size={15} />
@@ -74,7 +75,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       {request.status === "DOCKING" && user.role === "doc_officer" && (
         <button
           type="button"
-          className="table-action assign"
+        className={primaryTableActionClass}
           disabled={action.isPending}
           onClick={() => setSelected(request)}
         >
@@ -85,7 +86,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       {request.status === "ASSIGNED" && user.role === "ops_pic" && (
         <button
           type="button"
-          className="table-action assign"
+        className={primaryTableActionClass}
           disabled={action.isPending}
           onClick={() => setSelected(request)}
         >
@@ -97,24 +98,24 @@ export function DockingConfirmation({ user }: { user: User }) {
   );
 
   return (
-    <div className="workspace-view">
+    <div className={workspaceViewClass}>
       {action.error && (
         <p className="notice error text-[var(--color-danger)]">
           {action.error.message}
         </p>
       )}
-      <section className="panel data-panel">
-        <div className="panel-head">
+      <section className={operationalPanelClass}>
+        <div className={operationalPanelHeadClass}>
           <div>
-            <h2>Docking queue</h2>
-            <p>Assigned trucks requiring dock action or final confirmation</p>
+            <h2 className={operationalPanelTitleClass}>Docking queue</h2>
+            <p className={operationalPanelCopyClass}>Assigned trucks requiring dock action or final confirmation</p>
           </div>
         </div>
         {queue.isPending ? (
-          <div className="table-loading-shell">
-            <div className="table-loading-toolbar">
-              <span className="skeleton-chip" />
-              <span className="skeleton-chip" />
+          <div className={loadingShellClass}>
+            <div className={loadingToolbarClass}>
+              <span className={loadingChipClass} />
+              <span className={loadingChipClass} />
             </div>
             <SkeletonTable columns={4} rows={4} compact />
           </div>
@@ -173,19 +174,19 @@ function DockDialog({
     <Modal
       open
       onClose={onClose}
-      className="form-dialog compact"
+      className={compactFormDialogClass}
       role="dialog"
       ariaLabel={`Dock truck for ${request.cluster}`}
     >
-      <div className="dialog-head">
+      <div className={dialogHeadClass}>
         <div>
-          <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">
+          <p className="mb-[0.35rem] text-soc5-lime-deep text-xs font-semibold tracking-wide uppercase">
             {request.cluster}
           </p>
           <h2>Dock truck</h2>
         </div>
         <button
-          className="icon-button"
+          className={iconButtonClass}
           type="button"
           aria-label="Close"
           onClick={onClose}
@@ -193,28 +194,30 @@ function DockDialog({
           <X size={18} />
         </button>
       </div>
-      <form onSubmit={submit}>
+      <form className={dialogFormClass} onSubmit={submit}>
         {role === "doc_officer" ? (
-          <label>
+          <label className={dialogLabelClass}>
             Driver ID
             <input
               name="driver_id"
               required
+              className={dialogInputClass}
               defaultValue={request.driver_id ?? ""}
             />
           </label>
         ) : (
-          <label>
+          <label className={dialogLabelClass}>
             LH Trip Number
             <input
               name="linehaul_trip_no"
               required
+              className={dialogInputClass}
               defaultValue={request.linehaul_trip_no ?? ""}
             />
           </label>
         )}
-        <div className="dialog-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>
+        <div className={dialogActionsClass}>
+          <button type="button" className={secondaryButtonClass} onClick={onClose}>
             Cancel
           </button>
           <button type="submit" disabled={busy}>

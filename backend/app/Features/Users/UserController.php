@@ -3,6 +3,7 @@
 namespace App\Features\Users;
 
 use App\Integrations\SupabaseAdminClient;
+use App\Support\AuthenticatedProfileCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +99,7 @@ final class UserController
             abort_unless($updated, 404, 'User not found.');
             $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_UPDATED', $data);
         });
+        AuthenticatedProfileCache::forget($id);
 
         return response()->json(DB::table('profiles')->where('id', $id)->firstOrFail());
     }
@@ -111,6 +113,7 @@ final class UserController
             abort_unless($updated, 404, 'User not found.');
             $this->userEvent($id, $request->attributes->get('actor')->id, 'USER_DISABLED');
         });
+        AuthenticatedProfileCache::forget($id);
 
         return response()->json(['ok' => true]);
     }
@@ -129,6 +132,7 @@ final class UserController
             'password_reset_at' => $resetAt,
             'updated_at' => $resetAt,
         ]);
+        AuthenticatedProfileCache::forget($profile->id);
 
         $restoreResetState = function () use ($profile): void {
             $restored = DB::table('profiles')->where('id', $profile->id)->update([
@@ -140,6 +144,7 @@ final class UserController
             if (! $restored) {
                 Log::critical('Backroom password reset rollback failed.', ['user_id' => $profile->id, 'ops_id' => $profile->ops_id]);
             }
+            AuthenticatedProfileCache::forget($profile->id);
         };
 
         $availableAt = $resetAt->copy()->addMinutes(5);

@@ -20,11 +20,23 @@ import type { RequestFilters, RequestSort } from "../types";
 import { statuses } from "./RequestFilters";
 
 const menuButtonClass =
-  "flex min-h-9 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-soc5-line bg-soc5-panel px-2.5 py-1.5 text-sm text-[#536264] transition-[color,border-color,background-color,box-shadow,transform] duration-200 hover:border-linehaul-teal/20 hover:bg-[#f5faf9] hover:text-linehaul-teal-strong hover:shadow-[var(--lh-2026-shadow-sm)] active:translate-y-px max-[480px]:w-full max-[480px]:justify-center";
+  "flex min-h-9 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-soc5-line bg-soc5-panel px-2.5 py-1.5 text-sm text-[#536264] transition-[color,border-color,background-color,box-shadow,transform] duration-200 hover:border-linehaul-teal/20 hover:bg-[#f5faf9] hover:text-linehaul-teal-strong hover:shadow-[var(--lh-2026-shadow-sm)] active:translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-linehaul-teal max-[480px]:w-full max-[480px]:justify-center";
 const popoverClass =
   "absolute top-[calc(100%+8px)] left-0 z-20 grid min-w-[190px] gap-2.5 rounded-[10px] border border-[#dce9e8] bg-linehaul-surface p-3 shadow-[0_12px_28px_#1f4b4d1f] animate-[lh-popover-in_.18s_ease_both] max-[480px]:right-0 max-[480px]:left-auto";
 const actionButtonClass =
   "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border px-4 py-1.5 text-sm font-medium transition-[color,border-color,background-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-linehaul-teal/40 focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60";
+const filterChipClass =
+  "inline-flex min-h-6 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-[#cde3e0] bg-[#eef8f7] px-1.5 text-xs font-semibold text-[#365457] hover:border-[#8bbdb8] hover:bg-[#e4f3f0] hover:text-soc5-ink";
+const clearFiltersClass =
+  "inline-flex min-h-6 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-soc5-line bg-soc5-panel px-1.5 text-xs font-semibold text-soc5-muted hover:border-[#8bbdb8] hover:bg-[#e4f3f0] hover:text-soc5-ink";
+const densityToggleClass =
+  "inline-flex min-h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-soc5-line bg-soc5-panel px-2 text-xs font-semibold text-soc5-muted hover:border-[#8bbdb8] hover:bg-[#e4f3f0] hover:text-soc5-ink aria-[pressed=true]:border-[#8bbdb8] aria-[pressed=true]:bg-[#e4f3f0]";
+const searchWrapClass =
+  "relative order-first ml-auto w-full min-w-[9rem] max-w-[15.5rem] flex-1 max-[760px]:order-none max-[760px]:basis-full max-[480px]:col-span-full lg:order-none";
+const searchInputClass =
+  "min-h-9 w-full rounded-[9px] border border-linehaul-line bg-linehaul-surface py-1.5 pr-3 pl-9 text-sm text-soc5-ink placeholder:text-gray-400 focus:border-linehaul-teal/30 focus:outline-none focus:ring-[3px] focus:ring-linehaul-teal/10";
+const menuOptionClass =
+  "min-h-[30px] cursor-pointer rounded-md border-0 bg-transparent px-2 text-left text-xs capitalize text-[#506062] hover:bg-[#eef8f7] hover:text-linehaul-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-linehaul-teal";
 type Props = {
   filters: RequestFilters;
   exporting?: boolean;
@@ -104,7 +116,7 @@ export function LhTableToolbar({
   function filterChip(label: string, onClear: () => void) {
     return (
       <button
-        className="lh-filter-chip"
+        className={filterChipClass}
         key={label}
         type="button"
         onClick={onClear}
@@ -144,7 +156,7 @@ export function LhTableToolbar({
   function renderStatusOptions() {
     return statuses.map((status) => (
       <button
-        className="min-h-[30px] cursor-pointer rounded-md border-0 bg-transparent px-2 text-left text-xs capitalize text-[#506062] hover:bg-[#eef8f7] hover:text-linehaul-teal"
+        className={menuOptionClass}
         key={status}
         type="button"
         role="menuitem"
@@ -161,7 +173,7 @@ export function LhTableToolbar({
   function renderSortOptions() {
     return sortOptions.map((sort) => (
       <button
-        className="min-h-[30px] cursor-pointer rounded-md border-0 bg-transparent px-2 text-left text-xs capitalize text-[#506062] hover:bg-[#eef8f7] hover:text-linehaul-teal"
+        className={menuOptionClass}
         key={sort}
         type="button"
         role="menuitem"
@@ -176,10 +188,10 @@ export function LhTableToolbar({
   }
 
   return (
-    <div ref={rootRef} className="lh-table-toolbar-filters flex min-h-0 min-w-0 flex-col gap-3 min-[481px]:flex-row min-[481px]:items-center max-[1120px]:flex-wrap max-[760px]:gap-2.5 max-[480px]:grid max-[480px]:grid-cols-2 lg:flex-row lg:items-center">
+    <div ref={rootRef} className="flex min-h-0 min-w-0 flex-1 flex-col items-center gap-3 min-[481px]:flex-row max-[1120px]:flex-wrap max-[1120px]:gap-[.35rem] max-[760px]:gap-2.5 max-[680px]:p-[.45rem] max-[480px]:grid max-[480px]:grid-cols-2 lg:flex-row">
       <div className="relative inline-flex max-[760px]:order-none max-[760px]:flex-none">
         <button
-          className={`${menuButtonClass} lh-secondary-filter-control${filters.status !== "ALL" ? " is-active" : ""}`}
+          className={`${menuButtonClass} ${filters.status !== "ALL" ? "border-[#8bbdb8] bg-[#e4f3f0] text-soc5-ink" : ""}`}
           type="button"
           aria-expanded={openMenu === "status"}
           onClick={() => setOpenMenu(openMenu === "status" ? null : "status")}
@@ -200,7 +212,7 @@ export function LhTableToolbar({
       </div>
       <div className="relative inline-flex max-[760px]:order-none max-[760px]:flex-none">
         <button
-          className={`${menuButtonClass} lh-secondary-filter-control`}
+          className={`${menuButtonClass} ${openMenu === "filters" ? "border-[#8bbdb8] bg-[#e4f3f0] text-soc5-ink" : ""}`}
           type="button"
           aria-expanded={openMenu === "filters"}
           onClick={() => setOpenMenu(openMenu === "filters" ? null : "filters")}
@@ -214,7 +226,7 @@ export function LhTableToolbar({
             className={popoverClass}
             aria-label="Request filter controls"
           >
-            <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[.04em] text-[#657476]">
+            <label className="grid gap-1.5 text-sm font-medium text-[#657476]">
               Date
               <input
                 className="min-h-[34px] rounded-[7px] border border-[#dce7e6] bg-linehaul-surface px-2 text-xs text-[#293b3d]"
@@ -233,7 +245,7 @@ export function LhTableToolbar({
       </div>
       <div className="relative inline-flex max-[760px]:order-none max-[760px]:flex-none">
         <button
-          className={`${menuButtonClass} lh-secondary-filter-control`}
+          className={`${menuButtonClass} ${openMenu === "sort" ? "border-[#8bbdb8] bg-[#e4f3f0] text-soc5-ink" : ""}`}
           type="button"
           aria-expanded={openMenu === "sort"}
           onClick={() => setOpenMenu(openMenu === "sort" ? null : "sort")}
@@ -254,7 +266,7 @@ export function LhTableToolbar({
       </div>
       <div className="relative hidden max-[760px]:inline-flex">
         <button
-          className={`${menuButtonClass} ${activeFilterCount ? "is-active" : ""}`}
+          className={`${menuButtonClass} ${activeFilterCount ? "border-[#8bbdb8] bg-[#e4f3f0] text-soc5-ink" : ""}`}
           type="button"
           aria-expanded={openMenu === "mobileFilters"}
           onClick={() =>
@@ -267,9 +279,9 @@ export function LhTableToolbar({
         </button>
         {openMenu === "mobileFilters" && (
           <div className={`${popoverClass} min-w-[220px]`} role="menu" aria-label="Filters and sorting">
-            <strong className="px-2 text-[10px] uppercase tracking-[.06em] text-[#657476]">Status</strong>
+            <strong className="px-2 text-xs font-semibold text-[#657476]">Status</strong>
             {renderStatusOptions()}
-            <label className="grid gap-1.5 px-2 pt-2 text-[10px] font-bold uppercase tracking-[.04em] text-[#657476]">
+            <label className="grid gap-1.5 px-2 pt-2 text-sm font-medium text-[#657476]">
               Date
               <input
                 className="min-h-[34px] rounded-[7px] border border-[#dce7e6] bg-linehaul-surface px-2 text-xs text-[#293b3d]"
@@ -278,12 +290,12 @@ export function LhTableToolbar({
                 onChange={(event) => set({ dateFrom: event.target.value, dateTo: event.target.value })}
               />
             </label>
-            <strong className="px-2 pt-2 text-[10px] uppercase tracking-[.06em] text-[#657476]">Sort by</strong>
+            <strong className="px-2 pt-2 text-xs font-semibold text-[#657476]">Sort by</strong>
             {renderSortOptions()}
           </div>
         )}
       </div>
-      <div className="relative order-first w-full flex-1 max-[760px]:basis-full max-[480px]:col-span-full lg:order-none lg:ml-auto lg:max-w-xs">
+      <div className={searchWrapClass}>
         <Search
           className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400"
           aria-hidden="true"
@@ -291,7 +303,7 @@ export function LhTableToolbar({
         <input
           aria-label="Search"
           placeholder="Search by plate number"
-          className="min-h-9 w-full rounded-[9px] border border-linehaul-line bg-linehaul-surface py-1.5 pr-3 pl-9 text-sm placeholder:text-gray-400 focus:border-linehaul-teal/30 focus:outline-none focus:ring-[3px] focus:ring-linehaul-teal/10"
+          className={searchInputClass}
           type="text"
           value={filters.search}
           onChange={(event) => set({ search: event.target.value })}
@@ -307,7 +319,7 @@ export function LhTableToolbar({
         />
       )}
       <button
-        className="lh-density-toggle"
+        className={densityToggleClass}
         type="button"
         aria-label={`Use ${density === "compact" ? "comfortable" : "compact"} table density`}
         title={`Switch to ${density === "compact" ? "comfortable" : "compact"} density`}
@@ -336,15 +348,15 @@ export function LhTableToolbar({
         Add new
       </button>}
       {filterChips.length > 0 && (
-        <div className="lh-active-filter-row" aria-label="Active filters">
+        <div className="flex min-w-0 basis-full flex-wrap items-center gap-1.5">
           {filterChips}
-          <button className="lh-clear-filters" type="button" onClick={clearAllFilters}>
+          <button className={clearFiltersClass} type="button" onClick={clearAllFilters}>
             Clear all
           </button>
         </div>
       )}
       {lastUpdated ? (
-        <span className="lh-last-updated" aria-live="polite">
+        <span className="whitespace-nowrap text-xs font-medium leading-none text-soc5-muted" aria-live="polite">
           Updated {new Date(lastUpdated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
           {refreshReason ? ` · ${refreshReason}` : ""}
         </span>

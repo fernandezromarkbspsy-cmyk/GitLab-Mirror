@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { compactEmptyClass, dashboardListClass } from "../../lib/uiClasses";
 
 type QueuePreviewProps<Item> = {
   items: Item[];
@@ -14,11 +15,11 @@ export function QueuePreview<Item>({
   className = "",
 }: QueuePreviewProps<Item>) {
   return (
-    <div className={`dashboard-list${className ? ` ${className}` : ""}`}>
+    <div className={`${dashboardListClass}${className ? ` ${className}` : ""}`}>
       {items.length ? (
         items.map(renderItem)
       ) : (
-        <p className="compact-empty">{emptyMessage}</p>
+        <p className={compactEmptyClass}>{emptyMessage}</p>
       )}
     </div>
   );

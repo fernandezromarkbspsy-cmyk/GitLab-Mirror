@@ -7,6 +7,7 @@ import { LoginCard } from "../components/login/LoginCard";
 import { UserTypeToggle } from "../components/login/UserTypeToggle";
 import { api } from "../lib/api";
 import { supabase } from "../lib/supabase";
+import { loginModalCardClass, loginModalLayerClass } from "../lib/uiClasses";
 
 export type UserType = "fte" | "backroom";
 
@@ -201,7 +202,7 @@ export function Login({
   return (
     <LoginCard modal={modal} visible={visible}>
       <div className="mb-4">
-        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-faint">
+        <span className="mb-1.5 block text-xs font-medium text-faint">
           Login as
         </span>
         <UserTypeToggle value={type} onChange={switchType} />
@@ -237,19 +238,19 @@ export function Login({
       )}
       {forgotOpen && type === "backroom" && (
         <div
-          className="login-modal-layer is-visible"
+          className={loginModalLayerClass}
           role="dialog"
           aria-modal="true"
           aria-label="Forgot password"
         >
-          <section className="login-modal-card max-w-[360px] p-6">
+          <section className={`${loginModalCardClass} max-w-[360px] p-6 opacity-100 translate-y-0`}>
             <div className="mx-auto grid h-12 w-12 animate-pulse place-items-center rounded-full bg-accent/15 text-accent">
               <KeyRound size={23} aria-hidden="true" />
             </div>
-            <h2 className="mt-4 text-center font-display text-[18px] font-bold text-ink">
+            <h2 className="mt-4 text-center font-display text-lg font-semibold text-ink">
               Forgot password?
             </h2>
-            <p className="mt-2 text-center text-[12.5px] leading-relaxed text-muted">
+            <p className="mt-2 text-center text-xs leading-relaxed text-muted">
               To reset your password, please reach out to your FTE for
               assistance.
             </p>
@@ -257,7 +258,7 @@ export function Login({
               <button
                 type="button"
                 onClick={() => setForgotOpen(false)}
-                className="rounded-xl bg-accent px-4 py-2 text-[12px] font-bold text-white"
+                className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white"
               >
                 Close
               </button>

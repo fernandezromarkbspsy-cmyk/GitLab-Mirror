@@ -81,9 +81,9 @@ export function ColumnVisibilityMenu({
   }
 
   return (
-    <div ref={rootRef} className="column-visibility">
+    <div ref={rootRef} className="relative inline-flex shrink-0 self-center">
       <button
-        className={`column-visibility-button${iconOnly ? " lh-toolbar-icon" : ""}`}
+        className={`inline-flex min-h-[1.8rem] items-center justify-center gap-[.35rem] rounded-[.4rem] border border-[rgb(15_42_43_/_10%)] bg-white px-[.45rem] text-xs font-medium text-soc5-muted transition-[color,background,border-color,box-shadow,transform] duration-150 hover:border-soc5-line hover:bg-[#f4f7f1] hover:text-soc5-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-soc5-lime-deep ${iconOnly ? "size-[1.8rem] p-0" : ""}`}
         type="button"
         aria-label={label}
         aria-controls={open ? menuId : undefined}
@@ -101,23 +101,23 @@ export function ColumnVisibilityMenu({
         )}
       </button>
       {open && (
-        <div
+        <fieldset
           id={menuId}
-          className="column-visibility-menu"
-          role="group"
+          className="absolute top-[calc(100%+.4rem)] right-0 z-30 m-0 grid max-h-[min(70vh,18rem)] min-w-44 max-w-[min(16rem,calc(100vw_-_1.2rem))] gap-[.1rem] overflow-y-auto rounded-[.4rem] border border-[rgb(15_42_43_/_12%)] bg-white p-[.35rem] shadow-[0_.5rem_1.3rem_rgb(15_42_43_/_16%)] max-[760px]:max-h-[min(60vh,16rem)]"
           aria-label={label}
         >
           {options.map((option) => (
-            <label key={option.key} className="column-visibility-option">
+            <label key={option.key} className="flex min-h-[1.6rem] cursor-pointer items-center gap-[.4rem] rounded-[.2rem] px-[.3rem] py-[.2rem] text-xs text-soc5-ink hover:bg-[#f4f7f2]">
               <input
                 type="checkbox"
                 checked={visible.includes(option.key)}
+                className="accent-soc5-lime-deep"
                 onChange={() => toggle(option.key)}
               />
               <span>{option.label}</span>
             </label>
           ))}
-        </div>
+        </fieldset>
       )}
     </div>
   );

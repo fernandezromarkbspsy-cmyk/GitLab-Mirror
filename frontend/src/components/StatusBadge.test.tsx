@@ -23,6 +23,11 @@ describe("StatusBadge", () => {
     expect(markup).toContain("text-status-pending-ink");
   });
 
+  it("uses compact, readable typography", () => {
+    const markup = render("PENDING");
+    expect(markup).toContain("text-xs leading-4 font-semibold");
+  });
+
   it.each(["DOCKING", "ASSIGNED"] as Status[])(
     "uses the informational treatment for %s",
     (status) => {

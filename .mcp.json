@@ -8,6 +8,10 @@
       ],
       "cwd": ".",
       "type": "stdio"
+    },
+    "watermelon-ui": {
+      "url": "https://mcp.watermelon.sh/mcp",
+      "type": "http"
     }
   }
 }

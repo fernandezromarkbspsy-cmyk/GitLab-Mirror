@@ -8,7 +8,7 @@ describe("Skeleton", () => {
 
     expect(markup).toContain("--color-skeleton-base");
     expect(markup).toContain("--color-skeleton-highlight");
-    expect(markup).toContain("skeleton-shimmer_1.8s_ease-in-out_infinite");
+    expect(markup).toContain("animate-skeleton-shimmer");
     expect(markup).toContain("motion-reduce:animate-none");
     expect(markup).toContain('aria-hidden="true"');
   });
@@ -24,7 +24,7 @@ describe("Skeleton", () => {
       />,
     );
 
-    expect(markup).toContain("opacity-[.72]");
+    expect(markup).toContain("opacity-[.62]");
     expect(markup).toContain("self-center");
     expect(markup).toContain("width:62%");
     expect(markup).toContain("height:18px");

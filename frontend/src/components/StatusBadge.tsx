@@ -38,7 +38,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-block min-h-[22px] rounded-full border border-transparent px-2 py-[3px] text-[10px] leading-[13px] font-bold ${statusClassMap[status]}${uppercase ? " uppercase" : ""}${className ? ` ${className}` : ""}`}
+      className={`inline-block min-h-[22px] rounded-full border border-transparent px-2 py-[3px] text-xs leading-4 font-semibold ${statusClassMap[status]}${uppercase ? " uppercase" : ""}${className ? ` ${className}` : ""}`}
     >
       {statusLabelMap[status] ?? status.replaceAll("_", " ")}
     </span>

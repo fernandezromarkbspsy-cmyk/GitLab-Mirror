@@ -3,12 +3,12 @@
 namespace App\Http\Middleware;
 
 use App\Integrations\SupabaseHttpOptions;
+use App\Support\AuthenticatedProfileCache;
 use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,8 +18,7 @@ final class AuthenticateSupabase
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->session()->has('seatalk_profile_id')) {
-            $profile = DB::table('profiles')->where('id', $request->session()->get('seatalk_profile_id'))
-                ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_reset_at', 'password_changed_at', 'created_at']);
+            $profile = AuthenticatedProfileCache::findActive($request->session()->get('seatalk_profile_id'));
             abort_unless($profile, 401, 'Invalid or expired SeaTalk session.');
             $profile->is_admin = in_array(strtolower((string) $profile->email), array_map('strtolower', config('services.admin_emails', [])), true);
             $profile->original_role = $profile->role;
@@ -93,8 +92,7 @@ final class AuthenticateSupabase
         }
 
         try {
-            $profile = DB::table('profiles')->where('id', $authUserId)
-                ->where('is_active', true)->first(['id', 'name', 'role', 'email', 'ops_id', 'must_change_password', 'password_reset_at', 'password_changed_at', 'created_at']);
+            $profile = AuthenticatedProfileCache::findActive($authUserId);
         } catch (QueryException $exception) {
             Log::error('Unable to load the authenticated Supabase profile.', [
                 'auth_user_id' => $authUserId,

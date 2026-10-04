@@ -18,13 +18,18 @@ export function SkeletonTable({ columns, rows = 5, compact = false }: Props) {
       className="overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card"
       role="status"
       aria-label="Loading table"
+      aria-busy="true"
       style={{ ["--skeleton-cols" as string]: columnCount }}
     >
       <div
         className={`${gridClassName} border-b border-soc5-line bg-soc5-page/70 ${compact ? "px-3 py-2.5" : "px-4 py-3"}`}
       >
         {Array.from({ length: columnCount }).map((_, index) => (
-          <Skeleton key={index} variant="head" />
+          <Skeleton
+            key={index}
+            width={index === 0 ? "68%" : index === columnCount - 1 ? "42%" : `${54 + ((index * 13) % 28)}%`}
+            variant="head"
+          />
         ))}
       </div>
       <div className="divide-y divide-soc5-line">

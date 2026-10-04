@@ -26,7 +26,7 @@ export function Modal({
   open,
   onClose,
   children,
-  className = "form-dialog",
+  className = "",
   ariaLabelledBy,
   ariaLabel,
   role: _role,

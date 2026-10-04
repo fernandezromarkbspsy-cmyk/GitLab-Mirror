@@ -14,6 +14,8 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { textButtonClass } from "../lib/uiClasses";
+import { compactFormDialogClass, compactRequestRowClass, dialogActionsClass, dialogFormClass, dialogHeadClass, dialogLabelClass, dialogTextareaClass, formErrorClass, inlineCreateShellClass, recordsScrollClass, recordsTableClass, requestApproveClass, requestCheckboxClass, requestDrawerAvatarClass, requestDrawerBackdropClass, requestDrawerClass, requestDrawerFieldsClass, requestDrawerHeaderClass, requestDrawerProfileClass, requestDrawerCloseClass, requestExpandedRowClass, requestPageClass, requestRejectClass, requestRowClass, requestSelectedRowClass, requestTableBodyClass, requestTableHeadClass, requestToolbarIconClass, requestViewToggleClass, requestWorkspaceClass, tableShellClass, secondaryButtonClass } from "../lib/uiClasses";
 import {
   ApprovalStateBadge,
   approvalStateFor,
@@ -38,7 +40,6 @@ import { useOutboundRequests } from "../hooks/useOutboundRequests";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { openRequestsSheet } from "../lib/requests";
 import type { TruckRequest, User } from "../types";
-import "../styles/pages/outbound-requests.css";
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
@@ -229,10 +230,10 @@ export function OutboundRequests({
   }
 
   return (
-    <div className="workspace-view lh-request-page">
-      <section className="lh-request-workspace" aria-label="Linehaul requests">
+    <div className={requestPageClass}>
+      <section className={requestWorkspaceClass} aria-label="Linehaul requests">
         {editing && (
-          <div className="lh-table-create-row">
+          <div className={inlineCreateShellClass}>
             <InlineEditRow
               request={editing}
               busy={updateRequest.isPending}
@@ -248,7 +249,7 @@ export function OutboundRequests({
           </div>
         )}
         {creating && (
-          <div className="lh-table-create-row">
+          <div className={inlineCreateShellClass}>
             <InlineCreateRow
               busy={createRequest.isPending}
               error={createRequest.error?.message}
@@ -267,10 +268,10 @@ export function OutboundRequests({
           />
         )}
         <section
-          className={`lh-table-shell${density === "compact" ? " lh-table-shell--compact" : ""}`}
+          className={tableShellClass}
           aria-label="Outbound linehaul request records"
         >
-          <div className="lh-table-toolbar">
+          <div className="relative z-20 flex min-w-0 flex-wrap items-center justify-start gap-2 border-b border-[rgb(15_42_43/8%)] bg-[linear-gradient(180deg,rgb(248_250_249/98%),rgb(245_249_247/96%))] px-2.5 py-1.5 max-[680px]:flex-col max-[680px]:items-stretch max-[680px]:gap-1.5 max-[680px]:p-[.45rem]">
             <LhTableToolbar
               filters={filters}
               onChange={changeFilters}
@@ -290,9 +291,9 @@ export function OutboundRequests({
               lastUpdated={dataUpdatedAt}
               refreshReason={lastRefreshReason}
             />
-            <div className="lh-view-controls">
+            <div className="flex min-w-0 items-center gap-1.5">
               <button
-                className={`lh-toolbar-icon lh-refresh-button${requests.isFetching ? " is-refreshing" : ""}`}
+                className={`${requestToolbarIconClass}${requests.isFetching ? " animate-spin" : ""}`}
                 type="button"
                 aria-label={
                   requests.isFetching ? "Refreshing records" : "Refresh records"
@@ -307,14 +308,14 @@ export function OutboundRequests({
                 <RefreshCw size={16} aria-hidden="true" />
               </button>
             </div>
-            <div className="lh-table-toolbar-actions">
-              <div
-                className="lh-view-toggle"
-                role="group"
+            <div className="flex shrink-0 items-center gap-1.5">
+              <fieldset
+                className={requestViewToggleClass}
+                style={{ border: 0, margin: 0, padding: 0 }}
                 aria-label="Request view"
               >
                 <button
-                  className="lh-toolbar-icon"
+                  className={requestToolbarIconClass}
                   type="button"
                   aria-label="Table"
                   title="Table"
@@ -324,7 +325,7 @@ export function OutboundRequests({
                   <Table2 size={16} aria-hidden="true" />
                 </button>
                 <button
-                  className="lh-toolbar-icon"
+                  className={requestToolbarIconClass}
                   type="button"
                   aria-label="Card"
                   title="Card"
@@ -333,18 +334,20 @@ export function OutboundRequests({
                 >
                   <LayoutGrid size={16} aria-hidden="true" />
                 </button>
-              </div>
+              </fieldset>
             </div>
           </div>
           {view === "table" ? (
-            <div className="lh-records-table-scroll">
+            <div className={recordsScrollClass}>
               <div
-                className="lh-records-table"
+                className={recordsTableClass}
                 style={{
-                  gridTemplateColumns: `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
+                  gridTemplateColumns: hasColumn("status")
+                    ? `minmax(15rem, max-content) repeat(${visibleColumns.length}, minmax(112px, max-content))`
+                    : `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
                 }}
               >
-                <div className="lh-table-head lh-table-grid">
+                <div className={requestTableHeadClass}>
                   {hasColumn("status") && (
                     <span>
                       <CircleCheck size={14} />
@@ -423,7 +426,7 @@ export function OutboundRequests({
                     {canApprove && selectedCount > 0 && (
                       <button
                         type="button"
-                        className="request-action-button request-action-approve !h-8 whitespace-nowrap !px-3"
+                        className={`${requestApproveClass} h-8! whitespace-nowrap px-3!`}
                         disabled={approveRequests.isPending}
                         onClick={approveSelected}
                       >
@@ -432,7 +435,7 @@ export function OutboundRequests({
                     )}
                   </span>
                 </div>
-                <div className="lh-table-body">
+                <div className={requestTableBodyClass}>
                   {requests.isFetching && (
                     <SkeletonRequestTable
                       rows={6}
@@ -440,7 +443,7 @@ export function OutboundRequests({
                     />
                   )}
                   {requests.error && (
-                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
+                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
                       {requests.error.message}
                     </div>
                   )}
@@ -454,8 +457,9 @@ export function OutboundRequests({
                         _queue.alerts.some((alert) => alert.id === row.id);
                       return (
                         <div className="contents" key={row.id}>
+                          {/* biome-ignore lint/a11y/useSemanticElements: The row contains nested action buttons, so it cannot be converted to a native button. */}
                           <div
-                            className={`lh-table-row lh-table-grid ${isExpanded ? "is-expanded" : ""} ${selectedIds.has(row.id) ? "is-selected" : ""} ${isAlerting ? "!bg-[#f6f9e9] ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
+                            className={`${requestRowClass} ${density === "compact" ? compactRequestRowClass : ""} ${isExpanded ? requestExpandedRowClass : ""} ${selectedIds.has(row.id) ? requestSelectedRowClass : ""} ${isAlerting ? "bg-[#f6f9e9]! ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
                             style={
                               { "--row-index": index } as React.CSSProperties
                             }
@@ -472,7 +476,7 @@ export function OutboundRequests({
                             }}
                           >
                             {hasColumn("status") && (
-                              <span className="flex items-center gap-2">
+                              <span className="flex min-w-max items-center gap-2 overflow-visible whitespace-nowrap">
                                 <ChevronDown
                                   aria-hidden="true"
                                   className={`size-3.5 shrink-0 text-[#718071] transition-transform ${isExpanded ? "rotate-180 text-[#536500]" : ""}`}
@@ -482,7 +486,7 @@ export function OutboundRequests({
                                     row.status === "REROUTED") && (
                                     <input
                                       type="checkbox"
-                                      className="request-row-checkbox"
+                                      className={requestCheckboxClass}
                                       aria-label={`Select request ${row.id}`}
                                       checked={
                                         row.approval_status === "APPROVED" ||
@@ -605,7 +609,7 @@ export function OutboundRequests({
                               {canActOnApproval(row) && (
                                 <button
                                   role="menuitem"
-                                  className="request-action-button request-action-reject"
+                                  className={requestRejectClass}
                                   type="button"
                                   onClick={() => {
                                     setRejecting(row);
@@ -631,17 +635,17 @@ export function OutboundRequests({
                             </LhRowActionMenu>
                           </div>
                           {isExpanded && (
-                            <div
+                            <section
                               className="col-span-full min-w-0 w-full border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
                               aria-label={`Expanded details for request ${row.id}`}
                             >
                               <div className="contents">
                                 <dl>
                                   <div className="border-b border-[#e9eeea] pb-3">
-                                    <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">
+                                    <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">
                                       Cluster
                                     </dt>
-                                    <dd className="break-words text-base font-bold leading-6 tracking-[0.01em] text-[#26352d]">
+                                    <dd className="wrap-break-word text-base font-semibold leading-6 tracking-normal text-[#26352d]">
                                       {formatCluster(row.cluster)}
                                     </dd>
                                   </div>
@@ -661,10 +665,10 @@ export function OutboundRequests({
                                             className="min-w-0 border-b border-[#e9eeea] pb-2"
                                             key={key}
                                           >
-                                            <dt className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#718071]">
+                                            <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">
                                               {label}
                                             </dt>
-                                            <dd className="break-words text-xs font-medium leading-4 text-[#33423a]">
+                                            <dd className="wrap-break-word text-xs font-medium leading-4 text-[#33423a]">
                                               {value}
                                             </dd>
                                           </div>
@@ -674,7 +678,7 @@ export function OutboundRequests({
                                   ))}
                                 </div>
                               </div>
-                            </div>
+                            </section>
                           )}
                         </div>
                       );
@@ -682,7 +686,7 @@ export function OutboundRequests({
                   {!requests.isFetching &&
                     !requests.error &&
                     rows.length === 0 && (
-                      <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-[13px] text-soc5-muted bg-soc5-panel">
+                      <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
                         No live requests match the current filters.
                       </div>
                     )}
@@ -696,22 +700,22 @@ export function OutboundRequests({
               ) : (
                 rows.map((row) => (
                   <article
-                    className="lh-record-card flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39_/_4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39_/_7%)] hover:transform-none max-[680px]:flex-wrap"
+                    className="lh-record-card flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39/4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39/7%)] hover:transform-none max-[680px]:flex-wrap"
                     key={row.id}
                   >
                     <div>
-                      <small className="text-soc5-muted text-[11px]">
+                      <small className="text-soc5-muted text-xs">
                         {row.id}
                       </small>
-                      <h3 className="mt-2 mb-1 text-soc5-ink text-[14px] font-semibold">
+                      <h3 className="mt-2 mb-1 text-soc5-ink text-sm font-semibold">
                         {row.cluster}
                       </h3>
-                      <p className="m-0 text-soc5-muted text-[11px]">
+                      <p className="m-0 text-soc5-muted text-xs">
                         {row.region} · Dock {row.dock_no}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2 max-[760px]:items-start">
-                      <strong className="text-soc5-ink text-[12px]">
+                      <strong className="text-soc5-ink text-xs">
                         {row.truck_size}
                       </strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
@@ -722,7 +726,7 @@ export function OutboundRequests({
                       />
                       <button
                         type="button"
-                        className="text-button"
+                        className={textButtonClass}
                         aria-label="View details"
                         onClick={() => setSelectedRequest(row)}
                       >
@@ -730,7 +734,7 @@ export function OutboundRequests({
                       </button>
                       <button
                         type="button"
-                        className="text-button"
+                        className={textButtonClass}
                         onClick={() => setPrintRequest(row)}
                       >
                         <Printer size={14} />
@@ -758,20 +762,21 @@ export function OutboundRequests({
         <>
           <button
             type="button"
-            className="lh-drawer-backdrop"
+            className={requestDrawerBackdropClass}
             aria-label="Dismiss request details"
             onClick={() => setSelectedRequest(null)}
           />
           <section
-            className="lh-details-drawer"
+            className={requestDrawerClass}
             aria-label={`Details for request ${selectedRequest.id}`}
           >
-            <div className="lh-drawer-header">
+            <div className={requestDrawerHeaderClass}>
               <div>
                 <span className="lh-drawer-eyebrow">Request details</span>
                 <h2>{selectedRequest.id}</h2>
               </div>
               <button
+                className={requestDrawerCloseClass}
                 type="button"
                 aria-label="Close request details"
                 onClick={() => setSelectedRequest(null)}
@@ -779,8 +784,8 @@ export function OutboundRequests({
                 <X size={16} aria-hidden="true" />
               </button>
             </div>
-            <div className="lh-drawer-profile">
-              <div className="lh-drawer-avatar" aria-hidden="true">
+            <div className={requestDrawerProfileClass}>
+              <div className={requestDrawerAvatarClass} aria-hidden="true">
                 {selectedRequest.cluster.slice(0, 1).toUpperCase()}
               </div>
               <div>
@@ -797,7 +802,7 @@ export function OutboundRequests({
                 />
               </div>
             </div>
-            <dl className="lh-drawer-fields">
+            <dl className={requestDrawerFieldsClass}>
               <div>
                 <dt>Request time</dt>
                 <dd>
@@ -840,13 +845,13 @@ export function OutboundRequests({
         <Modal
           open
           onClose={() => setRejecting(null)}
-          className="form-dialog compact"
+          className={compactFormDialogClass}
           role="dialog"
           ariaLabelledBy="outbound-reject-title"
         >
-          <div className="dialog-head">
+          <div className={dialogHeadClass}>
             <div>
-              <p className="mb-[0.35rem] text-soc5-lime-deep text-[0.72rem] font-bold tracking-[0.08em] uppercase">
+              <p className="mb-[0.35rem] text-soc5-lime-deep text-xs font-bold tracking-wider uppercase">
                 FTE Ops action
               </p>
               <h2 id="outbound-reject-title">Reject request</h2>
@@ -854,7 +859,7 @@ export function OutboundRequests({
             </div>
           </div>
           <form
-            className="stack-form"
+            className={dialogFormClass}
             onSubmit={(event) => {
               event.preventDefault();
               const data = new FormData(event.currentTarget);
@@ -869,18 +874,18 @@ export function OutboundRequests({
               );
             }}
           >
-            <label>
+            <label className={dialogLabelClass}>
               Rejection remarks
-              <textarea name="rejection_remarks" required rows={4} />
+              <textarea className={dialogTextareaClass} name="rejection_remarks" required rows={4} />
             </label>
             {rejectRequest.error && (
-              <p className="notice error text-[var(--color-danger)]">
+              <p className={formErrorClass}>
                 {rejectRequest.error.message}
               </p>
             )}
-            <div className="dialog-actions">
+            <div className={dialogActionsClass}>
               <button
-                className="button-secondary"
+                className={secondaryButtonClass}
                 type="button"
                 onClick={() => setRejecting(null)}
                 disabled={rejectRequest.isPending}
@@ -888,7 +893,7 @@ export function OutboundRequests({
                 Cancel
               </button>
               <button
-                className="request-action-button request-action-reject"
+                className={requestRejectClass}
                 type="submit"
                 disabled={rejectRequest.isPending}
               >
@@ -900,7 +905,7 @@ export function OutboundRequests({
       )}
       {toast && (
         <div
-          className="fixed right-5 bottom-5 z-30 max-w-[min(420px,calc(100vw_-_32px))] rounded-[7px] border border-[#c8d68f] bg-[#fbfdec] px-[14px] py-[11px] text-[12px] text-soc5-ink shadow-[0_8px_24px_rgb(32_32_34_/_14%)]"
+          className="fixed right-5 bottom-5 z-30 max-w-[min(420px,calc(100vw-32px))] rounded-[7px] border border-[#c8d68f] bg-[#fbfdec] px-[14px] py-[11px] text-xs text-soc5-ink shadow-[0_8px_24px_rgb(32_32_34/14%)]"
           role="status"
         >
           {toast}

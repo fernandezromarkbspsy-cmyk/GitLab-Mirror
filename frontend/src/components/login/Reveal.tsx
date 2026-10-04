@@ -29,7 +29,7 @@ export function Reveal({ children, delay = 0, className = "" }: Props) {
   return (
     <div
       ref={ref}
-      className={`reveal ${inView ? "is-in" : ""} ${className}`}
+      className={`translate-y-4 opacity-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(.22,1,.36,1)] will-change-[opacity,transform] motion-reduce:transform-none motion-reduce:transition-none ${inView ? "translate-y-0 opacity-100" : ""} ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}

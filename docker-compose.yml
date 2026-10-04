@@ -28,7 +28,9 @@ services:
         VITE_API_URL: /api
         VITE_SUPABASE_URL: ${SUPABASE_URL}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
-    ports: ["127.0.0.1:8080:80"]
+    # The named Cloudflare Tunnel currently targets the frontend origin on
+    # port 5173. NGINX inside this image serves the built /app/dist output.
+    ports: ["127.0.0.1:5173:80"]
     depends_on:
       api:
         condition: service_healthy
@@ -46,6 +48,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    
-  volumes:
-      redis-data:
+
+volumes:
+  redis-data:

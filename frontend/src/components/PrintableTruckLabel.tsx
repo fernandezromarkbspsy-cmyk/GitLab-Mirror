@@ -1,6 +1,30 @@
 import { Printer, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import type { TruckRequest } from "../types";
+import {
+  driverQrActiveCellClass,
+  driverQrCellClass,
+  driverQrClass,
+  iconButtonClass,
+  printDialogClass,
+  printPreviewClass,
+  printToolbarActionsClass,
+  printToolbarClass,
+  printToolbarTitleClass,
+  secondaryButtonClass,
+  truckLabelClass,
+  truckLabelDockClass,
+  truckLabelDockTimeClass,
+  truckLabelDriverClass,
+  truckLabelImageClass,
+  truckLabelLoadBaseClass,
+  truckLabelLoadLeftClass,
+  truckLabelLoadRightClass,
+  truckLabelLoadSecondClass,
+  truckLabelLoadSingleClass,
+  truckLabelPlateClass,
+  truckLabelValueClass,
+} from "../lib/uiClasses";
 import { Modal } from "./Modal";
 
 type TemplateKind = "single" | "coload" | "triload";
@@ -63,12 +87,32 @@ function qrCells(value: string) {
   return cells;
 }
 
+function loadSlotClass(slot: string) {
+  switch (slot) {
+    case "load-single":
+      return truckLabelLoadSingleClass;
+    case "load-left":
+    case "load-third":
+      return truckLabelLoadLeftClass;
+    case "load-right":
+    case "load-first":
+      return truckLabelLoadRightClass;
+    case "load-second":
+      return truckLabelLoadSecondClass;
+    default:
+      return "";
+  }
+}
+
 function DriverQr({ value }: { value: string }) {
   const cells = qrCells(value || "DRIVER");
   return (
-    <div className="driver-qr" role="img" aria-label={`Driver ID QR ${value}`}>
+    <div className={driverQrClass} role="img" aria-label={`Driver ID QR ${value}`}>
       {cells.map((active, index) => (
-        <i key={index} className={active ? "on" : ""} />
+        <i
+          key={index}
+          className={`${driverQrCellClass}${active ? ` ${driverQrActiveCellClass}` : ""}`}
+        />
       ))}
     </div>
   );
@@ -105,14 +149,14 @@ export function PrintableTruckLabel({
     <Modal
       open
       onClose={onClose}
-      className="print-dialog"
+      className={printDialogClass}
       ariaLabel="Printable truck label"
     >
-      <div className="print-toolbar">
-        <strong>Printable LH label</strong>
-        <div>
+      <div className={printToolbarClass}>
+        <strong className={printToolbarTitleClass}>Printable LH label</strong>
+        <div className={printToolbarActionsClass}>
           <button
-            className="secondary-button"
+            className={`${secondaryButtonClass} text-xs font-bold`}
             type="button"
             onClick={() => window.print()}
           >
@@ -120,7 +164,7 @@ export function PrintableTruckLabel({
             Print
           </button>
           <button
-            className="icon-button"
+            className={iconButtonClass}
             type="button"
             aria-label="Close"
             onClick={onClose}
@@ -129,20 +173,20 @@ export function PrintableTruckLabel({
           </button>
         </div>
       </div>
-      <div className="print-preview">
-        <div className={`truck-label truck-label--${kind}`}>
-          <img src={templateSrc[kind]} alt="" />
-          <div className="label-value plate">{request.plate_number || ""}</div>
-          <div className="label-value driver">
+      <div className={printPreviewClass}>
+        <div className={truckLabelClass}>
+          <img className={truckLabelImageClass} src={templateSrc[kind]} alt="" />
+          <div className={`${truckLabelValueClass} ${truckLabelPlateClass}`}>{request.plate_number || ""}</div>
+          <div className={`${truckLabelValueClass} ${truckLabelDriverClass}`}>
             <DriverQr value={request.driver_id || ""} />
             <span>{request.driver_id || ""}</span>
           </div>
-          <div className="label-value dock">{request.dock_no}</div>
-          <div className="label-value dock-time">{dockTime(request)}</div>
+          <div className={`${truckLabelValueClass} ${truckLabelDockClass}`}>{request.dock_no}</div>
+          <div className={`${truckLabelValueClass} ${truckLabelDockTimeClass}`}>{dockTime(request)}</div>
           {loadSlots(kind, clusterValues).map((slot) => (
             <div
               key={slot.className}
-              className={`label-value ${slot.className}`}
+              className={`${truckLabelValueClass} ${truckLabelLoadBaseClass} ${loadSlotClass(slot.className)}`}
             >
               {slot.value}
             </div>

@@ -55,6 +55,7 @@ final class VerifyProductionConfig extends Command
         $deploymentMode = null;
         if ($this->option('production') && $this->option('staging')) {
             $this->error('Choose either --production or --staging, not both.');
+
             return self::FAILURE;
         }
         if ($this->option('production')) {

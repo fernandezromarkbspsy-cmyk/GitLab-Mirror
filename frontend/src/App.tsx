@@ -274,8 +274,15 @@ export default function App() {
 
 function StartupLoading() {
   return (
-    <main className="grid min-h-dvh place-items-center overflow-hidden bg-[#f8fcff]" aria-label="Loading SOC5 Outbound">
-      <img src={carLoadingUrl} alt="" className="block h-auto max-h-dvh w-[min(100vw,32rem)] aspect-video object-contain" />
+    <main
+      className="grid min-h-dvh place-items-center overflow-hidden bg-[#f8fcff]"
+      aria-label="Loading SOC5 Outbound"
+    >
+      <img
+        src={carLoadingUrl}
+        alt=""
+        className="block h-auto max-h-dvh w-[min(100vw,32rem)] aspect-video object-contain"
+      />
       <span className="sr-only">Loading SOC5 Outbound</span>
     </main>
   );

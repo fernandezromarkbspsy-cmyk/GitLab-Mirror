@@ -294,7 +294,7 @@ export function AppHeader({
       : `Search ${page[view].section.toLowerCase()} requests, then press Enter`;
 
   return (
-    <header className={`${preview && !builderPreview ? "hidden" : "fixed top-0 right-0 left-[9.5rem] z-[99999] flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255_/_94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-[9rem] max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"}`}>
+    <header className={`${preview && !builderPreview ? "hidden" : "fixed top-0 right-0 left-38 z-99999 flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255/94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-36 max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"}`}>
       {toast && (
         <div className={toastClass} role="status">
           <Bell size={17} />
@@ -308,7 +308,7 @@ export function AppHeader({
         <div className="grid min-w-0 gap-[.1rem]">
           <h1 className="m-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-semibold leading-tight tracking-tight text-[#242427] max-[600px]:text-xl">{page[view].name}</h1>
           <nav className="flex min-h-[.7rem] items-center gap-[.3rem] text-xs leading-none text-[#a1a2a6] max-[960px]:hidden" aria-label="Breadcrumb">
-            <span className="font-semibold text-[#687078]">Operations</span>
+            <span className="font-semibold text-soc5-muted">Operations</span>
             <ChevronRight className="text-[#c4c5c7]" size={12} aria-hidden="true" />
             <span className="font-bold text-soc5-lime-deep" aria-current="page">
               {page[view].section}
@@ -318,7 +318,7 @@ export function AppHeader({
       </div>
       <div className="flex min-w-0 flex-[0_1_auto] items-center gap-[.35rem] max-[960px]:gap-[.2rem]">
         <form
-          className="group flex h-[1.9rem] w-[clamp(7rem,22vw,12.5rem)] max-w-full min-w-0 items-center gap-[.35rem] rounded-lg border border-[#e7e7e7] bg-[#f5f5f5] px-2 text-[#686a6e] max-[1100px]:w-[clamp(6rem,20vw,10rem)] max-[960px]:w-[8.5rem] max-[600px]:w-[1.9rem] max-[600px]:justify-center max-[600px]:px-0 focus-within:max-[600px]:w-[6.75rem] focus-within:max-[600px]:justify-start focus-within:max-[600px]:px-[.4rem]"
+          className="group flex h-[1.9rem] w-[clamp(7rem,22vw,12.5rem)] max-w-full min-w-0 items-center gap-[.35rem] rounded-lg border border-[#e7e7e7] bg-[#f5f5f5] px-2 text-[#686a6e] max-[1100px]:w-[clamp(6rem,20vw,10rem)] max-[960px]:w-34 max-[600px]:w-[1.9rem] max-[600px]:justify-center max-[600px]:px-0 focus-within:max-[600px]:w-27 focus-within:max-[600px]:justify-start focus-within:max-[600px]:px-[.4rem]"
           onSubmit={(event) => {
             event.preventDefault();
             if (search.trim()) onSearch();

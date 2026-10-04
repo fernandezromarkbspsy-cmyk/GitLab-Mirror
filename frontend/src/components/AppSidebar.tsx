@@ -118,7 +118,7 @@ export function AppSidebar({
         className={`${scrimClass}${open ? " max-[960px]:visible max-[960px]:opacity-100" : ""}`}
         onClick={() => onOpenChange(false)}
       />
-      <aside className={`${sidebarClass}${open ? " max-[960px]:!translate-x-0" : ""}`}>
+      <aside className={`${sidebarClass}${open ? "max-[960px]:translate-x-0!" : ""}`}>
         <nav id="primary-navigation" aria-label="Primary navigation" className="contents">
         <div className="flex min-h-[3.8rem] items-center gap-[.45rem] border-b border-[#39393b] py-0 pr-[.95rem] pl-5">
           <div className="relative grid size-[1.6rem] shrink-0 place-items-center overflow-hidden rounded-[.35rem] bg-soc5-lime">
@@ -126,13 +126,13 @@ export function AppSidebar({
           </div>
           <div className="grid min-w-0 gap-[.1rem]">
             <strong className="text-sm font-semibold tracking-tight text-[#f7f7f7]">SOC 5</strong>
-            <small className="whitespace-nowrap text-xs text-[#687078]">
+            <small className="whitespace-nowrap text-xs text-soc5-muted">
               Outbound operations
             </small>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 py-[.9rem] pb-[.8rem] [scrollbar-color:#454548_transparent] [scrollbar-width:thin]">
+        <nav className="flex-1 overflow-y-auto px-2 py-[.9rem] pb-[.8rem] [scrollbar-color:#454548_transparent] scrollbar-thin">
           <div className="mb-[.9rem]">
             <p className="mb-[.4rem] ml-2 text-xs font-semibold text-[#7d7e83]">Workspace</p>
             <button
@@ -156,7 +156,7 @@ export function AppSidebar({
               >
                 <Route size={17} />
                 <span>Requests</span>
-                <ChevronRight size={15} className="ml-auto transition-transform duration-200 aria-[expanded=true]:rotate-90" />
+                <ChevronRight size={15} className="ml-auto transition-transform duration-200 aria-expanded:rotate-90" />
               </button>
               {visibleGroup === "outbound" && (
                 <button
@@ -167,7 +167,7 @@ export function AppSidebar({
                   <Route size={17} />
                   <span>LH Request</span>
                   {user.role === "fte_ops" && pendingCount > 0 && (
-                    <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18_/_20%)]">
+                    <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18/20%)]">
                       {pendingCount > 99 ? "99+" : pendingCount}
                     </span>
                   )}
@@ -187,7 +187,7 @@ export function AppSidebar({
               >
                 <Truck size={17} />
                 <span>Requests</span>
-                <ChevronRight size={15} className="ml-auto transition-transform duration-200 aria-[expanded=true]:rotate-90" />
+                <ChevronRight size={15} className="ml-auto transition-transform duration-200 aria-expanded:rotate-90" />
               </button>
               {visibleGroup === "midmile" && (
                 <button
@@ -198,7 +198,7 @@ export function AppSidebar({
                   <Truck size={17} />
                   <span>Truck Request</span>
                   {pendingCount > 0 && (
-                    <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18_/_20%)]">
+                    <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18/20%)]">
                       {pendingCount > 99 ? "99+" : pendingCount}
                     </span>
                   )}
@@ -217,7 +217,7 @@ export function AppSidebar({
                 <ShipWheel size={18} />
                 <span>Docking Confirmation</span>
                 {pendingCount > 0 && (
-                  <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18_/_20%)]">{pendingCount}</span>
+                  <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18/20%)]">{pendingCount}</span>
                 )}
               </button>
             </div>
@@ -250,7 +250,7 @@ export function AppSidebar({
           )}
         </nav>
 
-        <div className="flex min-h-[3.6rem] items-center gap-2 border-t border-[#39393b] bg-[linear-gradient(180deg,rgb(255_255_255_/_3%),rgb(255_255_255_/_1%))] px-[.7rem] py-2 pl-[.9rem]">
+        <div className="flex min-h-[3.6rem] items-center gap-2 border-t border-[#39393b] bg-[linear-gradient(180deg,rgb(255_255_255/3%),rgb(255_255_255/1%))] px-[.7rem] py-2 pl-[.9rem]">
           <div className="grid size-6 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#6d89d7,#243b80)] text-xs font-bold text-[#d6e2ff]" aria-hidden="true">
             {user.name.slice(0, 1).toUpperCase()}
           </div>
@@ -259,7 +259,7 @@ export function AppSidebar({
             <small className="text-xs text-[#85868a]">{roleNames[user.role]}</small>
           </div>
           <button
-            className="ml-auto grid size-[1.4rem] place-items-center rounded-md bg-transparent text-[#687078] transition-[color,background,transform] duration-200 hover:-translate-y-px hover:bg-[#2a2a2d] hover:text-soc5-lime focus-visible:outline-[.1rem] focus-visible:outline-soc5-lime focus-visible:outline-offset-[.1rem]"
+            className="ml-auto grid size-[1.4rem] place-items-center rounded-md bg-transparent text-soc5-muted transition-[color,background,transform] duration-200 hover:-translate-y-px hover:bg-[#2a2a2d] hover:text-soc5-lime focus-visible:outline-[.1rem] focus-visible:outline-soc5-lime focus-visible:outline-offset-[.1rem]"
             type="button"
             title="Sign out"
             aria-label="Sign out"

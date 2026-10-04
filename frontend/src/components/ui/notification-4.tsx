@@ -130,7 +130,7 @@ export default function Notification4({
     <section
       id={id}
       className={cn(
-        "absolute top-[2.3rem] right-0 z-50 flex w-[min(18rem,calc(100vw_-_1.2rem))] max-h-[min(23rem,calc(100dvh_-_3.6rem))] items-center justify-center overflow-hidden rounded-[.6rem] border border-[#e4e5e5] bg-white text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30_/_14%)] max-[600px]:right-1",
+        "absolute top-[2.3rem] right-0 z-50 flex w-[min(18rem,calc(100vw-1.2rem))] max-h-[min(23rem,calc(100dvh-3.6rem))] items-center justify-center overflow-hidden rounded-lh-2026-md border border-[#e4e5e5] bg-white text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30/14%)] max-[600px]:right-1",
         className,
       )}
     >
@@ -171,7 +171,7 @@ export default function Notification4({
           </div>
         </CardHeader>
 
-        <CardContent className="max-h-[min(19rem,calc(100dvh_-_7rem))] space-y-2 overflow-y-auto overscroll-contain px-2 py-[.4rem]">
+        <CardContent className="max-h-[min(19rem,calc(100dvh-7rem))] space-y-2 overflow-y-auto overscroll-contain px-2 py-[.4rem]">
           {groups.length ? (
             groups.map((group) => (
               <NotificationGroupCard key={group.id} group={group} onSelect={onSelect} />
@@ -195,7 +195,7 @@ function NotificationGroupCard({
   onSelect?: (event: NotificationEvent) => void;
 }) {
   return (
-    <section className="overflow-hidden rounded-[.6rem] bg-white">
+    <section className="overflow-hidden rounded-lh-2026-md bg-white">
       <div className="px-5 pt-4">
         <p className="text-sm font-medium text-[#696c70]">
           {group.label}
@@ -235,7 +235,7 @@ function NotificationEventRow({
           alt={event.source.name}
           className="border-black/5"
         />
-        <AvatarFallback className="bg-[#f2f6f5] text-xs font-semibold text-[#696c70]">
+        <AvatarFallback className="bg-linehaul-surface-muted text-xs font-semibold text-[#696c70]">
           {event.source.initials}
         </AvatarFallback>
       </Avatar>

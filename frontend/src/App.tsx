@@ -246,7 +246,7 @@ export default function App() {
     return (
       <main className="p-12 text-center">
         <h1>{failure.title}</h1>
-        <p className="error text-[var(--color-danger)]">{failure.message}</p>
+        <p className="error text-(--color-danger)">{failure.message}</p>
         <p>{failure.detail}</p>
         <button type="button" onClick={() => void retrySession()}>
           Try again

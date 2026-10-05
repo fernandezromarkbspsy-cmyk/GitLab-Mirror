@@ -1,10 +1,5 @@
 // C:\Users\phlspxuser\Documents\development\e2e\realtime.spec.js
-const path = require("path");
 const { test, expect } = require("@playwright/test");
-
-test.use({
-  storageState: path.resolve(__dirname, "..", "playwright-auth.json"),
-});
 
 test("production Supabase realtime channels join and reconnect", async ({
   page,
@@ -47,8 +42,10 @@ test("production Supabase realtime channels join and reconnect", async ({
     websocketErrors.push(errorMessage);
   });
 
-  await page.goto("https://soc5outboundops.app", { waitUntil: "domcontentloaded" });
-  await expect(page.locator(".app-shell")).toBeVisible({ timeout: 30_000 });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("main", { name: "Primary content" }),
+  ).toBeVisible({ timeout: 30_000 });
 
   await expect
     .poll(() => [...websocketConnections.values()].some(({ status }) => status === 101))

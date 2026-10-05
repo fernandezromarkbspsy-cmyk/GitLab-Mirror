@@ -1,8 +1,18 @@
 // C:\Users\phlspxuser\Documents\development\e2e\realtime.spec.js
 const { test, expect } = require("@playwright/test");
+const path = require("path");
+
+const productionAuthState = process.env.PRODUCTION_PLAYWRIGHT_AUTH_STATE;
+
+test.skip(
+  !productionAuthState,
+  "Set PRODUCTION_PLAYWRIGHT_AUTH_STATE to run the production realtime smoke test.",
+);
 
 test.use({
-  storageState: "playwright-auth.json",
+  storageState: productionAuthState
+    ? path.resolve(productionAuthState)
+    : undefined,
 });
 
 test("production Supabase realtime connection is active", async ({ page }) => {
@@ -19,7 +29,7 @@ test("production Supabase realtime connection is active", async ({ page }) => {
     });
   });
 
-  await page.goto("https://soc5outboundops.app");
+  await page.goto(process.env.PRODUCTION_PLAYWRIGHT_BASE_URL ?? "https://soc5outboundops.app");
 
   await page.waitForTimeout(120000);
 

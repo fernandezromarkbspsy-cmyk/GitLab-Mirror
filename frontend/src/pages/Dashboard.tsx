@@ -122,7 +122,7 @@ export function Dashboard({
   }, [location.pathname, routerNavigate, view]);
 
   return (
-    <div className={`${preview && !builderPreview ? "dashboard-preview" : ""} min-h-[100dvh]`}>
+    <div className={`${preview && !builderPreview ? "dashboard-preview" : ""} app-shell min-h-[100dvh]`}>
       <AppSidebar
         user={activeUser}
         activeView={view}

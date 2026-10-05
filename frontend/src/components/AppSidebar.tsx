@@ -118,7 +118,7 @@ export function AppSidebar({
         className={`${scrimClass}${open ? " max-[960px]:visible max-[960px]:opacity-100" : ""}`}
         onClick={() => onOpenChange(false)}
       />
-      <aside className={`${sidebarClass}${open ? "max-[960px]:translate-x-0!" : ""}`}>
+      <aside className={`${sidebarClass}${open ? " max-[960px]:translate-x-0!" : ""}`}>
         <nav id="primary-navigation" aria-label="Primary navigation" className="contents">
         <div className="flex min-h-[3.8rem] items-center gap-[.45rem] border-b border-[#39393b] py-0 pr-[.95rem] pl-5">
           <div className="relative grid size-[1.6rem] shrink-0 place-items-center overflow-hidden rounded-[.35rem] bg-soc5-lime">

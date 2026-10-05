@@ -118,6 +118,13 @@ Desktop.ini
 /playwright/.cache/
 /playwright/.auth/
 /frontend/playwright/.auth/
+/playwright-auth.json
+**/playwright-auth*.json
+**/playwright/.auth/
+**/.auth/
+**/*storage-state*.json
+**/*auth-state*.json
+**/*session-state*.json
 /frontend/playwright-report/
 /frontend/test-results/
 !frontend/.env.e2e.example

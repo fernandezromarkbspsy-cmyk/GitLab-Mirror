@@ -314,3 +314,9 @@ body {
     transition-duration: var(--motion-reduced-duration) !important;
   }
 }
+
+@media (min-width: 961px) {
+  .app-shell {
+    zoom: 0.88;
+  }
+}

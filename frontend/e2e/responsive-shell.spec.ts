@@ -61,6 +61,7 @@ test('opens and closes mobile navigation without trapping focus', async ({
 
   const menuToggle = page.getByRole('button', { name: 'Open navigation' });
   const navigation = page.locator('#primary-navigation');
+  const sidebar = page.locator('aside');
   const scrim = page.getByRole('button', { name: 'Close navigation' });
 
   await expect(menuToggle).toBeVisible();
@@ -69,6 +70,12 @@ test('opens and closes mobile navigation without trapping focus', async ({
   await menuToggle.click();
   await expect(menuToggle).toHaveAttribute('aria-expanded', 'true');
   await expect(scrim).toBeVisible();
+  await expect(
+    sidebar.evaluate((element) =>
+      element.classList.contains('max-[960px]:translate-x-0!'),
+    ),
+  ).resolves.toBe(true);
+  await expect(sidebar).toHaveCSS('transform', 'none');
 
   // The unauthenticated builder preview keeps its login layer above the shell;
   // force the shell scrim click so this test isolates the navigation behavior.

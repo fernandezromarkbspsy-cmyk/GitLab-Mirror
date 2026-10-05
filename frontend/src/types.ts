@@ -35,12 +35,14 @@ export interface TruckRequest {
   plate_number?: string | null;
   provide_time?: string | null;
   linehaul_trip_no?: string | null;
+  linehaul_trip_at?: string | null;
   docked_time?: string | null;
   status: Status;
   approval_status?: ApprovalStatus | null;
   approval_source?: "WEB" | "SEATALK" | null;
   rejection_remarks?: string | null;
   driver_id?: string | null;
+  driver_assigned_at?: string | null;
   created_by: string;
   created_by_name?: string | null;
   created_at: string;
@@ -74,6 +76,8 @@ export interface RequestAnalytics {
   truck_sizes: Partial<Record<"4W" | "6W" | "10W" | "6WF", number>>;
   hourly: Array<{ label: string; count: number }>;
   shift_start: string;
+  average_dwell_minutes?: number | null;
+  average_waiting_minutes?: number | null;
 }
 
 export type AppView =

@@ -127,7 +127,7 @@ export function AppSidebar({
           <div className="grid min-w-0 gap-[.1rem]">
             <strong className="text-sm font-semibold tracking-tight text-[#f7f7f7]">SOC 5</strong>
             <small className="whitespace-nowrap text-xs text-soc5-muted">
-              Outbound operations
+              
             </small>
           </div>
         </div>
@@ -231,7 +231,7 @@ export function AppSidebar({
                 onClick={() => navigate("kpi")}
               >
                 <BarChart3 size={18} />
-                <span>KPI Analytics</span>
+                <span>KPI</span>
               </button>
             </div>
           )}

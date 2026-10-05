@@ -5,6 +5,7 @@ type Option = { key: string; label: string };
 
 export const linehaulColumnOptions: Option[] = [
   { key: "status", label: "Status" },
+  { key: "runningTime", label: "Running time" },
   { key: "requestTime", label: "Request time" },
   { key: "cluster", label: "Cluster" },
   { key: "region", label: "Region" },
@@ -27,14 +28,15 @@ export const linehaulColumnOptions: Option[] = [
 
 export const linehaulPrimaryColumnKeys = [
   "status",
+  "runningTime",
+  "requestTime",
   "cluster",
   "region",
   "dock",
   "backlogs",
   "plateNumber",
-  "linehaulTrip",
   "truckSize",
-  "requestTime",
+  "linehaulTrip",
   "dockedTime",
 ] as const;
 

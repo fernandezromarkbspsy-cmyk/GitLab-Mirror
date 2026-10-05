@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use PDO;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
@@ -150,6 +151,29 @@ final class RequestWorkflowTest extends TestCase
         $this->assertArrayNotHasKey('10W', $result['truck_sizes']->all());
     }
 
+    public function test_analytics_returns_dwell_and_waiting_averages_from_milestone_timestamps(): void
+    {
+        $this->insertRequest([
+            'request_timestamp' => '2026-06-15 08:00:00',
+            'provide_time' => '2026-06-15 08:30:00',
+            'linehaul_trip_at' => '2026-06-15 10:00:00',
+        ]);
+        $this->insertRequest([
+            'request_timestamp' => '2026-06-15 09:00:00',
+            'provide_time' => '2026-06-15 10:00:00',
+            'linehaul_trip_at' => '2026-06-15 12:00:00',
+        ]);
+        $actor = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
+
+        $result = $this->repository->analytics($actor, [
+            'date_from' => '2026-06-01',
+            'date_to' => '2026-06-30',
+        ]);
+
+        $this->assertSame(45.0, $result['average_waiting_minutes']);
+        $this->assertSame(150.0, $result['average_dwell_minutes']);
+    }
+
     public function test_non_postgres_date_filters_use_the_business_timezone(): void
     {
         config()->set('app.business_timezone', 'Asia/Manila');
@@ -179,6 +203,7 @@ final class RequestWorkflowTest extends TestCase
             'to_status' => 'DOCKING',
         ]);
         $this->assertSame('DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
+        $this->assertNotNull(DB::table('requests')->where('id', $request->id)->value('provide_time'));
     }
 
     public function test_request_becomes_docked_only_after_driver_and_trip_are_present(): void
@@ -188,21 +213,23 @@ final class RequestWorkflowTest extends TestCase
         $request = $this->insertRequest(['status' => 'DOCKING', 'created_by' => $opsPic->id]);
 
         $this->service->transition($request->id, $docOfficer, 'mark-docked', ['driver_id' => 'DRV-1']);
-        $this->assertSame('ASSIGNED', DB::table('requests')->where('id', $request->id)->value('status'));
+        $this->assertSame('DOCKING', DB::table('requests')->where('id', $request->id)->value('status'));
+        $this->assertNotNull(DB::table('requests')->where('id', $request->id)->value('driver_assigned_at'));
 
         $this->service->transition($request->id, $opsPic, 'mark-docked', ['linehaul_trip_no' => 'LH-1']);
         $this->assertSame('DOCKED', DB::table('requests')->where('id', $request->id)->value('status'));
         $this->assertDatabaseHas('request_events', [
             'request_id' => $request->id,
             'event_type' => 'TRUCK_DOCKED',
-            'from_status' => 'ASSIGNED',
+            'from_status' => 'DOCKING',
             'to_status' => 'DOCKED',
         ]);
+        $this->assertNotNull(DB::table('requests')->where('id', $request->id)->value('linehaul_trip_at'));
     }
 
     public function test_non_owner_ops_pic_cannot_mark_request_docked(): void
     {
-        $request = $this->insertRequest(['status' => 'ASSIGNED', 'created_by' => (string) Str::uuid()]);
+        $request = $this->insertRequest(['status' => 'DOCKING', 'created_by' => (string) Str::uuid()]);
         $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
 
         try {
@@ -217,7 +244,7 @@ final class RequestWorkflowTest extends TestCase
 
     public function test_docking_transition_ignores_fields_owned_by_another_workflow_step(): void
     {
-        $request = $this->insertRequest(['status' => 'ASSIGNED', 'truck_type' => 'WETLEASE', 'driver_id' => 'DRV-1']);
+        $request = $this->insertRequest(['status' => 'DOCKING', 'truck_type' => 'WETLEASE', 'driver_id' => 'DRV-1']);
         $opsPic = (object) ['id' => $request->created_by, 'role' => 'ops_pic'];
 
         $updated = $this->service->transition($request->id, $opsPic, 'mark-docked', [
@@ -232,16 +259,13 @@ final class RequestWorkflowTest extends TestCase
     public function test_disallowed_docking_field_cannot_complete_the_transition(): void
     {
         $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
-        $request = $this->insertRequest(['status' => 'ASSIGNED', 'created_by' => $opsPic->id]);
+        $request = $this->insertRequest(['status' => 'DOCKING', 'created_by' => $opsPic->id]);
 
-        $updated = $this->service->transition($request->id, $opsPic, 'mark-docked', [
+        $this->expectException(ValidationException::class);
+        $this->service->transition($request->id, $opsPic, 'mark-docked', [
             'linehaul_trip_no' => 'LH-1',
             'driver_id' => 'DRV-INJECTED',
         ]);
-
-        $this->assertSame('ASSIGNED', $updated->status);
-        $this->assertSame('LH-1', $updated->linehaul_trip_no);
-        $this->assertNull($updated->driver_id);
     }
 
     private function insertRequest(array $overrides = []): object
@@ -257,6 +281,8 @@ final class RequestWorkflowTest extends TestCase
             'truck_size' => '6W',
             'truck_type' => 'WETLEASE',
             'plate_number' => null,
+            'driver_assigned_at' => null,
+            'linehaul_trip_at' => null,
             'status' => 'PENDING',
             'created_by' => (string) Str::uuid(),
             'created_at' => '2026-06-30 08:00:00',
@@ -290,6 +316,8 @@ final class RequestWorkflowTest extends TestCase
             $table->string('status');
             $table->text('rejection_remarks')->nullable();
             $table->string('driver_id')->nullable();
+            $table->dateTime('driver_assigned_at')->nullable();
+            $table->dateTime('linehaul_trip_at')->nullable();
             $table->uuid('created_by');
             $table->dateTime('approved_at')->nullable();
             $table->dateTime('rejected_at')->nullable();

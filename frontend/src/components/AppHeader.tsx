@@ -50,7 +50,7 @@ const page = {
   "lh-request": { name: "LH Request", section: "Outbound" },
   "truck-request": { name: "Truck Request", section: "Midmile" },
   docking: { name: "Docking Confirmation", section: "Docking" },
-  kpi: { name: "KPI Analytics", section: "Performance" },
+  kpi: { name: "KPI", section: "Performance" },
   users: { name: "User Management", section: "Administration" },
 };
 

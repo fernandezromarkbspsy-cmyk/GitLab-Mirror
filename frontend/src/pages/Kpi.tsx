@@ -9,7 +9,7 @@ export function Kpi() {
       <img
         className="block h-auto max-h-[calc(100dvh-76px)] w-full object-contain"
         src="/image.png"
-        alt="KPI analytics page under construction"
+        alt="KPI page under construction"
       />
     </section>
   );

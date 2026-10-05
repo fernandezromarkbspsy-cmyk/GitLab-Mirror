@@ -27,6 +27,38 @@ const statusClassMap: Record<Status, string> = {
     "border-current/20 bg-status-pending-surface text-status-pending-ink",
 };
 
+const statusTextClassMap: Record<string, string> = {
+  PENDING: "text-[#8a6a10]",
+  REQUESTED: "text-[#28658f]",
+  REROUTED: "text-[#8a6a10]",
+  ASSIGNED: "text-[#237a72]",
+  DOCKING: "text-[#6d5a9d]",
+  DOCKED: "text-[#2f7c58]",
+  CANCELLED: "text-[#a44d59]",
+};
+
+const statusDotClassMap: Record<string, string> = {
+  PENDING: "bg-[#d5a92d]",
+  REQUESTED: "bg-[#4b91c2]",
+  REROUTED: "bg-[#d5a92d]",
+  ASSIGNED: "bg-[#36a59a]",
+  DOCKING: "bg-[#8a70c4]",
+  DOCKED: "bg-[#4aaf79]",
+  CANCELLED: "bg-[#c76470]",
+};
+
+export function StatusText({ status }: { status: string }) {
+  const normalized = status === "FOR_DOCKING" ? "DOCKING" : status;
+  const label = normalized.replaceAll("_", " ");
+
+  return (
+    <span className={`inline-flex min-w-0 items-center gap-1.5 text-xs font-bold uppercase tracking-[.045em] ${statusTextClassMap[normalized] ?? "text-[#596667]"}`}>
+      <i className={`size-1.5 shrink-0 rounded-full ${statusDotClassMap[normalized] ?? "bg-[#899596]"}`} aria-hidden="true" />
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
 export function StatusBadge({
   status,
   className,

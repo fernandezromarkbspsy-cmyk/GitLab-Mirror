@@ -35,7 +35,7 @@ Record any deviation in the implementation plan before coding.
 
 In SeaTalk Open Platform:
 
-1. Create or select the application used by the outbound operations system.
+1. Create or select the application used by the  system.
 2. Enable the **Workspace App** capability.
 3. Record the App ID.
 4. Generate or retrieve the App Secret.

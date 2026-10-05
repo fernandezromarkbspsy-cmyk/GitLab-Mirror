@@ -254,6 +254,10 @@ body {
     min-height: 100dvh;
   }
 
+  #root {
+    background-color: var(--color-soc5-page);
+  }
+
   body {
     margin: 0;
     background-color: var(--color-page);
@@ -318,5 +322,6 @@ body {
 @media (min-width: 961px) {
   .app-shell {
     zoom: 0.88;
+    min-height: calc(100dvh / 0.88);
   }
 }

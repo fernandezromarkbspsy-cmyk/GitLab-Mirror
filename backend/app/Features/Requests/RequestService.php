@@ -86,8 +86,8 @@ final class RequestService
                 'reject-mm' => [['REQUESTED'], 'CANCELLED', 'REQUEST_REJECTED_BY_MM'],
                 'assign-truck' => [['REQUESTED'], 'DOCKING', 'TRUCK_ASSIGNED'],
                 'mark-docked' => $actor->role === 'doc_officer'
-                    ? [['DOCKING'], 'ASSIGNED', 'DRIVER_ASSIGNED']
-                    : [['ASSIGNED'], 'DOCKED', 'TRUCK_DOCKED'],
+                    ? [['DOCKING'], 'DOCKING', 'DRIVER_ASSIGNED']
+                    : [['DOCKING'], 'DOCKED', 'TRUCK_DOCKED'],
                 default => throw ValidationException::withMessages(['action' => 'Unknown action.']),
             };
             abort_unless(in_array($request->status, $from, true), 409, "Cannot {$action} a {$request->status} request.");
@@ -98,8 +98,8 @@ final class RequestService
             if ($action === 'assign-truck' && blank($input['plate_number'] ?? null)) {
                 throw ValidationException::withMessages(['plate_number' => 'Plate number is required.']);
             }
-            if ($action === 'confirm' && (blank($request->driver_id) || blank($request->linehaul_trip_no))) {
-                throw ValidationException::withMessages(['driver_id' => 'Driver ID and linehaul trip number are required.']);
+            if ($action === 'mark-docked' && $actor->role !== 'doc_officer' && blank($request->driver_id)) {
+                throw ValidationException::withMessages(['driver_id' => 'Driver ID is required before entering the linehaul trip number.']);
             }
 
             $allowedFields = match ($action) {
@@ -109,13 +109,14 @@ final class RequestService
                 default => [],
             };
             $fields = array_intersect_key($input, array_flip($allowedFields));
+            if ($action === 'assign-truck') {
+                $fields['provide_time'] = now();
+            }
             if ($action === 'mark-docked') {
-                $driverId = $fields['driver_id'] ?? $request->driver_id;
-                $tripNo = $fields['linehaul_trip_no'] ?? $request->linehaul_trip_no;
-                if ($actor->role !== 'doc_officer' && blank($driverId)) {
-                    $updated = $this->requests->update($id, $fields);
-
-                    return $updated;
+                if ($actor->role === 'doc_officer') {
+                    $fields['driver_assigned_at'] = now();
+                } else {
+                    $fields['linehaul_trip_at'] = now();
                 }
             }
             $fields['status'] = $to;

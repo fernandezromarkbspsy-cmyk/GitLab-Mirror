@@ -93,9 +93,14 @@ function describeFailure(cause: unknown): Failure {
 
 export default function App() {
   const navigate = useNavigate();
+  // Local Vite development should render the production-style application
+  // shell directly so UI work is not obscured by the unauthenticated preview.
+  // Production builds keep the normal authentication flow.
   const isBuilderPreview =
     import.meta.env.DEV &&
-    new URLSearchParams(window.location.search).get("builderPreview") === "1";
+    (import.meta.env.VITE_E2E_AUTH_ENTRY !== "1" ||
+      new URLSearchParams(window.location.search).get("builderPreview") ===
+        "1");
   const [state, setState] = useState<AppState>(
     isBuilderPreview ? "ready" : "loading",
   );

@@ -9,7 +9,6 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import carLoadingUrl from "../assets/Car loading.svg";
-import { LoginBackdrop } from "./components/login/LoginBackdrop";
 import { ApiError, api } from "./lib/api";
 import { isKnownAppPath } from "./lib/routes";
 import {
@@ -93,18 +92,11 @@ function describeFailure(cause: unknown): Failure {
 
 export default function App() {
   const navigate = useNavigate();
-  const isBuilderPreview =
-    import.meta.env.DEV &&
-    new URLSearchParams(window.location.search).get("builderPreview") === "1";
-  const [state, setState] = useState<AppState>(
-    isBuilderPreview ? "ready" : "loading",
-  );
+  const [state, setState] = useState<AppState>("loading");
   const [startupAnimationComplete, setStartupAnimationComplete] =
     useState(false);
   const [failure, setFailure] = useState<Failure>(defaultFailure);
-  const [profile, setProfile] = useState<User | null>(
-    isBuilderPreview ? previewUser : null,
-  );
+  const [profile, setProfile] = useState<User | null>(null);
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
   const seatalkSession = useRef(false);
@@ -123,8 +115,6 @@ export default function App() {
 
   const resolveSession = useCallback(
     async (session: { access_token: string } | null, force = false) => {
-      if (isBuilderPreview) return;
-
       if (!session) {
         lastToken.current = null;
         requestSequence.current += 1;
@@ -190,7 +180,7 @@ export default function App() {
         setState("unauthorized");
       }
     },
-    [isBuilderPreview, navigate],
+    [navigate],
   );
 
   const retrySession = useCallback(async () => {
@@ -261,11 +251,7 @@ export default function App() {
     return <ChangePassword onComplete={() => setState("ready")} />;
   return profile ? (
     <Suspense fallback={<StartupLoading />}>
-      <Dashboard
-        user={profile}
-        preview={isBuilderPreview}
-        builderPreview={isBuilderPreview}
-      />
+      <Dashboard user={profile} />
     </Suspense>
   ) : (
     <StartupLoading />
@@ -307,11 +293,11 @@ function UnauthenticatedEntry() {
   return (
     <Fragment>
       <div className="dashboard-preview">
-        <Suspense fallback={<LoginBackdrop />}>
+        <Suspense fallback={null}>
           <Dashboard user={previewUser} preview />
         </Suspense>
       </div>
-      <Suspense fallback={<LoginBackdrop />}>
+      <Suspense fallback={null}>
         <Login modal visible={loginVisible} />
       </Suspense>
     </Fragment>

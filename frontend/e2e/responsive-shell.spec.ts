@@ -1,4 +1,9 @@
+import { mockShellSession } from "./helpers/shell-session";
 import { expect, test } from '@playwright/test';
+
+test.beforeEach(async ({ page }) => {
+  await mockShellSession(page);
+});
 
 const zoomLevels = [80, 90, 100, 110, 125, 150];
 const referenceWidth = 1366;
@@ -6,12 +11,15 @@ const referenceWidth = 1366;
 test('reflows the application shell at common browser zoom levels', async ({
   page,
 }) => {
-  await page.goto('/?builderPreview=1#/dashboard');
+  await page.goto('/dashboard');
   await page.waitForSelector('main[aria-label="Primary content"]');
 
   for (const zoomLevel of zoomLevels) {
     const viewportWidth = Math.round(referenceWidth / (zoomLevel / 100));
     await page.setViewportSize({ width: viewportWidth, height: 900 });
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
 
     const layout = await page.evaluate(() => {
       const sidebar = document.querySelector('aside');
@@ -57,7 +65,7 @@ test('opens and closes mobile navigation without trapping focus', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 800, height: 900 });
-  await page.goto('/?builderPreview=1#/dashboard');
+  await page.goto('/dashboard');
 
   const menuToggle = page.getByRole('button', { name: 'Open navigation' });
   const navigation = page.locator('#primary-navigation');
@@ -70,9 +78,7 @@ test('opens and closes mobile navigation without trapping focus', async ({
   await expect(menuToggle).toHaveAttribute('aria-expanded', 'true');
   await expect(scrim).toBeVisible();
 
-  // The unauthenticated builder preview keeps its login layer above the shell;
-  // force the shell scrim click so this test isolates the navigation behavior.
-  await scrim.evaluate((element) => (element as HTMLButtonElement).click());
+  await scrim.click();
   await expect(menuToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(menuToggle).toBeFocused();
 

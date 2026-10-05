@@ -17,9 +17,10 @@ import { Modal } from "../components/Modal";
 import { Skeleton } from "../components/Skeleton";
 import { Skiper87 } from "../components/ui/skiper-ui/skiper87";
 import { api } from "../lib/api";
-import type { ManagedUser, Role } from "../types";
+import type { ManagedUser, Role, User } from "../types";
 
 const roles: Role[] = ["ops_pic", "fte_ops", "fte_mm", "doc_officer"];
+const standardRoles: Role[] = ["ops_pic", "doc_officer"];
 const roleLabels: Record<Role, string> = {
   ops_pic: "Ops PIC",
   fte_ops: "FTE Operations",
@@ -50,7 +51,8 @@ function formatJoinedDate(value: string) {
       });
 }
 
-export function UserManagement() {
+export function UserManagement({ user: currentUser }: { user: User }) {
+  const assignableRoles = currentUser.is_admin ? roles : standardRoles;
   const client = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [resetUser, setResetUser] = useState<ManagedUser | null>(null);
@@ -266,7 +268,7 @@ export function UserManagement() {
                             })
                           }
                         >
-                          {roles.map((role) => (
+                          {[...assignableRoles, ...(assignableRoles.includes(user.role) ? [] : [user.role])].map((role) => (
                             <option key={role} value={role}>
                               {roleLabels[role]}
                             </option>

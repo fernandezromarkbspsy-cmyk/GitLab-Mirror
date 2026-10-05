@@ -11,6 +11,7 @@ use App\Http\Middleware\AuthenticateSupabase;
 use App\Http\Middleware\IdempotencyMiddleware;
 use App\Http\Middleware\RequestTelemetry;
 use App\Http\Middleware\VerifySeaTalkCallback;
+use App\Http\Middleware\VerifySessionOrigin;
 use App\Jobs\ExpireSeaTalkAssignments;
 use App\Jobs\SyncRequestsToGoogleSheetJob;
 use Illuminate\Console\Scheduling\Schedule;
@@ -60,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'supabase.auth' => AuthenticateSupabase::class,
             'idempotency' => IdempotencyMiddleware::class,
             'seatalk.callback' => VerifySeaTalkCallback::class,
+            'session.origin' => VerifySessionOrigin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

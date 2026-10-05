@@ -93,7 +93,7 @@ final class UserAuditAtomicityTest extends TestCase
             'name' => 'Updated name',
             'role' => 'fte_mm',
         ]);
-        $request->attributes->set('actor', (object) ['id' => $this->actorId, 'role' => 'fte_ops']);
+        $request->attributes->set('actor', (object) ['id' => $this->actorId, 'role' => 'fte_ops', 'is_admin' => true]);
 
         return $request;
     }

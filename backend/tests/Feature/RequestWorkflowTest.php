@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use PDO;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
@@ -229,19 +230,23 @@ final class RequestWorkflowTest extends TestCase
         $this->assertSame('WETLEASE', $updated->truck_type);
     }
 
-    public function test_disallowed_docking_field_cannot_complete_the_transition(): void
+    public function test_docking_requires_a_driver_before_saving_the_trip_number(): void
     {
         $opsPic = (object) ['id' => (string) Str::uuid(), 'role' => 'ops_pic'];
         $request = $this->insertRequest(['status' => 'ASSIGNED', 'created_by' => $opsPic->id]);
 
-        $updated = $this->service->transition($request->id, $opsPic, 'mark-docked', [
-            'linehaul_trip_no' => 'LH-1',
-            'driver_id' => 'DRV-INJECTED',
-        ]);
+        try {
+            $this->service->transition($request->id, $opsPic, 'mark-docked', [
+                'linehaul_trip_no' => 'LH-1',
+            ]);
+            $this->fail('Docking should be rejected until a driver is assigned.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('driver_id', $exception->errors());
+        }
 
-        $this->assertSame('ASSIGNED', $updated->status);
-        $this->assertSame('LH-1', $updated->linehaul_trip_no);
-        $this->assertNull($updated->driver_id);
+        $this->assertSame('ASSIGNED', DB::table('requests')->where('id', $request->id)->value('status'));
+        $this->assertNull(DB::table('requests')->where('id', $request->id)->value('linehaul_trip_no'));
+        $this->assertNull(DB::table('requests')->where('id', $request->id)->value('driver_id'));
     }
 
     private function insertRequest(array $overrides = []): object

@@ -65,6 +65,28 @@ final class UserManagementAuthorizationTest extends TestCase
         }
     }
 
+    public function test_non_admin_fte_cannot_assign_an_elevated_role(): void
+    {
+        $request = Request::create('/api/users/'.$this->targetId, 'PUT', [
+            'name' => 'Target user',
+            'role' => 'fte_mm',
+        ]);
+        $request->attributes->set('actor', (object) [
+            'id' => (string) Str::uuid(),
+            'role' => 'fte_ops',
+            'is_admin' => false,
+        ]);
+
+        try {
+            (new UserController)->update($request, $this->targetId);
+            $this->fail('Expected FTE role assignment to be denied for a non-admin.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+
+        $this->assertDatabaseHas('profiles', ['id' => $this->targetId, 'role' => 'ops_pic']);
+    }
+
     public function test_profile_change_rolls_back_and_deletes_auth_user_when_audit_fails(): void
     {
         $authUserId = (string) Str::uuid();

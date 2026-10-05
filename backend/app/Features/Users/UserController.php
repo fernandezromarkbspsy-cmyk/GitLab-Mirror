@@ -90,9 +90,15 @@ final class UserController
 
     public function update(Request $request, string $id): JsonResponse
     {
+        $actor = $request->attributes->get('actor');
         $this->authorize($request);
-        abort_if($request->attributes->get('actor')->id === $id, 409, 'You cannot change your own role.');
+        abort_if($actor->id === $id, 409, 'You cannot change your own role.');
         $data = $request->validate(['name' => 'required|string|min:2|max:120', 'role' => ['required', Rule::in(['ops_pic', 'fte_ops', 'fte_mm', 'doc_officer'])]]);
+        abort_unless(
+            ($actor->is_admin ?? false) || ! in_array($data['role'], ['fte_ops', 'fte_mm'], true),
+            403,
+            'Only designated administrators can assign FTE roles.'
+        );
         DB::transaction(function () use ($id, $data, $request): void {
             $updated = DB::table('profiles')->where('id', $id)->update($data + ['updated_at' => now()]);
             abort_unless($updated, 404, 'User not found.');

@@ -109,13 +109,12 @@ final class RequestService
                 default => [],
             };
             $fields = array_intersect_key($input, array_flip($allowedFields));
-            if ($action === 'mark-docked') {
-                $driverId = $fields['driver_id'] ?? $request->driver_id;
-                $tripNo = $fields['linehaul_trip_no'] ?? $request->linehaul_trip_no;
-                if ($actor->role !== 'doc_officer' && blank($driverId)) {
-                    $updated = $this->requests->update($id, $fields);
-
-                    return $updated;
+            if ($action === 'mark-docked' && $actor->role !== 'doc_officer') {
+                $driverId = $request->driver_id;
+                if (blank($driverId)) {
+                    throw ValidationException::withMessages([
+                        'driver_id' => 'A Doc Officer must record the driver ID before this request can be marked docked.',
+                    ]);
                 }
             }
             $fields['status'] = $to;

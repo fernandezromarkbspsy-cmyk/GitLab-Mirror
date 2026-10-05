@@ -142,7 +142,7 @@ export function Dashboard({
               )}
               {view === "docking" && <DockingConfirmation user={activeUser} />}
               {view === "kpi" && <Kpi />}
-              {view === "users" && <UserManagement />}
+              {view === "users" && <UserManagement user={activeUser} />}
             </Suspense>
           </section>
         </div>

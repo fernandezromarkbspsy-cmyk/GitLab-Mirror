@@ -38,7 +38,7 @@ $registerApiRoutes = static function (string $prefix): void {
             StartSession::class,
         ])->group(function (): void {
             Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
-            Route::post('/auth/seatalk/logout', [SeatalkController::class, 'logout']);
+            Route::post('/auth/seatalk/logout', [SeatalkController::class, 'logout'])->middleware('session.origin');
         });
 
         Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
@@ -49,7 +49,15 @@ $registerApiRoutes = static function (string $prefix): void {
             Route::post('/integrations/seatalk/approval/reject', [SeaTalkApprovalCallbackController::class, 'reject']);
         });
 
-        Route::middleware([StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
+        Route::middleware([
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+            'throttle:api-ip',
+            'supabase.auth',
+            'session.origin',
+            'throttle:api',
+        ])->group(function (): void {
             Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
             Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
             Route::get('/users', [UserController::class, 'index']);

@@ -32,7 +32,10 @@ import {
   requestWorkspaceClass,
   tableShellClass,
 } from "../lib/uiClasses";
-import { approvalStateFor } from "../components/approval/ApprovalStateBadge";
+import {
+  ApprovalStateBadge,
+  approvalStateFor,
+} from "../components/approval/ApprovalStateBadge";
 import {
   linehaulColumnOptions,
   linehaulPrimaryColumnKeys,
@@ -515,8 +518,12 @@ export function OutboundRequests({
                                         event.stopPropagation()
                                       }
                                     />
-                                  )}
+                                )}
                                 <StatusText status={row.status} />
+                                <ApprovalStateBadge
+                                  status={row.status}
+                                  approvalStatus={row.approval_status}
+                                />
                               </span>
                             )}
                             {hasColumn("runningTime") && (

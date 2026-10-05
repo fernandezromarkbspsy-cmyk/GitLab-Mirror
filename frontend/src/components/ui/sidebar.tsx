@@ -40,6 +40,7 @@ type SidebarContextProps = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  mobileTriggerRef: React.RefObject<HTMLButtonElement | null>
 }
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
@@ -68,6 +69,8 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+  const mobileTriggerRef = React.useRef<HTMLButtonElement>(null)
+  const previousOpenMobile = React.useRef(openMobile)
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -92,6 +95,13 @@ function SidebarProvider({
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
   }, [isMobile, setOpen, setOpenMobile])
+
+  React.useEffect(() => {
+    if (previousOpenMobile.current && !openMobile) {
+      mobileTriggerRef.current?.focus()
+    }
+    previousOpenMobile.current = openMobile
+  }, [openMobile])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -122,6 +132,7 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      mobileTriggerRef,
     }),
     [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
   )
@@ -259,10 +270,11 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, isMobile, mobileTriggerRef } = useSidebar()
 
   return (
     <Button
+      ref={isMobile ? mobileTriggerRef : undefined}
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"

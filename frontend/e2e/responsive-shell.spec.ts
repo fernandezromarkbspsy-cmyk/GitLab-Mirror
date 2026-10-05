@@ -22,7 +22,7 @@ test('reflows the application shell at common browser zoom levels', async ({
     }));
 
     const layout = await page.evaluate(() => {
-      const sidebar = document.querySelector('aside');
+      const sidebar = document.querySelector('[data-slot="sidebar-container"]');
       const content = document.querySelector('main[aria-label="Primary content"]');
       const header = document.querySelector('header');
 
@@ -64,12 +64,12 @@ test('reflows the application shell at common browser zoom levels', async ({
 test('opens and closes mobile navigation without trapping focus', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 800, height: 900 });
+  await page.setViewportSize({ width: 700, height: 900 });
   await page.goto('/dashboard');
 
-  const menuToggle = page.getByRole('button', { name: 'Open navigation' });
+  const menuToggle = page.locator('button[data-slot="sidebar-trigger"]');
   const navigation = page.locator('#primary-navigation');
-  const scrim = page.getByRole('button', { name: 'Close navigation' });
+  const scrim = page.locator('[data-slot="sheet-overlay"]');
 
   await expect(menuToggle).toBeVisible();
   await expect(menuToggle).toHaveAttribute('aria-expanded', 'false');
@@ -84,8 +84,8 @@ test('opens and closes mobile navigation without trapping focus', async ({
 
   await menuToggle.click();
   await navigation
-    .getByRole('button', { name: 'Dashboard' })
-    .evaluate((element) => (element as HTMLButtonElement).click());
+    .getByRole('link', { name: 'Dashboard' })
+    .click();
   await expect(menuToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(menuToggle).toBeFocused();
 });
@@ -93,10 +93,10 @@ test('opens and closes mobile navigation without trapping focus', async ({
 test('keeps the closed mobile navigation out of the tab order', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 800, height: 900 });
+  await page.setViewportSize({ width: 700, height: 900 });
   await page.goto('/dashboard');
 
-  const menuToggle = page.getByRole('button', { name: 'Open navigation' });
+  const menuToggle = page.locator('button[data-slot="sidebar-trigger"]');
   const navigation = page.locator('#primary-navigation');
 
   await menuToggle.focus();

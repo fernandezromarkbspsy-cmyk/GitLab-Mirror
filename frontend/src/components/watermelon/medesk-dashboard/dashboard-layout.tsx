@@ -22,7 +22,7 @@ export default function DashboardLayout({ children, navigationGroups, currentUse
       <TooltipProvider>
         <SidebarProvider
           defaultOpen
-          className="medesk-dashboard h-svh overflow-hidden no-scrollbar"
+          className="app-shell medesk-dashboard h-svh overflow-hidden no-scrollbar"
           style={
             {
               "--sidebar-width": "17.25rem",

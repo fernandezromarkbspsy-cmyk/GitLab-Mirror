@@ -44,7 +44,7 @@ function Invoke-ProjectBinary {
 }
 
 function Invoke-FrontendNpmCi {
-    $output = @(& npm ci --cache .npm --prefer-offline 2>&1)
+    $output = @(& npm.cmd ci --cache .npm --prefer-offline 2>&1)
     $exitCode = $LASTEXITCODE
 
     $output | ForEach-Object { Write-Host ([string]$_) }
@@ -56,17 +56,18 @@ function Invoke-FrontendNpmCi {
 }
 
 function Reset-FrontendDependencies {
-    Get-Process node -ErrorAction SilentlyContinue |
-        Stop-Process -Force -ErrorAction SilentlyContinue
-
     $nodeModulesPath = Join-Path $Root 'frontend\node_modules'
+
     if (Test-Path -LiteralPath $nodeModulesPath -PathType Container) {
-        Remove-Item -LiteralPath $nodeModulesPath -Recurse -Force -ErrorAction Stop
+        & cmd.exe /c rmdir /s /q "$nodeModulesPath"
+        if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $nodeModulesPath)) {
+            throw "Unable to remove frontend node_modules before reinstalling dependencies."
+        }
     }
 }
 
 function Repair-FrontendDependencies {
-    Write-Host "Stopping Node processes and removing frontend node_modules before retrying npm ci..."
+    Write-Host "Removing frontend node_modules before retrying npm ci..."
     Reset-FrontendDependencies
 
     Set-Location (Join-Path $Root 'frontend')
@@ -337,7 +338,7 @@ if ($RunFrontend) {
             Set-Location "$Root\frontend"
 
             Invoke-CommandChecked {
-                npm run check:robots
+                npm.cmd run check:robots
             } "robots check failed"
         }
 
@@ -345,7 +346,7 @@ if ($RunFrontend) {
             Set-Location "$Root\frontend"
 
             Invoke-CommandChecked {
-                npm run lint
+                npm.cmd run lint
             } "frontend lint failed"
         } {
             Set-Location "$Root\frontend"
@@ -356,7 +357,7 @@ if ($RunFrontend) {
             Set-Location "$Root\frontend"
 
             Invoke-CommandChecked {
-                npm run format:check
+                npm.cmd run format:check
             } "frontend formatting failed"
         } {
             Set-Location "$Root\frontend"
@@ -374,7 +375,7 @@ if ($RunFrontend) {
             Set-Location "$Root\frontend"
 
             Invoke-CommandChecked {
-                npm test
+                npm.cmd test
             } "frontend tests failed"
         }
 
@@ -392,7 +393,7 @@ if ($RunFrontend) {
 
             try {
                 Invoke-CommandChecked {
-                    npm run test:e2e
+                    npm.cmd run test:e2e
                 } "E2E tests failed"
             }
             finally {
@@ -409,7 +410,7 @@ if ($RunFrontend) {
             Set-Location "$Root\frontend"
 
             Invoke-CommandChecked {
-                npm run build
+                npm.cmd run build
             } "frontend build failed"
         }
     }

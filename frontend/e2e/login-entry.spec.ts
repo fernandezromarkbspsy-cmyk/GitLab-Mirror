@@ -27,7 +27,7 @@ test('renders the unauthenticated login entry', async ({ page }) => {
     page.getByRole('main', { name: 'Primary content' }),
   ).toBeVisible({ timeout: 10_000 });
   await expect(
-    page.getByRole('button', { name: 'Dashboard', exact: true }),
+    page.getByRole('link', { name: 'Dashboard', exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole('navigation', { name: 'Primary navigation' }),

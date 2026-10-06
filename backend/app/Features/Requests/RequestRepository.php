@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Schema;
 
 final class RequestRepository
 {
-    private const COLUMNS = ['id', 'request_timestamp', 'cluster', 'region', 'dock_no', 'backlogs', 'backlogs_timestamp', 'ob_fte', 'truck_size', 'truck_type', 'plate_number', 'provide_time', 'linehaul_trip_no', 'docked_time', 'status', 'rejection_remarks', 'driver_id', 'created_by', 'created_at', 'updated_at'];
+    private const COLUMNS = ['id', 'request_timestamp', 'cluster', 'region', 'dock_no', 'backlogs', 'backlogs_timestamp', 'ob_fte', 'truck_size', 'truck_type', 'plate_number', 'provide_time', 'linehaul_trip_no', 'linehaul_trip_at', 'docked_time', 'status', 'rejection_remarks', 'driver_id', 'driver_assigned_at', 'created_by', 'created_at', 'updated_at'];
 
     private const APPROVAL_COLUMNS = ['approval_status', 'approved_by', 'approved_at', 'approval_source', 'rejected_by', 'rejected_at', 'approval_version', 'approval_correlation_id'];
 
@@ -122,7 +122,26 @@ final class RequestRepository
                 'count' => $count,
             ])->values(),
             'shift_start' => $shiftStart->toIso8601String(),
+            'average_dwell_minutes' => $this->averageMinutes($actor, $filters, 'linehaul_trip_at'),
+            'average_waiting_minutes' => $this->averageMinutes($actor, $filters, 'provide_time'),
         ];
+    }
+
+    private function averageMinutes(object $actor, array $filters, string $endColumn): ?float
+    {
+        $query = DB::table('requests')
+            ->whereNotNull($endColumn)
+            ->selectRaw('avg(extract(epoch from ('.$endColumn.' - request_timestamp)) / 60) as average_minutes');
+        $this->scope($query, $actor, $filters);
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            $values = $query->select(['request_timestamp', $endColumn])->get();
+
+            return $values->isEmpty() ? null : $values->avg(fn (object $row): float => (strtotime($row->{$endColumn}) - strtotime($row->request_timestamp)) / 60);
+        }
+
+        $value = $query->value('average_minutes');
+
+        return $value === null ? null : round((float) $value, 1);
     }
 
     private function scope(Builder $query, object $actor, array $filters): void

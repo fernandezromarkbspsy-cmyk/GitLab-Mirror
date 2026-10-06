@@ -118,7 +118,11 @@ export function AppSidebar({
         className={`${scrimClass}${open ? " max-[960px]:visible max-[960px]:opacity-100" : ""}`}
         onClick={() => onOpenChange(false)}
       />
+<<<<<<< HEAD
       <aside className={`${sidebarClass}${open ? "max-[960px]:translate-x-0!" : ""}`}>
+=======
+      <aside className={`${sidebarClass}${open ? " max-[960px]:translate-x-0!" : ""}`}>
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
         <nav id="primary-navigation" aria-label="Primary navigation" className="contents">
         <div className="flex min-h-[3.8rem] items-center gap-[.45rem] border-b border-[#39393b] py-0 pr-[.95rem] pl-5">
           <div className="relative grid size-[1.6rem] shrink-0 place-items-center overflow-hidden rounded-[.35rem] bg-soc5-lime">
@@ -127,7 +131,11 @@ export function AppSidebar({
           <div className="grid min-w-0 gap-[.1rem]">
             <strong className="text-sm font-semibold tracking-tight text-[#f7f7f7]">SOC 5</strong>
             <small className="whitespace-nowrap text-xs text-soc5-muted">
+<<<<<<< HEAD
               Outbound operations
+=======
+              
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
             </small>
           </div>
         </div>
@@ -231,7 +239,7 @@ export function AppSidebar({
                 onClick={() => navigate("kpi")}
               >
                 <BarChart3 size={18} />
-                <span>KPI Analytics</span>
+                <span>KPI</span>
               </button>
             </div>
           )}

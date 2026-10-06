@@ -42,6 +42,10 @@ import {
   loadingToolbarClass,
   overviewMetricsClass,
   scorecardsLayoutClass,
+<<<<<<< HEAD
+=======
+  timingMetricsClass,
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
   lineChartClass,
   lineChartSvgClass,
   lineAreaClass,
@@ -102,6 +106,14 @@ function getTodayDate(now = new Date()) {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function formatDurationMinutes(minutes?: number | null) {
+  if (minutes == null || !Number.isFinite(minutes)) return "-";
+  const rounded = Math.round(minutes);
+  const hours = Math.floor(rounded / 60);
+  const remainder = rounded % 60;
+  return hours ? `${hours}h ${remainder}m` : `${remainder}m`;
 }
 
 function smoothPath(points: Array<{ x: number; y: number }>) {
@@ -379,6 +391,31 @@ export function Overview({
           </article>
         </section>
       </section>
+<<<<<<< HEAD
+=======
+      <section className={timingMetricsClass} aria-label="Request timing metrics">
+        <MetricCard
+          label="Average Dwell time"
+          value={
+            analytics.isPending ? <Skeleton width={64} height={26} /> : formatDurationMinutes(analytics.data?.average_dwell_minutes)
+          }
+          icon={<Clock3 size={22} aria-hidden="true" />}
+          chip="Request to Depart"
+          footnote="Request to LHTrip entry"
+          onClick={() => setDetailStatus("ALL")}
+        />
+        <MetricCard
+          label="Average Waiting Time"
+          value={
+            analytics.isPending ? <Skeleton width={64} height={26} /> : formatDurationMinutes(analytics.data?.average_waiting_minutes)
+          }
+          icon={<Truck size={22} aria-hidden="true" />}
+          chip="Request to plate"
+          footnote="Request to FTE MM plate assignment"
+          onClick={() => setDetailStatus("ALL")}
+        />
+      </section>
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
       <section className={dashboardGridClass}>
         <Panel
           className="chart-panel truck-mix-panel"
@@ -423,9 +460,15 @@ export function Overview({
         <article className={`min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}>
           <div className={`${dashboardPanelHeadClass} border-b border-[#087f7c]/[.24] pb-[.65rem]`}>
             <div>
+<<<<<<< HEAD
               <p className={dashboardPanelKickerClass}>Live dispatch board</p>
               <h2 className="m-0 text-sm font-semibold text-card-heading">Recent linehaul trips</h2>
               <p className="mt-1 mb-0 text-xs leading-normal text-soc5-muted">Latest trips with driver assignments</p>
+=======
+              <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>Live dispatch board</p>
+              <h2 className="m-0 text-sm font-semibold text-[#183f42]">Recent linehaul trips</h2>
+              <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">Latest trips with driver assignments</p>
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
             </div>
             <span className="trips-live-status">
               <i aria-hidden="true" /> Live
@@ -471,9 +514,15 @@ export function Overview({
         <article className="min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card">
           <div className={dashboardPanelHeadClass}>
             <div>
+<<<<<<< HEAD
               <p className={dashboardPanelKickerClass}>Docking queue</p>
               <h2 className="m-0 text-sm font-semibold text-card-heading">Trucks awaiting docking</h2>
               <p className="mt-1 mb-0 text-xs leading-normal text-soc5-muted">Assigned trucks ready for dock confirmation</p>
+=======
+              <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>Docking queue</p>
+              <h2 className="m-0 text-sm font-semibold text-[#183f42]">Trucks awaiting docking</h2>
+              <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">Assigned trucks ready for dock confirmation</p>
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
             </div>
             <button
               className={textButtonClass}

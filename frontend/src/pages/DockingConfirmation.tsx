@@ -13,9 +13,24 @@ import type { Page, TruckRequest, User } from "../types";
 
 type DockAction = "mark-docked";
 
+export function canShowDriverAssignment(
+  request: Pick<TruckRequest, "status" | "driver_id">,
+  dockingChecked: boolean,
+) {
+  return request.status === "DOCKING" && !request.driver_id && dockingChecked;
+}
+
+export function canShowTripAssignment(
+  request: Pick<TruckRequest, "status" | "driver_id">,
+  role: User["role"],
+) {
+  return role === "ops_pic" && request.status === "DOCKING" && Boolean(request.driver_id);
+}
+
 export function DockingConfirmation({ user }: { user: User }) {
   const client = useQueryClient();
   const [selected, setSelected] = useState<TruckRequest | null>(null);
+  const [dockingChecked, setDockingChecked] = useState<Set<string>>(() => new Set());
   const [printable, setPrintable] = useState<TruckRequest | null>(null);
   const queue = useQuery({
     queryKey: ["requests", "docking"],
@@ -50,7 +65,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       }),
     onSuccess: async (updated, variables) => {
       setSelected(null);
-      if (variables.action === "mark-docked") setPrintable(updated);
+      if (variables.action === "mark-docked" && user.role === "ops_pic") setPrintable(updated);
       await client.invalidateQueries({ queryKey: requestQueryKey("docking") });
       await client.invalidateQueries({ queryKey: requestQueryKey("dashboard") });
       await client.invalidateQueries({ queryKey: requestQueryKey("notification-queue") });
@@ -58,9 +73,7 @@ export function DockingConfirmation({ user }: { user: User }) {
   });
   const rows = (queue.data?.data ?? []).filter(
     (request) =>
-      request.status === "DOCKING" ||
-      request.status === "ASSIGNED" ||
-      request.status === "DOCKED",
+      request.status === "DOCKING" || request.status === "DOCKED",
   );
   const actions = (request: TruckRequest) => (
     <>
@@ -72,26 +85,50 @@ export function DockingConfirmation({ user }: { user: User }) {
         <Printer size={15} />
         Print
       </button>
-      {request.status === "DOCKING" && user.role === "doc_officer" && (
+      {request.status === "DOCKING" && user.role === "doc_officer" && !request.driver_id && (
+        <label className="inline-flex items-center gap-2 text-xs font-semibold text-soc5-muted">
+          <input
+            type="checkbox"
+            checked={dockingChecked.has(request.id)}
+            onChange={(event) => setDockingChecked((current) => {
+              const next = new Set(current);
+              if (event.target.checked) next.add(request.id);
+              else next.delete(request.id);
+              return next;
+            })}
+            aria-label={`Confirm docking for ${request.id}`}
+          />
+          Docking
+        </label>
+      )}
+      {user.role === "doc_officer" && canShowDriverAssignment(request, dockingChecked.has(request.id)) && (
         <button
           type="button"
+<<<<<<< HEAD
         className={primaryTableActionClass}
+=======
+          className={primaryTableActionClass}
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
           disabled={action.isPending}
           onClick={() => setSelected(request)}
         >
           <ShipWheel size={15} />
-          Dock truck
+          Assigned
         </button>
       )}
-      {request.status === "ASSIGNED" && user.role === "ops_pic" && (
+      {canShowTripAssignment(request, user.role) && (
         <button
           type="button"
+<<<<<<< HEAD
         className={primaryTableActionClass}
+=======
+          className={primaryTableActionClass}
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
           disabled={action.isPending}
           onClick={() => setSelected(request)}
         >
           <ShipWheel size={15} />
-          Dock truck
+          Enter LHTrip #
         </button>
       )}
     </>
@@ -221,7 +258,7 @@ function DockDialog({
             Cancel
           </button>
           <button type="submit" disabled={busy}>
-            {busy ? "Saving..." : "Mark as docked"}
+            {busy ? "Saving..." : role === "doc_officer" ? "Assigned" : "Docked"}
           </button>
         </div>
       </form>

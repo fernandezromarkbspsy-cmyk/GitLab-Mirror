@@ -4,7 +4,6 @@ import {
   Check,
   ChevronDown,
   ChevronsUpDown,
-  CircleDot,
   Clipboard,
   Clock3,
   Copy,
@@ -14,9 +13,9 @@ import {
   Truck,
   UserRound,
 } from "lucide-react";
-import { Fragment, type ReactNode, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 import type { RequestSort, SortDirection, TruckRequest } from "../types";
-import { StatusBadge } from "./StatusBadge";
+import { StatusText } from "./StatusBadge";
 import { Skiper87 } from "./ui/skiper-ui/skiper87";
 import {
   genericRequestDetailCardClass,
@@ -50,7 +49,7 @@ type Column = {
   key: string;
   sortKey?: RequestSort;
   label: string;
-  icon: typeof CircleDot;
+  icon: typeof Clock3;
   render: (request: TruckRequest) => ReactNode;
 };
 
@@ -59,8 +58,16 @@ const columns: Column[] = [
     key: "status",
     sortKey: "status",
     label: "Status",
-    icon: CircleDot,
-    render: (request) => <StatusBadge status={request.status} />,
+    icon: Clock3,
+    render: (request) => (
+      <StatusText status={request.status} />
+    ),
+  },
+  {
+    key: "running_time",
+    label: "Running time",
+    icon: Clock3,
+    render: (request) => <RequestElapsedTime request={request} />,
   },
   {
     key: "request_timestamp",
@@ -271,7 +278,11 @@ export function RequestTable({
                   </tr>
                   {expanded && (
                     <tr className="request-detail-row" id={detailId}>
+<<<<<<< HEAD
                       <td className="p-0" colSpan={renderedColumns.length + (actions ? 2 : 1)}>
+=======
+                      <td className="w-full max-w-0 overflow-hidden p-0" colSpan={renderedColumns.length + (actions ? 2 : 1)}>
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
                         <RequestDetails request={request} />
                       </td>
                     </tr>
@@ -283,6 +294,38 @@ export function RequestTable({
         </table>
       </Skiper87>
     </div>
+  );
+}
+
+export function formatElapsed(
+  start: string | null | undefined,
+  end: string | null | undefined,
+  now = new Date(),
+) {
+  if (!start) return "-";
+  const startMs = new Date(start).getTime();
+  const endMs = end ? new Date(end).getTime() : now.getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return "-";
+  const minutes = Math.max(0, Math.floor((endMs - startMs) / 60_000));
+  const days = Math.floor(minutes / 1_440);
+  const hours = Math.floor((minutes % 1_440) / 60);
+  const remainder = minutes % 60;
+  if (days) return `${days}d ${hours}h`;
+  if (hours) return `${hours}h ${remainder}m`;
+  return `${remainder}m`;
+}
+
+export function RequestElapsedTime({ request }: { request: TruckRequest }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (request.driver_assigned_at) return;
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [request.driver_assigned_at]);
+  return (
+    <span title="Request to Driver ID assignment">
+      {formatElapsed(request.request_timestamp, request.driver_assigned_at, now)}
+    </span>
   );
 }
 

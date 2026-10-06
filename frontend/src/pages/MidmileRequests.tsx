@@ -27,7 +27,8 @@ import { Modal } from "../components/Modal";
 import { Pagination } from "../components/Pagination";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
-import { StatusBadge } from "../components/StatusBadge";
+import { StatusBadge, StatusText } from "../components/StatusBadge";
+import { RequestElapsedTime } from "../components/RequestTable";
 import { useRequestFilters } from "../hooks/useRequestFilters";
 import { useLinehaulTablePreferences } from "../hooks/useLinehaulTablePreferences";
 import { api } from "../lib/api";
@@ -363,6 +364,12 @@ export function MidmileRequests({ user }: { user: User }) {
                     Status
                   </span>
                 )}
+                {hasColumn("runningTime") && (
+                  <span className="flex items-center gap-2">
+                    <Clock3 size={14} />
+                    Running time
+                  </span>
+                )}
                 {hasColumn("requestTime") && (
                   <button
                     type="button"
@@ -475,8 +482,11 @@ export function MidmileRequests({ user }: { user: User }) {
                           aria-hidden="true"
                           className={`size-3.5 shrink-0 text-[#718071] transition-transform ${expandedRow === row.id ? "rotate-180 text-[#536500]" : ""}`}
                         />
-                        <StatusBadge status={row.status} uppercase />
+                        <StatusText status={row.status} />
                         </span>
+                      )}
+                      {hasColumn("runningTime") && (
+                        <RequestElapsedTime request={row} />
                       )}
                       {hasColumn("requestTime") && (
                         <span>{formatDateTime(row.request_timestamp)}</span>
@@ -578,19 +588,21 @@ export function MidmileRequests({ user }: { user: User }) {
                     </div>
                     {expandedRow === row.id && (
                       <section
+<<<<<<< HEAD
                         className="col-span-full min-w-0 w-full border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
+=======
+                        className="col-span-full min-w-0 w-full max-w-full overflow-x-hidden border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
                         aria-label={`Expanded details for request ${row.id}`}
                       >
-                        <div
-                          className="contents"
-                        >
+                        <div className="grid w-full min-w-0 max-w-full gap-3 overflow-x-hidden">
                           <dl>
                             <div className="border-b border-[#e9eeea] pb-3">
                               <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">Cluster</dt>
                               <dd className="wrap-break-word text-base font-bold leading-6 tracking-normal text-[#26352d]">{formatCluster(row.cluster)}</dd>
                             </div>
                           </dl>
-                          <div className="grid grid-cols-1 gap-4 pt-3 md:grid-cols-3">
+                          <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(13rem,100%),1fr))] gap-3 overflow-x-hidden pt-3">
                             {expandedRequestGroups(row, visibleColumns).map(({ fields }) => (
                               <section className="min-w-0" key={fields[0]?.key}>
                                 <dl className="grid gap-2">

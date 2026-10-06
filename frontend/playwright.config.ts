@@ -64,6 +64,7 @@ export default defineConfig({
             process.env.VITE_SUPABASE_URL ?? 'https://example.supabase.co',
           VITE_SUPABASE_PUBLISHABLE_KEY:
             process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? 'playwright-test-key',
+          VITE_E2E_AUTH_ENTRY: '1',
         },
       }
     : undefined,

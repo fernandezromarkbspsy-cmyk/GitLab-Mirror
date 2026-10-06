@@ -34,7 +34,8 @@ import {
 import { Pagination } from "../components/Pagination";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
-import { StatusBadge } from "../components/StatusBadge";
+import { StatusBadge, StatusText } from "../components/StatusBadge";
+import { RequestElapsedTime } from "../components/RequestTable";
 import { useLinehaulTablePreferences } from "../hooks/useLinehaulTablePreferences";
 import { useOutboundRequests } from "../hooks/useOutboundRequests";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
@@ -343,7 +344,11 @@ export function OutboundRequests({
                 className={recordsTableClass}
                 style={{
                   gridTemplateColumns: hasColumn("status")
+<<<<<<< HEAD
                     ? `minmax(15rem, max-content) repeat(${visibleColumns.length}, minmax(112px, max-content))`
+=======
+                    ? `minmax(10rem, max-content) repeat(${visibleColumns.length}, minmax(112px, max-content))`
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
                     : `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
                 }}
               >
@@ -352,6 +357,12 @@ export function OutboundRequests({
                     <span>
                       <CircleCheck size={14} />
                       Status
+                    </span>
+                  )}
+                  {hasColumn("runningTime") && (
+                    <span>
+                      <Clock3 size={14} />
+                      Running time
                     </span>
                   )}
                   {hasColumn("requestTime") && (
@@ -505,12 +516,15 @@ export function OutboundRequests({
                                       }
                                     />
                                   )}
-                                <StatusBadge status={row.status} uppercase />
+                                <StatusText status={row.status} />
                                 <ApprovalStateBadge
                                   status={row.status}
                                   approvalStatus={row.approval_status}
                                 />
                               </span>
+                            )}
+                            {hasColumn("runningTime") && (
+                              <RequestElapsedTime request={row} />
                             )}
                             {hasColumn("requestTime") && (
                               <span>
@@ -636,10 +650,14 @@ export function OutboundRequests({
                           </div>
                           {isExpanded && (
                             <section
+<<<<<<< HEAD
                               className="col-span-full min-w-0 w-full border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
+=======
+                              className="col-span-full min-w-0 w-full max-w-full overflow-x-hidden border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
                               aria-label={`Expanded details for request ${row.id}`}
                             >
-                              <div className="contents">
+                              <div className="grid w-full min-w-0 max-w-full gap-3 overflow-x-hidden">
                                 <dl>
                                   <div className="border-b border-[#e9eeea] pb-3">
                                     <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">
@@ -650,7 +668,7 @@ export function OutboundRequests({
                                     </dd>
                                   </div>
                                 </dl>
-                                <div className="grid grid-cols-1 gap-4 pt-3 md:grid-cols-3">
+                                <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(13rem,100%),1fr))] gap-3 overflow-x-hidden pt-3">
                                   {expandedRequestGroups(
                                     row,
                                     visibleColumns,

@@ -53,6 +53,33 @@ test('renders both supported login modes', async ({ page }) => {
   await expect(page.getByLabel('Password')).toBeVisible();
 });
 
+test('keeps the login modal compact on desktop viewports', async ({ page }) => {
+  await page.setViewportSize({ width: 850, height: 600 });
+  await page.goto('/');
+
+  const dialog = page.getByRole('dialog', {
+    name: 'Sign in to SOC 5 Outbound',
+  });
+  await expect(dialog).toBeVisible({ timeout: loginEntryTimeout });
+
+  const box = await dialog.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box?.width).toBeLessThanOrEqual(608);
+  await expect(dialog).toHaveCSS('overflow-y', 'visible');
+  await expect(dialog.locator('..')).toHaveCSS('overflow-y', 'hidden');
+});
+
+test('uses a compact app scale only on desktop viewports', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+
+  const appShell = page.locator('.app-shell');
+  await expect(appShell).toHaveCSS('zoom', '0.88');
+
+  await page.setViewportSize({ width: 800, height: 800 });
+  await expect(appShell).toHaveCSS('zoom', '1');
+});
+
 test('preserves deep links while showing the login entry', async ({ page }) => {
   await page.goto('/outbound/lh-request');
 

@@ -34,6 +34,7 @@ import type {
 type Props = {
   user: User;
   preview?: boolean;
+  builderPreview?: boolean;
   view: AppView;
   onRoleChange: (role: Role) => void;
   onSearch: () => void;
@@ -49,7 +50,7 @@ const page = {
   "lh-request": { name: "LH Request", section: "Outbound" },
   "truck-request": { name: "Truck Request", section: "Midmile" },
   docking: { name: "Docking Confirmation", section: "Docking" },
-  kpi: { name: "KPI Analytics", section: "Performance" },
+  kpi: { name: "KPI", section: "Performance" },
   users: { name: "User Management", section: "Administration" },
 };
 
@@ -125,6 +126,7 @@ function notificationGroups(alerts: AppNotification[]): NotificationGroup[] {
 export function AppHeader({
   user,
   preview = false,
+  builderPreview = false,
   view,
   onRoleChange,
   onSearch,
@@ -292,7 +294,11 @@ export function AppHeader({
       : `Search ${page[view].section.toLowerCase()} requests, then press Enter`;
 
   return (
+<<<<<<< HEAD
     <header className={`${preview ? "hidden" : "fixed top-0 right-0 left-38 z-99999 flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255/94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-36 max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"}`}>
+=======
+    <header className={`${preview && !builderPreview ? "hidden" : "fixed top-0 right-0 left-38 z-99999 flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255/94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-36 max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"}`}>
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
       {toast && (
         <div className={toastClass} role="status">
           <Bell size={17} />

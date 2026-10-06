@@ -1,13 +1,18 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { Status } from "../types";
-import { StatusBadge } from "./StatusBadge";
+import { StatusBadge, StatusText } from "./StatusBadge";
 
 function render(status: Status) {
   return renderToStaticMarkup(<StatusBadge status={status} />);
 }
 
 describe("StatusBadge", () => {
+  it("normalizes legacy FOR_DOCKING text to DOCKING", () => {
+    const markup = renderToStaticMarkup(<StatusText status="FOR_DOCKING" />);
+    expect(markup).toContain(">DOCKING</span>");
+    expect(markup).not.toContain("FOR DOCKING");
+  });
   it.each(["DOCKED"] as Status[])(
     "uses the success treatment for %s",
     (status) => {

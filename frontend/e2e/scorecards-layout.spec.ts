@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { mockShellSession } from "./helpers/shell-session";
 import { expect, test } from "@playwright/test";
 
@@ -8,6 +9,13 @@ test.beforeEach(async ({ page }) => {
 test("keeps the scorecards in the original desktop composition at 80% zoom", async ({ page }) => {
   await page.setViewportSize({ width: 2400, height: 1200 });
   await page.goto("/dashboard");
+=======
+import { expect, test } from "@playwright/test";
+
+test("keeps the scorecards in the original desktop composition at 80% zoom", async ({ page }) => {
+  await page.setViewportSize({ width: 2400, height: 1200 });
+  await page.goto("/?builderPreview=1#/dashboard");
+>>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
   await page.waitForSelector(".scorecards-layout");
 
   const layout = await page.evaluate(() => {

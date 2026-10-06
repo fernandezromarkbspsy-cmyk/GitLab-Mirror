@@ -3,5 +3,7 @@
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.3"
   },
-  "scripts": {}
+  "scripts": {
+    "test:production-realtime": "playwright test --config=tests/playwright.realtime.config.js"
+  }
 }

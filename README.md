@@ -167,10 +167,7 @@ Remove-Item -Recurse -Force .\Frontend\node_modules
 npm ci
 php artisan optimize:clear
 netstat -ano | findstr ":3000 :5173 :4173 :8080"
-<<<<<<< HEAD
-=======
 
 cd frontend
 npm run build
 npm run preview -- --host 127.0.0.1 --port 5173 --strictPort
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852

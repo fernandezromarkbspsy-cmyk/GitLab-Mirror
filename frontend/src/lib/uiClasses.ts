@@ -21,11 +21,8 @@ export const overviewMetricsClass =
 
 export const scorecardsLayoutClass =
   "scorecards-layout grid min-w-0 gap-[clamp(1.066667rem,1.5vw,1.6rem)] mb-[.6rem] min-[1024px]:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] max-[960px]:grid-cols-1";
-<<<<<<< HEAD
-=======
 export const timingMetricsClass =
   "grid min-w-0 grid-cols-2 gap-[clamp(.7rem,1.1vw,1rem)] mb-[clamp(1rem,1.5vw,1.4rem)] max-[600px]:grid-cols-1";
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 
 export const dashboardGridClass =
   "dashboard-grid grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,23.466667rem),1fr))] gap-[clamp(.8rem,1.25vw,1.333333rem)] max-[820px]:grid-cols-1";
@@ -137,11 +134,7 @@ export const inlinePrimaryButtonClass =
   "inline-flex min-h-[1.8rem] cursor-pointer items-center justify-center gap-[.3rem] rounded-[.3rem] border border-soc5-lime bg-soc5-lime px-2 text-sm font-medium leading-none text-soc5-ink whitespace-nowrap hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-55";
 
 export const requestTableHeadClass =
-<<<<<<< HEAD
-  "lh-table-head col-span-full sticky top-0 z-[4] grid min-h-[2.4rem] grid-cols-subgrid items-center border-b border-[rgb(15_42_43_/_8%)] bg-[linear-gradient(180deg,rgb(247_249_247_/.98),rgb(241_246_245_/.96))] text-xs font-semibold leading-tight text-[rgb(39_49_50_/.92)] [&>*]:min-w-0 [&>*]:overflow-hidden [&>*]:whitespace-nowrap [&>*]:px-[.6rem] [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>button]:grid [&>button]:h-full [&>button]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] [&>button]:items-center [&>button]:gap-[.35rem] [&>button]:border-0 [&>button]:bg-transparent [&>button]:font-inherit [&>button]:text-inherit [&>button]:cursor-pointer [&>button:hover]:bg-[rgb(15_42_43_/_3%)] [&>:first-child]:sticky [&>:first-child]:left-0 [&>:first-child]:z-[3] [&>:first-child]:shadow-[.3rem_0_.5rem_-.5rem_rgb(15_42_43_/_65%)] [&>:last-child]:sticky [&>:last-child]:right-0 [&>:last-child]:z-[3] [&>:last-child]:shadow-[-.3rem_0_.5rem_-.5rem_rgb(15_42_43_/_65%)]";
-=======
   "lh-table-head col-span-full sticky top-0 z-[4] grid min-h-[2.4rem] grid-cols-subgrid items-center border-b border-[rgb(15_42_43_/_8%)] bg-[linear-gradient(180deg,rgb(247_249_247_/.98),rgb(241_246_245_/.96))] text-xs font-semibold leading-tight text-[rgb(39_49_50_/.92)] [&>*]:min-w-0 [&>*]:overflow-hidden [&>*]:whitespace-nowrap [&>*]:px-[.6rem] [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>button]:grid [&>button]:h-full [&>button]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] [&>button]:items-center [&>button]:gap-[.35rem] [&>button]:border-0 [&>button]:bg-transparent [&>button]:font-inherit [&>button]:text-inherit [&>button]:cursor-pointer [&>button:hover]:bg-[rgb(15_42_43_/_3%)] [&>:first-child]:sticky [&>:first-child]:left-0 [&>:first-child]:z-[8] [&>:first-child]:bg-[#f1f6f5] [&>:first-child]:shadow-[.3rem_0_.5rem_-.5rem_rgb(15_42_43_/_65%)] [&>:last-child]:sticky [&>:last-child]:right-0 [&>:last-child]:z-[8] [&>:last-child]:bg-[#f1f6f5] [&>:last-child]:shadow-[-.3rem_0_.5rem_-.5rem_rgb(15_42_43_/_65%)]";
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 export const requestTableBodyClass =
   "lh-table-body col-span-full grid min-h-0 grid-cols-subgrid grid-flow-row auto-rows-min content-start overflow-visible bg-[linear-gradient(180deg,rgb(255_255_255_/.95),rgb(245_250_248_/.94))]";
 export const requestRowClass =
@@ -164,19 +157,11 @@ export const requestDrawerAvatarClass =
 export const requestDrawerFieldsClass =
   "mt-5 grid grid-cols-2 gap-3 max-[460px]:grid-cols-1 [&>div]:grid [&>div]:gap-1 [&_dt]:text-xs [&_dt]:font-bold [&_dt]:uppercase [&_dt]:tracking-wider [&_dt]:text-[#7b898a] [&_dd]:m-0 [&_dd]:text-xs [&_dd]:font-semibold [&_dd]:text-[#263638]";
 export const requestSkeletonClass =
-<<<<<<< HEAD
-  "lh-table-skeleton grid grid-cols-subgrid [&_.lh-table-row]:pointer-events-none [&_.lh-table-row>span]:self-center";
-export const requestSkeletonRowClass =
-  "lh-table-row lh-table-grid grid min-h-[2.5rem] grid-cols-subgrid items-center border-b border-[rgb(15_42_43_/_6%)] bg-white pointer-events-none";
-export const requestSkeletonCellClass =
-  "lh-skeleton-cell flex min-h-full items-center gap-[.4rem] [&:last-child]:justify-center";
-=======
   "lh-table-skeleton col-span-full grid min-w-0 w-full max-w-full grid-cols-subgrid overflow-hidden [&_.lh-table-row]:pointer-events-none [&_.lh-table-row>span]:self-center";
 export const requestSkeletonRowClass =
   "lh-table-row lh-table-grid grid min-w-0 min-h-[2.5rem] grid-cols-subgrid items-center border-b border-[rgb(15_42_43_/_6%)] bg-white pointer-events-none";
 export const requestSkeletonCellClass =
   "lh-skeleton-cell flex min-w-0 min-h-full items-center gap-[.4rem] overflow-hidden [&:last-child]:justify-center";
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 export const rowMenuWrapClass = "relative flex h-full items-center justify-center overflow-visible";
 export const rowMenuClass =
   "lh-row-menu fixed z-[100002] flex w-[7.4rem] flex-col gap-[.1rem] rounded-[.5rem] border border-[rgb(15_42_43_/_14%)] bg-[rgb(255_255_255_/.98)] p-[.3rem] shadow-[0_.7rem_1.4rem_rgb(15_42_43_/_16%),0_.1rem_.3rem_rgb(15_42_43_/_8%)] [&>button]:flex [&>button]:min-h-[1.8rem] [&>button]:cursor-pointer [&>button]:items-center [&>button]:gap-[.4rem] [&>button]:rounded-[.35rem] [&>button]:border-0 [&>button]:bg-transparent [&>button]:px-2 [&>button]:text-left [&>button]:text-xs [&>button]:font-medium [&>button]:leading-tight [&>button]:text-soc5-ink [&>button:hover]:bg-[#eef6d9] [&>button:hover]:text-[#536500] [&>button:focus-visible]:bg-[#eef6d9] [&>button:focus-visible]:text-[#536500] [&>button:focus-visible]:outline [&>button:focus-visible]:outline-2 [&>button:focus-visible]:outline-[#a2c500]";
@@ -191,11 +176,7 @@ export const selectedRequestLabelClass =
 export const requestCheckboxClass =
   "size-[.85rem] shrink-0 cursor-pointer accent-[#0b7f78]";
 export const loadingShellClass =
-<<<<<<< HEAD
-  "min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface p-3";
-=======
   "w-full min-w-0 max-w-full overflow-hidden rounded-card border border-card-line bg-card-surface p-3";
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 export const loadingToolbarClass =
   "mb-3 flex min-h-6 items-center justify-between gap-2 border-b border-soc5-line pb-2";
 export const loadingChipClass =
@@ -231,15 +212,9 @@ export const dashboardPanelBodyClass = "min-w-0 px-3.5 pt-3 pb-3.5";
 export const loginShineButtonClass =
   "relative overflow-hidden after:absolute after:inset-y-0 after:left-[-70%] after:w-[45%] after:skew-x-[-22deg] after:bg-[linear-gradient(90deg,transparent,rgb(255_255_255_/_32%),transparent)] after:transition-[left] after:duration-[650ms] after:ease-[ease] after:pointer-events-none after:content-[''] hover:after:left-[125%]";
 export const loginModalLayerClass =
-<<<<<<< HEAD
   "fixed inset-0 z-[100] grid place-items-center overflow-auto bg-[rgb(13_23_48_/_22%)] p-[1.2rem] backdrop-blur-[.4rem] backdrop-saturate-[.86] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(rgb(255_255_255_/_10%)_.05rem,transparent_.05rem),linear-gradient(90deg,rgb(255_255_255_/_10%)_.05rem,transparent_.05rem)] before:bg-[length:2.6rem_2.6rem] before:opacity-[.12] max-[720px]:place-items-start max-[720px]:p-[.6rem]";
 export const loginModalCardClass =
   "relative w-[min(43rem,100%)] max-h-[calc(100dvh-2.4rem)] overflow-y-auto overscroll-contain rounded-[.9rem] border border-white/20 bg-[#4D6383] text-ink shadow-[0_1.5rem_3.5rem_-1.4rem_rgb(14_24_54_/_65%)] opacity-0 translate-y-[.6rem] transition-[opacity,transform] duration-[420ms,520ms] ease-[ease,cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none motion-reduce:transform-none max-[720px]:max-h-[calc(100dvh-1.2rem)] [&::-webkit-scrollbar]:hidden [scrollbar-width:none]";
-=======
-  "fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-[rgb(13_23_48_/_22%)] p-[1.2rem] backdrop-blur-[.4rem] backdrop-saturate-[.86] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(rgb(255_255_255_/_10%)_.05rem,transparent_.05rem),linear-gradient(90deg,rgb(255_255_255_/_10%)_.05rem,transparent_.05rem)] before:bg-[length:2.6rem_2.6rem] before:opacity-[.12] max-[720px]:place-items-start max-[720px]:p-[.6rem]";
-export const loginModalCardClass =
-  "relative w-[min(50rem,100%)] scale-[0.70] overflow-visible rounded-[.9rem] border border-white/20 bg-[#4D6383] text-ink shadow-[0_1.5rem_3.5rem_-1.4rem_rgb(14_24_54_/_65%)] opacity-0 translate-y-[.6rem] transition-[opacity,transform] duration-[420ms,520ms] ease-[ease,cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none motion-reduce:transform-none";
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 export const requestControlsClass =
   "mx-auto w-full max-w-[74rem] min-w-0 rounded-t-[.75rem] border border-[#e5e6e4] bg-[rgb(255_255_255_/_84%)] px-3 py-[.65rem]";
 export const requestStatusTabsClass =
@@ -266,17 +241,10 @@ export const genericRequestTableCellClass = "min-w-0 overflow-hidden border-b bo
 export const genericRequestTableRowClass = "hover:bg-[#fbfcf7] last:[&>td]:border-b-0";
 export const genericRequestSortButtonClass = "inline-flex items-center gap-[.3rem] whitespace-nowrap bg-transparent p-0 font-inherit text-inherit hover:text-soc5-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-soc5-lime-deep";
 export const genericRequestHeaderLabelClass = "inline-flex items-center gap-[.3rem]";
-<<<<<<< HEAD
-export const genericRequestDetailGridClass = "grid grid-cols-3 gap-2 bg-[#f7faf4] p-[.7rem] max-[720px]:grid-cols-2 max-[480px]:grid-cols-1";
-export const genericRequestDetailCardClass = "min-w-0 rounded-[.45rem] border border-[#e5ebe1] bg-[rgb(255_255_255_/_75%)] px-[.6rem] py-2 shadow-[0_.1rem_.3rem_rgb(43_61_47_/_5%)]";
-export const genericRequestDetailLabelClass = "block overflow-hidden text-xs font-bold uppercase tracking-wider text-[#8b8f93] text-ellipsis";
-export const genericRequestDetailValueClass = "block overflow-hidden whitespace-nowrap text-xs font-semibold text-[#36393c] text-ellipsis";
-=======
 export const genericRequestDetailGridClass = "grid w-full min-w-0 max-w-full grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-3 overflow-x-hidden bg-[#f7faf4] p-3 max-[720px]:grid-cols-2 max-[480px]:grid-cols-1";
 export const genericRequestDetailCardClass = "min-w-0 rounded-[.45rem] border border-[#e5ebe1] bg-[rgb(255_255_255_/_75%)] px-[.6rem] py-2 shadow-[0_.1rem_.3rem_rgb(43_61_47_/_5%)]";
 export const genericRequestDetailLabelClass = "block overflow-hidden text-xs font-bold uppercase tracking-wider text-[#8b8f93] text-ellipsis";
 export const genericRequestDetailValueClass = "block min-w-0 break-words text-xs font-semibold text-[#36393c]";
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 
 export const changePasswordPageClass =
   "grid min-h-dvh place-items-center bg-[radial-gradient(circle_at_10%_0,rgb(214_250_45_/_14%),transparent_28rem),linear-gradient(180deg,#f6faf8_0%,var(--soc5-page)_100%)] px-4 py-8 text-soc5-ink";

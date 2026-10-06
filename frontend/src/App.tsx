@@ -92,21 +92,7 @@ function describeFailure(cause: unknown): Failure {
 
 export default function App() {
   const navigate = useNavigate();
-<<<<<<< HEAD
   const [state, setState] = useState<AppState>("loading");
-=======
-  // Local Vite development should render the production-style application
-  // shell directly so UI work is not obscured by the unauthenticated preview.
-  // Production builds keep the normal authentication flow.
-  const isBuilderPreview =
-    import.meta.env.DEV &&
-    (import.meta.env.VITE_E2E_AUTH_ENTRY !== "1" ||
-      new URLSearchParams(window.location.search).get("builderPreview") ===
-        "1");
-  const [state, setState] = useState<AppState>(
-    isBuilderPreview ? "ready" : "loading",
-  );
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
   const [startupAnimationComplete, setStartupAnimationComplete] =
     useState(false);
   const [failure, setFailure] = useState<Failure>(defaultFailure);
@@ -265,15 +251,7 @@ export default function App() {
     return <ChangePassword onComplete={() => setState("ready")} />;
   return profile ? (
     <Suspense fallback={<StartupLoading />}>
-<<<<<<< HEAD
       <Dashboard user={profile} />
-=======
-      <Dashboard
-        user={profile}
-        preview={isBuilderPreview}
-        builderPreview={isBuilderPreview}
-      />
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
     </Suspense>
   ) : (
     <StartupLoading />

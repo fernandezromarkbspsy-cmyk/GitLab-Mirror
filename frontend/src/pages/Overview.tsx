@@ -42,10 +42,7 @@ import {
   loadingToolbarClass,
   overviewMetricsClass,
   scorecardsLayoutClass,
-<<<<<<< HEAD
-=======
   timingMetricsClass,
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
   lineChartClass,
   lineChartSvgClass,
   lineAreaClass,
@@ -391,8 +388,6 @@ export function Overview({
           </article>
         </section>
       </section>
-<<<<<<< HEAD
-=======
       <section className={timingMetricsClass} aria-label="Request timing metrics">
         <MetricCard
           label="Average Dwell time"
@@ -415,7 +410,6 @@ export function Overview({
           onClick={() => setDetailStatus("ALL")}
         />
       </section>
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
       <section className={dashboardGridClass}>
         <Panel
           className="chart-panel truck-mix-panel"
@@ -460,15 +454,9 @@ export function Overview({
         <article className={`min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}>
           <div className={`${dashboardPanelHeadClass} border-b border-[#087f7c]/[.24] pb-[.65rem]`}>
             <div>
-<<<<<<< HEAD
-              <p className={dashboardPanelKickerClass}>Live dispatch board</p>
-              <h2 className="m-0 text-sm font-semibold text-card-heading">Recent linehaul trips</h2>
-              <p className="mt-1 mb-0 text-xs leading-normal text-soc5-muted">Latest trips with driver assignments</p>
-=======
               <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>Live dispatch board</p>
               <h2 className="m-0 text-sm font-semibold text-[#183f42]">Recent linehaul trips</h2>
               <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">Latest trips with driver assignments</p>
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
             </div>
             <span className="trips-live-status">
               <i aria-hidden="true" /> Live
@@ -514,15 +502,9 @@ export function Overview({
         <article className="min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card">
           <div className={dashboardPanelHeadClass}>
             <div>
-<<<<<<< HEAD
-              <p className={dashboardPanelKickerClass}>Docking queue</p>
-              <h2 className="m-0 text-sm font-semibold text-card-heading">Trucks awaiting docking</h2>
-              <p className="mt-1 mb-0 text-xs leading-normal text-soc5-muted">Assigned trucks ready for dock confirmation</p>
-=======
               <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>Docking queue</p>
               <h2 className="m-0 text-sm font-semibold text-[#183f42]">Trucks awaiting docking</h2>
               <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">Assigned trucks ready for dock confirmation</p>
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
             </div>
             <button
               className={textButtonClass}

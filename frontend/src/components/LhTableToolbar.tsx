@@ -356,11 +356,7 @@ export function LhTableToolbar({
         </div>
       )}
       {lastUpdated ? (
-<<<<<<< HEAD
-        <span className="whitespace-nowrap text-xs font-medium leading-none text-soc5-muted" aria-live="polite">
-=======
         <span className="basis-full whitespace-nowrap text-right text-xs font-medium leading-none text-soc5-muted" aria-live="polite">
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
           Updated {new Date(lastUpdated).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
           {refreshReason ? ` · ${refreshReason}` : ""}
         </span>

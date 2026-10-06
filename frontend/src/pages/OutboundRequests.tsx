@@ -344,11 +344,7 @@ export function OutboundRequests({
                 className={recordsTableClass}
                 style={{
                   gridTemplateColumns: hasColumn("status")
-<<<<<<< HEAD
-                    ? `minmax(15rem, max-content) repeat(${visibleColumns.length}, minmax(112px, max-content))`
-=======
                     ? `minmax(10rem, max-content) repeat(${visibleColumns.length}, minmax(112px, max-content))`
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
                     : `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
                 }}
               >
@@ -650,11 +646,7 @@ export function OutboundRequests({
                           </div>
                           {isExpanded && (
                             <section
-<<<<<<< HEAD
-                              className="col-span-full min-w-0 w-full border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
-=======
                               className="col-span-full min-w-0 w-full max-w-full overflow-x-hidden border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
                               aria-label={`Expanded details for request ${row.id}`}
                             >
                               <div className="grid w-full min-w-0 max-w-full gap-3 overflow-x-hidden">

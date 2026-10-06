@@ -278,11 +278,7 @@ export function RequestTable({
                   </tr>
                   {expanded && (
                     <tr className="request-detail-row" id={detailId}>
-<<<<<<< HEAD
-                      <td className="p-0" colSpan={renderedColumns.length + (actions ? 2 : 1)}>
-=======
                       <td className="w-full max-w-0 overflow-hidden p-0" colSpan={renderedColumns.length + (actions ? 2 : 1)}>
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
                         <RequestDetails request={request} />
                       </td>
                     </tr>

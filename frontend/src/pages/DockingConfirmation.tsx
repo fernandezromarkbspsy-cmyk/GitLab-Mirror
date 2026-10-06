@@ -104,11 +104,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       {user.role === "doc_officer" && canShowDriverAssignment(request, dockingChecked.has(request.id)) && (
         <button
           type="button"
-<<<<<<< HEAD
-        className={primaryTableActionClass}
-=======
           className={primaryTableActionClass}
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
           disabled={action.isPending}
           onClick={() => setSelected(request)}
         >
@@ -119,11 +115,7 @@ export function DockingConfirmation({ user }: { user: User }) {
       {canShowTripAssignment(request, user.role) && (
         <button
           type="button"
-<<<<<<< HEAD
-        className={primaryTableActionClass}
-=======
           className={primaryTableActionClass}
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
           disabled={action.isPending}
           onClick={() => setSelected(request)}
         >

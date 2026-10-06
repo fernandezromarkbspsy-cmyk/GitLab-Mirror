@@ -34,6 +34,10 @@ $registerApiRoutes = static function (string $prefix): void {
             AddQueuedCookiesToResponse::class,
             StartSession::class,
             'throttle:api-ip',
+<<<<<<< HEAD
+=======
+            'supabase.auth',
+>>>>>>> c236f8f (medesk-nav)
             'throttle:api',
         ])->group(function (): void {
             Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);

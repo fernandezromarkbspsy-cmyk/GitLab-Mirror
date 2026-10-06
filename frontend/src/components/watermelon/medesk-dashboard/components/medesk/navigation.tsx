@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import {
   createContext,
   useContext,
@@ -51,10 +52,33 @@ export function useDashboardNavigation() {
   }
 
   return context;
+=======
+import type { AnchorHTMLAttributes, ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+// Retains the template API without installing a second router.
+export function DashboardNavigationProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return <>{children}</>;
+}
+
+export function useDashboardNavigation() {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  return {
+    pathname,
+    navigate: (path: string) => navigate(path),
+  };
+>>>>>>> c236f8f (medesk-nav)
 }
 
 export function DashboardLink({
   href,
+<<<<<<< HEAD
   onClick,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) {
@@ -79,4 +103,9 @@ export function DashboardLink({
   }
 
   return <a href={href} onClick={handleClick} {...props} />;
+=======
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) {
+  return <Link to={href} {...props} />;
+>>>>>>> c236f8f (medesk-nav)
 }

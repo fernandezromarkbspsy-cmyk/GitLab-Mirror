@@ -51,6 +51,22 @@ final class SeaTalkApprovalCallbackTest extends TestCase
         $this->assertSame('APPROVED', DB::table('seatalk_approval_assignments')->where('id', $this->assignmentId)->value('status'));
         $this->assertSame(1, DB::table('request_events')->count());
         $this->assertSame(1, DB::table('seatalk_callback_events')->count());
+        $this->assertSame(
+            'processed',
+            json_decode($first->getContent(), true, 512, JSON_THROW_ON_ERROR)['status']
+        );
+
+        $this->assertSame(
+            'duplicate',
+            json_decode($second->getContent(), true, 512, JSON_THROW_ON_ERROR)['status']
+        );
+
+        $this->assertSame(1, DB::table('notifications')->count());
+
+        $this->assertDatabaseHas('seatalk_callback_events', [
+            'status' => 'processed',
+            'assignment_id' => $this->assignmentId,
+        ]);
     }
 
     public function test_wrong_employee_is_acknowledged_without_mutating_request(): void
@@ -64,6 +80,16 @@ final class SeaTalkApprovalCallbackTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame('PENDING', DB::table('requests')->where('id', $this->requestId)->value('status'));
         $this->assertSame(0, DB::table('request_events')->count());
+        $this->assertSame(
+            'ignored',
+            json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR)['status']
+        );
+
+        $this->assertDatabaseHas('seatalk_callback_events', [
+            'status' => 'ignored',
+            'failure_reason' => 'Actor is disabled or not provisioned.',
+        ]);
+
     }
 
     public function test_signature_uses_raw_body_and_constant_time_comparison_contract(): void
@@ -102,6 +128,7 @@ final class SeaTalkApprovalCallbackTest extends TestCase
         Schema::create('profiles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('role');
+            $table->boolean('is_active')->default(true);
             $table->string('seatalk_employee_code')->nullable();
         });
         Schema::create('requests', function (Blueprint $table): void {
@@ -109,9 +136,13 @@ final class SeaTalkApprovalCallbackTest extends TestCase
             $table->string('status');
             $table->uuid('created_by')->nullable();
             $table->string('rejection_remarks')->nullable();
+
             $table->string('approval_status')->default('PENDING');
             $table->uuid('approved_by')->nullable();
             $table->dateTime('approved_at')->nullable();
+            $table->uuid('rejected_by')->nullable();
+            $table->dateTime('rejected_at')->nullable();
+
             $table->string('approval_source')->nullable();
             $table->unsignedBigInteger('approval_version')->default(0);
             $table->uuid('approval_correlation_id')->nullable();
@@ -145,10 +176,12 @@ final class SeaTalkApprovalCallbackTest extends TestCase
             $table->uuid('fte_user_id');
             $table->string('status');
             $table->text('failure_reason')->nullable();
+            $table->timestamp('expires_at')->nullable();
             $table->timestamp('responded_at')->nullable();
             $table->string('provider_response_id')->nullable();
             $table->timestamp('updated_at')->nullable();
         });
+
         Schema::create('seatalk_callback_events', function (Blueprint $table): void {
             $table->string('event_id')->primary();
             $table->string('provider_item_id');
@@ -156,14 +189,32 @@ final class SeaTalkApprovalCallbackTest extends TestCase
             $table->string('employee_code');
             $table->string('action');
             $table->string('status');
+
+            $table->string('payload_hash', 64)->nullable();
+            $table->uuid('assignment_id')->nullable();
+            $table->text('failure_reason')->nullable();
+
             $table->uuid('correlation_id')->nullable();
             $table->timestamp('received_at');
             $table->timestamp('processed_at')->nullable();
         });
 
-        DB::table('profiles')->insert(['id' => $this->profileId, 'role' => 'fte_ops', 'seatalk_employee_code' => 'employee-1']);
+        DB::table('profiles')->insert([
+            'id' => $this->profileId,
+            'role' => 'fte_ops',
+            'is_active' => true,
+            'seatalk_employee_code' => 'employee-1',
+        ]);
+
+        DB::table('seatalk_approval_assignments')->insert([
+            'id' => $this->assignmentId,
+            'request_id' => $this->requestId,
+            'fte_user_id' => $this->profileId,
+            'status' => 'ACTIVE',
+            'expires_at' => now()->addMinutes(5),
+        ]);
+
         DB::table('requests')->insert(['id' => $this->requestId, 'status' => 'PENDING', 'created_by' => $this->profileId]);
         DB::table('seatalk_approval_items')->insert(['id' => 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'request_id' => $this->requestId, 'provider_item_id' => 'provider-item-1']);
-        DB::table('seatalk_approval_assignments')->insert(['id' => $this->assignmentId, 'request_id' => $this->requestId, 'fte_user_id' => $this->profileId, 'status' => 'ACTIVE']);
     }
 }

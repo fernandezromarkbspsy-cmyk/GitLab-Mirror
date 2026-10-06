@@ -115,7 +115,9 @@ final class AuthenticateSupabase
         if ($profile->must_change_password) {
             $allowed = [
                 'GET:api/auth/me',
+                'GET:api/v1/auth.me',
                 'POST:api/auth/password-changed',
+                'POST:api/v1/auth/password-changed',
             ];
             abort_unless(in_array($request->method().':'.$request->path(), $allowed, true), 403, 'Password change required.');
         }

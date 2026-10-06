@@ -161,9 +161,13 @@ cloudflared tunnel token <TUNNEL-ID>
 cloudflared tunnel run --token <TOKEN>
 
 Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
-Get-Process playwright -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -ErrorAction SilentlyContinue | Stop-Process -Force
 Remove-Item -Recurse -Force .\node_modules
 Remove-Item -Recurse -Force .\Frontend\node_modules
 npm ci
 php artisan optimize:clear
 netstat -ano | findstr ":3000 :5173 :4173 :8080"
+
+cd frontend
+npm run build
+npm run preview -- --host 127.0.0.1 --port 5173 --strictPort

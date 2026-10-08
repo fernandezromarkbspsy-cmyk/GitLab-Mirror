@@ -96,7 +96,7 @@ export function QrPanel({ enabled: _enabled = true, compact = false }: QrPanelPr
   }, [_enabled]);
 
   return (
-    <section className={`relative hidden lg:flex flex-col overflow-hidden ${compact ? "px-4 pb-14 pt-4 sm:px-5" : "px-5 pb-24 pt-6 sm:px-7"}`}>
+    <section className={`relative hidden lg:flex flex-col overflow-hidden ${compact ? "px-4 pb-10 pt-3 sm:px-5" : "px-5 pb-24 pt-6 sm:px-7"}`}>
       <div
         aria-hidden
         className="absolute right-2 top-28 h-48 w-36 bg-[radial-gradient(rgb(214_228_255_/_34%)_.055rem,transparent_.055rem)] bg-[length:.75rem_.75rem] opacity-60 [mask-image:radial-gradient(closest-side,black,transparent)]"
@@ -135,14 +135,17 @@ export function QrPanel({ enabled: _enabled = true, compact = false }: QrPanelPr
         </p>
       </Reveal>
 
-      <Reveal delay={180} className={compact ? "mt-4" : "mt-6"}>
+      <Reveal delay={180} className={compact ? "mt-3" : "mt-6"}>
         <div className={`rounded-2xl border border-line bg-white/[0.03] ${compact ? "p-3" : "p-4"} text-center`}>
           <fieldset
             ref={widgetRef}
             aria-label="SeaTalk login"
-            className={`mx-auto flex ${compact ? "min-h-[132px] p-2" : "min-h-[176px] p-3"} items-center justify-center rounded-xl border-0 bg-white`}
+            className={`mx-auto flex w-full ${compact ? "min-h-[112px] p-2" : "min-h-[176px] p-3"} items-center justify-center overflow-hidden rounded-xl border-0 bg-white`}
           >
-            <div ref={sdkContainerRef} />
+            <div
+              ref={sdkContainerRef}
+              className="min-w-0 max-w-full overflow-hidden"
+            />
             {status === "loading" && (
               <Loader2 className="h-6 w-6 animate-spin text-accent" />
             )}
@@ -170,7 +173,7 @@ export function QrPanel({ enabled: _enabled = true, compact = false }: QrPanelPr
       {/* freight scene */}
       <div
         aria-hidden
-        className={`pointer-events-none absolute inset-x-0 bottom-0 ${compact ? "h-24" : "h-32"}`}
+        className={`pointer-events-none absolute inset-x-0 bottom-0 ${compact ? "h-20" : "h-32"}`}
       >
         <img
           src={trucksImage}

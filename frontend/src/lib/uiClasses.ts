@@ -214,7 +214,7 @@ export const loginShineButtonClass =
 export const loginModalLayerClass =
   "fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-[rgb(13_23_48_/_22%)] p-[clamp(.5rem,2vw,1rem)] backdrop-blur-[.4rem] backdrop-saturate-[.86] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(rgb(255_255_255_/_10%)_.05rem,transparent_.05rem),linear-gradient(90deg,rgb(255_255_255_/_10%)_.05rem,transparent_.05rem)] before:bg-[length:2.6rem_2.6rem] before:opacity-[.12] max-[720px]:p-[.5rem]";
 export const loginModalCardClass =
-  "relative w-[min(36rem,100%)] overflow-hidden rounded-[.9rem] border border-white/20 bg-[#4D6383] text-ink shadow-[0_1.5rem_3.5rem_-1.4rem_rgb(14_24_54_/_65%)] opacity-0 translate-y-[.6rem] [zoom:.8] transition-[opacity,transform] duration-[420ms,520ms] ease-[ease,cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none motion-reduce:transform-none max-[720px]:[zoom:.74] max-[420px]:[zoom:.68]";
+  "relative w-[min(36rem,100%)] overflow-hidden rounded-[.9rem] border border-white/20 bg-[#4D6383] text-ink shadow-[0_1.5rem_3.5rem_-1.4rem_rgb(14_24_54_/_65%)] opacity-0 translate-y-[.6rem] [zoom:.76] transition-[opacity,transform] duration-[420ms,520ms] ease-[ease,cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none motion-reduce:transform-none max-[720px]:[zoom:.7] max-[420px]:[zoom:.64]";
 export const requestControlsClass =
   "mx-auto w-full max-w-[74rem] min-w-0 rounded-t-[.75rem] border border-[#e5e6e4] bg-[rgb(255_255_255_/_84%)] px-3 py-[.65rem]";
 export const requestStatusTabsClass =

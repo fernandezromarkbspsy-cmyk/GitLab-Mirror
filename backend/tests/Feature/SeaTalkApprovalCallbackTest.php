@@ -102,6 +102,22 @@ final class SeaTalkApprovalCallbackTest extends TestCase
         $this->assertFalse(SeaTalkCallbackSignature::verify($raw, null, 'callback-secret'));
     }
 
+    public function test_callback_endpoint_is_rate_limited_before_signature_processing(): void
+    {
+        $responses = [];
+
+        for ($attempt = 0; $attempt < 61; $attempt++) {
+            $responses[] = $this->withHeaders([
+                'Signature' => 'invalid-signature',
+            ])->postJson('/api/v1/integrations/seatalk/approval/approve', [
+                'item_id' => 'provider-item-1',
+            ]);
+        }
+
+        $this->assertSame(401, $responses[0]->getStatusCode());
+        $this->assertSame(429, $responses[60]->getStatusCode());
+    }
+
     private function request(array $payload): Request
     {
         return Request::create(

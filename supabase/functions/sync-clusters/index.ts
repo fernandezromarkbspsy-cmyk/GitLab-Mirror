@@ -5,6 +5,47 @@ const ALLOWED_FIELDS = new Set(["cluster_name", "region", "dock_number", "backlo
 const ALLOWED_SYNC_SOURCES = new Set(["google-apps-script"]);
 const MAX_BODY_BYTES = 1_000_000;
 const MAX_ROWS = 1_000;
+const MAX_CLOCK_SKEW_SECONDS = 300;
+
+function constantTimeEqual(left: string, right: string): boolean {
+  if (left.length !== right.length) return false;
+
+  let difference = 0;
+  for (let index = 0; index < left.length; index++) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+
+  return difference === 0;
+}
+
+async function verifySyncRequest(req: Request, rawBody: string, expectedSecret: string): Promise<boolean> {
+  const timestamp = req.headers.get("x-sync-timestamp")?.trim() ?? "";
+  const signature = req.headers.get("x-sync-signature")?.trim().toLowerCase() ?? "";
+  const timestampSeconds = Number(timestamp);
+
+  if (
+    !/^\d{10}$/.test(timestamp)
+    || !Number.isSafeInteger(timestampSeconds)
+    || Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds) > MAX_CLOCK_SKEW_SECONDS
+    || !/^[0-9a-f]{64}$/.test(signature)
+  ) return false;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(expectedSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(`${timestamp}.${rawBody}`),
+  );
+  const expected = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+
+  return constantTimeEqual(expected, signature);
+}
 
 type ClusterRow = {
   cluster_name: string;
@@ -19,9 +60,9 @@ function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 }
 
-async function readBody(req: Request): Promise<unknown> {
+async function readBody(req: Request): Promise<string> {
   const reader = req.body?.getReader();
-  if (!reader) return JSON.parse("null");
+  if (!reader) return "";
 
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -55,7 +96,7 @@ async function readBody(req: Request): Promise<unknown> {
 
   const text = new TextDecoder().decode(combined);
   if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) throw new Error("PAYLOAD_TOO_LARGE");
-  return JSON.parse(text);
+  return text;
 }
 
 export async function handleRequest(req: Request): Promise<Response> {
@@ -65,9 +106,10 @@ export async function handleRequest(req: Request): Promise<Response> {
     if (!ALLOWED_SYNC_SOURCES.has(syncSource)) return json({ error: "Forbidden: unknown sync source" }, 403);
     const expectedSecret = Deno.env.get("SYNC_SECRET")?.trim();
     if (!expectedSecret) return json({ error: "Server misconfigured" }, 500);
-    if ((req.headers.get("x-sync-secret") ?? "").trim() !== expectedSecret) return json({ error: "Unauthorized" }, 401);
+    const rawBody = await readBody(req);
+    if (!await verifySyncRequest(req, rawBody, expectedSecret)) return json({ error: "Unauthorized" }, 401);
 
-    const body = await readBody(req);
+    const body = JSON.parse(rawBody);
     const inputRows = Array.isArray(body) ? body : [body];
     if (inputRows.length > MAX_ROWS) return json({ error: "Too many rows supplied." }, 413);
 

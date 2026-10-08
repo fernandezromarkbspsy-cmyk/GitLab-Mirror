@@ -34,7 +34,6 @@ $registerApiRoutes = static function (string $prefix): void {
             AddQueuedCookiesToResponse::class,
             StartSession::class,
             'throttle:api-ip',
-            'supabase.auth',
             'throttle:api',
         ])->group(function (): void {
             Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
@@ -44,7 +43,7 @@ $registerApiRoutes = static function (string $prefix): void {
         Route::post('/auth/backroom/login', [BackroomController::class, 'login'])->middleware('throttle:backroom');
         Route::post('/access-requests', [AccessRequestController::class, 'store'])->middleware('throttle:3,10');
 
-        Route::middleware('seatalk.callback')->group(function (): void {
+        Route::middleware(['throttle:seatalk-callback', 'seatalk.callback'])->group(function (): void {
             Route::post('/integrations/seatalk/approval/approve', [SeaTalkApprovalCallbackController::class, 'approve']);
             Route::post('/integrations/seatalk/approval/reject', [SeaTalkApprovalCallbackController::class, 'reject']);
         });

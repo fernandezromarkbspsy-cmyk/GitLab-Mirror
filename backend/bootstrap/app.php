@@ -10,6 +10,7 @@ use App\Console\Commands\VerifyProductionConfig;
 use App\Http\Middleware\AuthenticateSupabase;
 use App\Http\Middleware\IdempotencyMiddleware;
 use App\Http\Middleware\RequestTelemetry;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifySeaTalkCallback;
 use App\Jobs\ExpireSeaTalkAssignments;
 use App\Jobs\SyncRequestsToGoogleSheetJob;
@@ -60,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('seatalk:reconcile-approvals --repair')->everyFiveMinutes()->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(SecurityHeaders::class);
         $middleware->append(RequestTelemetry::class);
         $middleware->alias([
             'supabase.auth' => AuthenticateSupabase::class,

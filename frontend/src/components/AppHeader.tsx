@@ -36,7 +36,6 @@ import type {
 type Props = {
   user: User;
   preview?: boolean;
-  builderPreview?: boolean;
   view: AppView;
   onRoleChange: (role: Role) => void;
   onSearch: () => void;
@@ -133,7 +132,6 @@ function notificationGroups(alerts: AppNotification[]): NotificationGroup[] {
 export function AppHeader({
   user,
   preview = false,
-  builderPreview = false,
   view,
   onRoleChange,
   onSearch,
@@ -163,7 +161,7 @@ export function AppHeader({
     queryFn: () =>
       api<{ data: AppNotification[]; unread: number }>("/notifications"),
     refetchInterval: false,
-    enabled: !preview && !builderPreview,
+    enabled: !preview,
   });
   const read = useMutation({
     mutationFn: (id: number) =>
@@ -178,7 +176,7 @@ export function AppHeader({
   const alerts = notifications.data?.data ?? [];
   const groupedNotifications = notificationGroups(alerts);
   useEffect(() => {
-    if (preview || builderPreview) return;
+    if (preview) return;
     const recoverAfterReconnect = createRealtimeRecoveryTracker(() =>
       client.invalidateQueries({ queryKey: ["notifications"] }),
     );
@@ -202,7 +200,7 @@ export function AppHeader({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [builderPreview, client, preview, user.id]);
+  }, [client, preview, user.id]);
 
   useEffect(() => {
     const latest = alerts.find((item) => !item.read_at);
@@ -303,7 +301,7 @@ export function AppHeader({
   return (
     <header
       className={
-        preview && !builderPreview
+        preview
           ? "hidden"
           : "fixed top-0 right-0 left-38 z-99999 flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255/94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-36 max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"
       }

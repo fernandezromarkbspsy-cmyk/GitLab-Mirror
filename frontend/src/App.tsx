@@ -92,23 +92,11 @@ function describeFailure(cause: unknown): Failure {
 
 export default function App() {
   const navigate = useNavigate();
-  // Local Vite development should render the production-style application
-  // shell directly so UI work is not obscured by the unauthenticated preview.
-  // Production builds keep the normal authentication flow.
-  const isBuilderPreview =
-    import.meta.env.DEV &&
-    (import.meta.env.VITE_E2E_AUTH_ENTRY !== "1" ||
-      new URLSearchParams(window.location.search).get("builderPreview") ===
-        "1");
-  const [state, setState] = useState<AppState>(
-    isBuilderPreview ? "ready" : "loading",
-  );
+  const [state, setState] = useState<AppState>("loading");
   const [startupAnimationComplete, setStartupAnimationComplete] =
-    useState(isBuilderPreview);
+    useState(false);
   const [failure, setFailure] = useState<Failure>(defaultFailure);
-  const [profile, setProfile] = useState<User | null>(
-    isBuilderPreview ? previewUser : null,
-  );
+  const [profile, setProfile] = useState<User | null>(null);
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
   const seatalkSession = useRef(false);
@@ -207,8 +195,6 @@ export default function App() {
   }, [resolveSession]);
 
   useEffect(() => {
-    if (isBuilderPreview) return;
-
     let cancelled = false;
     seatalkSession.current = rememberSeatalkSession(
       window.location.search,
@@ -241,7 +227,7 @@ export default function App() {
       cancelled = true;
       data.subscription.unsubscribe();
     };
-  }, [isBuilderPreview, resolveSession]);
+  }, [resolveSession]);
 
   if (!startupAnimationComplete) return <StartupLoading />;
   if (state === "loading") return <StartupLoading />;
@@ -265,7 +251,7 @@ export default function App() {
     return <ChangePassword onComplete={() => setState("ready")} />;
   return profile ? (
     <Suspense fallback={<StartupLoading />}>
-      <Dashboard user={profile} builderPreview={isBuilderPreview} />
+      <Dashboard user={profile} />
     </Suspense>
   ) : (
     <StartupLoading />
@@ -291,18 +277,12 @@ function StartupLoading() {
 function UnauthenticatedEntry() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [loginVisible, setLoginVisible] = useState(false);
 
   useEffect(() => {
     if (!isKnownAppPath(location.pathname)) {
       navigate("/dashboard", { replace: true });
     }
   }, [location.pathname, navigate]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setLoginVisible(true), 2000);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   return (
     <Fragment>
@@ -312,7 +292,7 @@ function UnauthenticatedEntry() {
         </Suspense>
       </div>
       <Suspense fallback={null}>
-        <Login modal visible={loginVisible} />
+        <Login modal visible />
       </Suspense>
     </Fragment>
   );

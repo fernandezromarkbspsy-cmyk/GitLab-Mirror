@@ -65,6 +65,8 @@ function syncClusters() {
         : (row[4] === '' ? null : String(row[4])),
     }));
 
+  const body = JSON.stringify(rows);
+  const timestamp = Math.floor(Date.now() / 1000).toString();
   const response = UrlFetchApp.fetch(
     syncUrl,
     {
@@ -72,28 +74,35 @@ function syncClusters() {
       contentType: 'application/json',
       headers: {
         'x-sync-source': 'google-apps-script',
-        'x-sync-secret': secret,
+        'x-sync-timestamp': timestamp,
+        'x-sync-signature': hmacHex(`${timestamp}.${body}`, secret),
       },
-      payload: JSON.stringify(rows),
+      payload: body,
       muteHttpExceptions: true,
     }
   );
 
   const status = response.getResponseCode();
-  const body = response.getContentText();
+  const responseBody = response.getContentText();
 
   if (status < 200 || status >= 300) {
-    throw new Error(`sync-clusters failed (${status}): ${body}`);
+    throw new Error(`sync-clusters failed (${status}): ${responseBody}`);
   }
 
-  console.log(body);
-  return JSON.parse(body);
+  console.log(responseBody);
+  return JSON.parse(responseBody);
 }
 
 function requiredProperty(properties, name) {
   const value = properties.getProperty(name);
   if (!value) throw new Error(`Missing Script Property: ${name}`);
   return value;
+}
+
+function hmacHex(message, secret) {
+  return Utilities.computeHmacSha256Signature(message, secret)
+    .map(byte => (byte < 0 ? byte + 256 : byte).toString(16).padStart(2, '0'))
+    .join('');
 }
 ```
 

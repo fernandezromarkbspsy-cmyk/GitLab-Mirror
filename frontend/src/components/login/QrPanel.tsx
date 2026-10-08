@@ -15,9 +15,10 @@ let seaTalkSdkPromise: Promise<void> | null = null;
 
 interface QrPanelProps {
   enabled?: boolean;
+  compact?: boolean;
 }
 
-export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
+export function QrPanel({ enabled: _enabled = true, compact = false }: QrPanelProps) {
   const widgetRef = useRef<HTMLFieldSetElement>(null);
   const sdkContainerRef = useRef<HTMLDivElement>(null);
   const renderLoginOnce = useRef<(() => Promise<void>) | null>(null);
@@ -95,7 +96,7 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
   }, [_enabled]);
 
   return (
-    <section className="relative hidden lg:flex flex-col overflow-hidden px-5 pb-24 pt-6 sm:px-7">
+    <section className={`relative hidden lg:flex flex-col overflow-hidden ${compact ? "px-4 pb-14 pt-4 sm:px-5" : "px-5 pb-24 pt-6 sm:px-7"}`}>
       <div
         aria-hidden
         className="absolute right-2 top-28 h-48 w-36 bg-[radial-gradient(rgb(214_228_255_/_34%)_.055rem,transparent_.055rem)] bg-[length:.75rem_.75rem] opacity-60 [mask-image:radial-gradient(closest-side,black,transparent)]"
@@ -107,14 +108,14 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
 
       {/* brand */}
       <Reveal>
-        <div className="flex items-center gap-2.5">
+        <div className={`flex items-center ${compact ? "gap-2" : "gap-2.5"}`}>
           <img
             src="/dashboard-icon/icon_logo.png"
             alt="SOC 5"
-            className="h-[52px] w-[52px] shrink-0 rounded-xl object-cover shadow-lg shadow-accent/30"
+            className={`${compact ? "h-10 w-10 rounded-lg" : "h-[52px] w-[52px] rounded-xl"} shrink-0 object-cover shadow-lg shadow-accent/30`}
           />
           <div>
-            <p className="font-display text-base font-semibold tracking-tight leading-snug text-ink">
+            <p className={`font-display ${compact ? "text-sm" : "text-base"} font-semibold tracking-tight leading-snug text-ink`}>
               SOC 5 OUTBOUND
             </p>
             <p className="text-xs font-medium text-faint leading-snug">
@@ -125,21 +126,21 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
       </Reveal>
 
       {/* heading */}
-      <Reveal delay={90} className="mt-5">
-        <h1 className="font-display text-xl font-semibold leading-tight tracking-tight text-ink">
+      <Reveal delay={90} className={compact ? "mt-3" : "mt-5"}>
+        <h1 className={`font-display ${compact ? "text-lg" : "text-xl"} font-semibold leading-tight tracking-tight text-ink`}>
           Login to continue
         </h1>
-        <p className="mt-2 text-xs text-muted leading-relaxed">
+        <p className={`${compact ? "mt-1" : "mt-2"} text-xs text-muted leading-relaxed`}>
           Use your work email or Ops ID to sign in below.
         </p>
       </Reveal>
 
-      <Reveal delay={180} className="mt-6">
-        <div className="rounded-2xl border border-line bg-white/[0.03] p-4 text-center">
+      <Reveal delay={180} className={compact ? "mt-4" : "mt-6"}>
+        <div className={`rounded-2xl border border-line bg-white/[0.03] ${compact ? "p-3" : "p-4"} text-center`}>
           <fieldset
             ref={widgetRef}
             aria-label="SeaTalk login"
-            className="mx-auto flex min-h-[176px] items-center justify-center rounded-xl border-0 bg-white p-3"
+            className={`mx-auto flex ${compact ? "min-h-[132px] p-2" : "min-h-[176px] p-3"} items-center justify-center rounded-xl border-0 bg-white`}
           >
             <div ref={sdkContainerRef} />
             {status === "loading" && (
@@ -159,7 +160,7 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
             </div>
           )}
           {status !== "error" && (
-            <p className="mt-3 text-xs leading-relaxed text-muted">
+              <p className={`${compact ? "mt-2" : "mt-3"} text-xs leading-relaxed text-muted`}>
               Continue with SeaTalk to sign in.
             </p>
           )}
@@ -169,7 +170,7 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
       {/* freight scene */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-32"
+        className={`pointer-events-none absolute inset-x-0 bottom-0 ${compact ? "h-24" : "h-32"}`}
       >
         <img
           src={trucksImage}

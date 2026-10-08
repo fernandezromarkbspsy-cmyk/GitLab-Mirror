@@ -115,7 +115,7 @@ final class AuthenticateSupabase
         if ($profile->must_change_password) {
             $allowed = [
                 'GET:api/auth/me',
-                'GET:api/v1/auth.me',
+                'GET:api/v1/auth/me',
                 'POST:api/auth/password-changed',
                 'POST:api/v1/auth/password-changed',
             ];

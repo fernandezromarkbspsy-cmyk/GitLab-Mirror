@@ -58,11 +58,9 @@ const UserManagement = lazy(() =>
 export function Dashboard({
   user,
   preview = false,
-  builderPreview = false,
 }: {
   user: User;
   preview?: boolean;
-  builderPreview?: boolean;
 }) {
   useRequestRealtime();
 
@@ -71,7 +69,7 @@ export function Dashboard({
   const routerNavigate = useNavigate();
   const viewRole = useUiStore((state) => state.viewRole);
   const setViewRole = useUiStore((state) => state.setViewRole);
-  const isPreview = preview || builderPreview;
+  const isPreview = preview;
   const activeUser = {
     ...user,
     role: user.is_admin && viewRole ? viewRole : user.role,
@@ -123,7 +121,7 @@ export function Dashboard({
   }, [location.pathname, routerNavigate, view]);
 
   return (
-    <div className={`${preview && !builderPreview ? "dashboard-preview" : ""} app-shell min-h-[100dvh]`}>
+    <div className={`${preview ? "dashboard-preview" : ""} app-shell min-h-[100dvh]`}>
       <AppSidebar
         user={activeUser}
         activeView={view}
@@ -133,12 +131,11 @@ export function Dashboard({
         onSignOut={() => void signOut()}
         pendingCount={queue.count}
       />
-      <main className={`relative z-0 isolate flex h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-soc5-page ${preview && !builderPreview ? "ml-0 w-full pt-0" : "w-[calc(100%_-_9.5rem)] ml-[9.5rem] pt-[3.8rem] max-[1100px]:ml-[9rem] max-[1100px]:w-[calc(100%_-_9rem)] max-[960px]:ml-0 max-[960px]:min-h-[100dvh] max-[960px]:w-full max-[960px]:pt-[3.4rem] max-[600px]:pt-[3.1rem]"}`} aria-label="Primary content">
+      <main className={`relative z-0 isolate flex h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-soc5-page ${preview ? "ml-0 w-full pt-0" : "w-[calc(100%_-_9.5rem)] ml-[9.5rem] pt-[3.8rem] max-[1100px]:ml-[9rem] max-[1100px]:w-[calc(100%_-_9rem)] max-[960px]:ml-0 max-[960px]:min-h-[100dvh] max-[960px]:w-full max-[960px]:pt-[3.4rem] max-[600px]:pt-[3.1rem]"}`} aria-label="Primary content">
         <div className="relative z-[1] flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-clip">
           <AppHeader
             user={activeUser}
             preview={preview}
-            builderPreview={builderPreview}
             view={view}
             onRoleChange={switchRole}
             onSearch={() =>

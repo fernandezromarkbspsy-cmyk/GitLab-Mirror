@@ -281,9 +281,15 @@ final class IdempotencyTest extends TestCase
             $table->dateTime('docked_time')->nullable();
             $table->string('status');
             $table->text('rejection_remarks')->nullable();
-            $table->string('driver_id')->nullable();
+            $table->string('approval_status')->default('PENDING');
+            $table->uuid('approved_by')->nullable();
             $table->dateTime('approved_at')->nullable();
+            $table->string('approval_source')->nullable();
+            $table->uuid('rejected_by')->nullable();
             $table->dateTime('rejected_at')->nullable();
+            $table->unsignedBigInteger('approval_version')->default(0);
+            $table->uuid('approval_correlation_id')->nullable();
+            $table->string('driver_id')->nullable();
             $table->dateTime('confirmed_at')->nullable();
             $table->uuid('created_by');
             $table->timestamps();

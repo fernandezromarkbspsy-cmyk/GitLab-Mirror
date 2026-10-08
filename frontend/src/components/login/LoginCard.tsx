@@ -22,14 +22,14 @@ export function LoginCard({
         className={`${loginModalLayerClass}${visible ? "" : " pointer-events-none"}`}
         aria-hidden={!visible}
       >
-        <main
+        <section
           className={`${loginModalCardClass}${visible ? " translate-y-0 opacity-100 animate-login-modal-enter motion-reduce:animate-none" : " invisible"}`}
           role="dialog"
           aria-modal="true"
           aria-label="Sign in to SOC 5 Outbound"
         >
           <div className="relative grid lg:grid-cols-[1fr_1fr]">
-            <QrPanel enabled={visible} />
+            <QrPanel enabled={visible} compact />
             <div
               aria-hidden
               className="absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 bg-line lg:block"
@@ -46,14 +46,14 @@ export function LoginCard({
               </span>
               <span className="h-px flex-1 bg-line" />
             </div>
-            <section className="flex items-center justify-center px-5 py-7 sm:px-7">
+            <section className="flex items-center justify-center px-4 py-4 sm:px-5">
               <Reveal delay={140} className="w-full max-w-[330px]">
                 {children}
               </Reveal>
             </section>
           </div>
-          <FooterBar />
-        </main>
+          <FooterBar compact />
+        </section>
       </div>
     );
   }

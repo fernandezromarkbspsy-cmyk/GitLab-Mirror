@@ -39,6 +39,7 @@ final class ApprovalServiceTest extends TestCase
     {
         $request = $this->insertRequest('PENDING');
         $actor = new ApprovalActor((string) Str::uuid(), 'fte_ops');
+        $this->insertApprovalProfile($actor);
 
         $first = $this->service->approve($request, $actor, ApprovalSource::Web);
         $second = $this->service->approve($request, $actor, ApprovalSource::Web);
@@ -56,15 +57,18 @@ final class ApprovalServiceTest extends TestCase
     {
         $request = $this->insertRequest('REQUESTED');
         $assignmentId = (string) Str::uuid();
+        $actor = new ApprovalActor((string) Str::uuid(), 'fte_mm', 'employee-1');
+        $this->insertApprovalProfile($actor);
         DB::table('seatalk_approval_assignments')->insert([
             'id' => $assignmentId,
             'request_id' => $request,
+            'fte_user_id' => $actor->id,
             'status' => 'ACTIVE',
         ]);
 
         $result = $this->service->reject(
             $request,
-            new ApprovalActor((string) Str::uuid(), 'fte_mm'),
+            $actor,
             ApprovalSource::SeaTalk,
             $assignmentId,
             'No truck available',
@@ -72,12 +76,18 @@ final class ApprovalServiceTest extends TestCase
 
         $this->assertSame('CANCELLED', $result->request->status);
         $this->assertSame('REJECTED', DB::table('requests')->where('id', $request)->value('approval_status'));
-        $this->assertSame('CLOSED', DB::table('seatalk_approval_assignments')->where('request_id', $request)->value('status'));
-        $this->assertSame('rejected', DB::table('seatalk_approval_assignments')->where('request_id', $request)->value('failure_reason'));
+        $this->assertSame('REJECTED', DB::table('seatalk_approval_assignments')->where('request_id', $request)->value('status'));
+        $this->assertNull(DB::table('seatalk_approval_assignments')->where('request_id', $request)->value('failure_reason'));
     }
 
     private function createSchema(): void
     {
+        Schema::create('profiles', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('role');
+            $table->boolean('is_active')->default(true);
+            $table->string('seatalk_employee_code')->nullable();
+        });
         Schema::create('requests', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('status');
@@ -113,8 +123,11 @@ final class ApprovalServiceTest extends TestCase
         Schema::create('seatalk_approval_assignments', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('request_id');
+            $table->uuid('fte_user_id');
             $table->string('status');
             $table->text('failure_reason')->nullable();
+            $table->dateTime('expires_at')->nullable();
+            $table->dateTime('responded_at')->nullable();
             $table->dateTime('updated_at')->nullable();
         });
     }
@@ -125,5 +138,15 @@ final class ApprovalServiceTest extends TestCase
         DB::table('requests')->insert(['id' => $id, 'status' => $status]);
 
         return $id;
+    }
+
+    private function insertApprovalProfile(ApprovalActor $actor): void
+    {
+        DB::table('profiles')->insert([
+            'id' => $actor->id,
+            'role' => $actor->role,
+            'is_active' => true,
+            'seatalk_employee_code' => $actor->employeeCode,
+        ]);
     }
 }

@@ -36,28 +36,6 @@ final class SeaTalkApprovalCallbackController
             'item_id' => ['required', 'string', 'max:100'],
             'event_id' => ['nullable', 'string', 'max:255'],
             'timestamp' => ['nullable', 'integer'],
-<<<<<<< HEAD
-            'employee.employee_code' => ['required', 'string', 'max:255'],
-            'reason' => [$action === 'reject' ? 'required' : 'nullable', 'string', 'max:500'],
-        ]);
-
-        $itemId = (string) $data['item_id'];
-        $employeeCode = (string) data_get($data, 'employee.employee_code');
-        $eventId = (string) ($data['event_id'] ?? hash('sha256', implode("\n", [
-            $action,
-            $request->getContent(),
-            $itemId,
-            $employeeCode,
-        ])));
-        $item = $this->resolveItem($itemId);
-        $assignment = $this->resolveAssignment($item, $employeeCode);
-
-        $inserted = DB::table('seatalk_callback_events')->insertOrIgnore([
-            'event_id' => $eventId,
-            'provider_item_id' => $itemId,
-            'request_id' => $item->request_id,
-            'employee_code' => $employeeCode,
-=======
             'employee.employee_code' => [
                 'required',
                 'string',
@@ -82,7 +60,6 @@ final class SeaTalkApprovalCallbackController
         // This fingerprint detects changed content under the same event ID.
         // It is intentionally separate from raw-body signature verification.
         $payloadHash = hash('sha256', json_encode([
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
             'action' => $action,
             'item_id' => $itemId,
             'employee_code' => $employeeCode,
@@ -91,12 +68,6 @@ final class SeaTalkApprovalCallbackController
 
         $suppliedEventId = $data['event_id'] ?? null;
 
-<<<<<<< HEAD
-        $profile = DB::table('profiles')->where('id', $assignment->fte_user_id)->first(['id', 'role', 'seatalk_employee_code']);
-        if ($profile === null || (string) $profile->seatalk_employee_code !== $employeeCode) {
-            return $this->acknowledge('ignored');
-        }
-=======
         // Preserve the original raw-body fallback for providers that omit
         // event_id. It deduplicates exact delivery repeats only.
         $eventId = is_string($suppliedEventId)
@@ -108,7 +79,6 @@ final class SeaTalkApprovalCallbackController
                 $itemId,
                 $employeeCode,
             ]));
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 
         $status = DB::transaction(function () use (
             $itemId,

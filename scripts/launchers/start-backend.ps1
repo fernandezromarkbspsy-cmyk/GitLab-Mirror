@@ -28,4 +28,10 @@ if (-not (Select-String -Path '.env' -Pattern '^APP_KEY=base64:' -Quiet)) {
     php artisan key:generate --force
     if ($LASTEXITCODE -ne 0) { throw 'Laravel key generation failed.' }
 }
+
+# The repository may contain a stale Laravel config cache from another
+# environment. Clear it before starting so the current local .env is used.
+php artisan config:clear
+if ($LASTEXITCODE -ne 0) { throw 'Laravel configuration cache clear failed.' }
+
 php artisan serve --no-reload

@@ -25,5 +25,6 @@ final class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('backroom-ip|'.$request->ip()),
             Limit::perMinute(5)->by('backroom-id|'.$request->ip().'|'.strtolower(trim((string) $request->input('ops_id')))),
         ]);
+        RateLimiter::for('seatalk-callback', fn (Request $request) => Limit::perMinute(60)->by('seatalk-callback|'.$request->ip()));
     }
 }

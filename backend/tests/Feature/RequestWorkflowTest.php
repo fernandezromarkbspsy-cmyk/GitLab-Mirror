@@ -94,6 +94,8 @@ final class RequestWorkflowTest extends TestCase
         $request = $this->insertRequest(['status' => 'REQUESTED']);
         $midmile = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
         $ops = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops'];
+        $this->insertProfile($midmile);
+        $this->insertProfile($ops);
 
         $midmileRequests = $this->repository->paginate($midmile, ['status' => 'REQUESTED']);
         $opsRequests = $this->repository->paginate($ops, ['status' => 'REQUESTED']);
@@ -108,6 +110,8 @@ final class RequestWorkflowTest extends TestCase
         $request = $this->insertRequest(['status' => 'REQUESTED']);
         $midmile = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_mm'];
         $ops = (object) ['id' => (string) Str::uuid(), 'role' => 'fte_ops'];
+        $this->insertProfile($midmile);
+        $this->insertProfile($ops);
 
         $updated = $this->service->transition($request->id, $midmile, 'reject-mm', [
             'rejection_remarks' => 'No truck available',
@@ -297,6 +301,8 @@ final class RequestWorkflowTest extends TestCase
         Schema::create('profiles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('name')->nullable();
+            $table->string('role')->nullable();
+            $table->boolean('is_active')->default(true);
         });
         Schema::create('requests', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -315,6 +321,12 @@ final class RequestWorkflowTest extends TestCase
             $table->dateTime('docked_time')->nullable();
             $table->string('status');
             $table->text('rejection_remarks')->nullable();
+            $table->string('approval_status')->default('PENDING');
+            $table->uuid('approved_by')->nullable();
+            $table->string('approval_source')->nullable();
+            $table->uuid('rejected_by')->nullable();
+            $table->unsignedBigInteger('approval_version')->default(0);
+            $table->uuid('approval_correlation_id')->nullable();
             $table->string('driver_id')->nullable();
             $table->dateTime('driver_assigned_at')->nullable();
             $table->dateTime('linehaul_trip_at')->nullable();
@@ -344,5 +356,14 @@ final class RequestWorkflowTest extends TestCase
             $table->text('body');
             $table->timestamps();
         });
+    }
+
+    private function insertProfile(object $actor): void
+    {
+        DB::table('profiles')->insert([
+            'id' => $actor->id,
+            'role' => $actor->role,
+            'is_active' => true,
+        ]);
     }
 }

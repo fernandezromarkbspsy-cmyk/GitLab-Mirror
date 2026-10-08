@@ -42,14 +42,17 @@ function syncIntradayDispatch() {
     hour: Number(row[4]),
   })).filter(row => row.date && Number.isInteger(row.hour) && row.hour >= 0 && row.hour <= 23);
 
+  const body = JSON.stringify(rows);
+  const timestamp = Math.floor(Date.now() / 1000).toString();
   const response = UrlFetchApp.fetch(syncUrl, {
     method: 'post',
     contentType: 'application/json',
     headers: {
       'x-sync-source': 'google-apps-script',
-      'x-sync-secret': syncSecret,
+      'x-sync-timestamp': timestamp,
+      'x-sync-signature': hmacHex(`${timestamp}.${body}`, syncSecret),
     },
-    payload: JSON.stringify(rows),
+    payload: body,
     muteHttpExceptions: true,
   });
   if (response.getResponseCode() < 200 || response.getResponseCode() >= 300) {
@@ -61,6 +64,12 @@ function requiredProperty(properties, name) {
   const value = properties.getProperty(name);
   if (!value) throw new Error(`Missing Script Property: ${name}`);
   return value;
+}
+
+function hmacHex(message, secret) {
+  return Utilities.computeHmacSha256Signature(message, secret)
+    .map(byte => (byte < 0 ? byte + 256 : byte).toString(16).padStart(2, '0'))
+    .join('');
 }
 ```
 

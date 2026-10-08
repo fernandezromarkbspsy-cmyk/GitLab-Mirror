@@ -21,6 +21,8 @@ final class ProductionConfigTest extends TestCase
             'app.debug' => true,
             'app.key' => 'base64:test-key',
             'app.url' => 'https://api.example.test',
+            'app.frontend_url' => 'https://frontend.example.test',
+            'session.secure' => true,
             'services.supabase.url' => 'https://project.supabase.co',
             'services.supabase.anon_key' => 'publishable-key',
             'services.supabase.service_key' => 'service-key',
@@ -44,6 +46,7 @@ final class ProductionConfigTest extends TestCase
             'app.debug' => false,
             'app.key' => 'base64:test-key',
             'app.url' => 'https://staging-api.example.test',
+            'app.frontend_url' => 'https://staging-frontend.example.test',
             'services.supabase.url' => 'https://project.supabase.co',
             'services.supabase.anon_key' => 'publishable-key',
             'services.supabase.service_key' => 'service-key',
@@ -67,6 +70,8 @@ final class ProductionConfigTest extends TestCase
             'app.debug' => false,
             'app.key' => 'base64:test-key',
             'app.url' => 'https://api.example.test',
+            'app.frontend_url' => 'https://frontend.example.test',
+            'session.secure' => true,
             'services.supabase.url' => 'https://project.supabase.co',
             'services.supabase.anon_key' => 'publishable-key',
             'services.supabase.service_key' => 'service-key',
@@ -90,6 +95,8 @@ final class ProductionConfigTest extends TestCase
             'app.debug' => false,
             'app.key' => 'base64:test-key',
             'app.url' => 'https://api.example.test',
+            'app.frontend_url' => 'https://frontend.example.test',
+            'session.secure' => true,
             'services.supabase.url' => 'https://project.supabase.co',
             'services.supabase.anon_key' => 'publishable-key',
             'services.supabase.service_key' => 'service-key',
@@ -113,6 +120,8 @@ final class ProductionConfigTest extends TestCase
             'app.debug' => false,
             'app.key' => 'base64:test-key',
             'app.url' => 'https://api.example.test',
+            'app.frontend_url' => 'https://frontend.example.test',
+            'session.secure' => true,
             'services.supabase.url' => 'https://project.supabase.co',
             'services.supabase.anon_key' => 'publishable-key',
             'services.supabase.service_key' => 'service-key',
@@ -126,6 +135,34 @@ final class ProductionConfigTest extends TestCase
 
         $this->artisan('system:verify-config', ['--production' => true])
             ->expectsOutput('SUPABASE_CA_BUNDLE must reference a readable file when configured.')
+            ->assertExitCode(1);
+    }
+
+    public function test_production_config_rejects_insecure_frontend_or_session_cookie_settings(): void
+    {
+        Schema::shouldReceive('hasTable')->with('user_events')->andReturnTrue();
+        Schema::shouldReceive('hasTable')->with('idempotency_keys')->andReturnTrue();
+
+        config()->set([
+            'app.env' => 'production',
+            'app.debug' => false,
+            'app.key' => 'base64:test-key',
+            'app.url' => 'https://api.example.test',
+            'app.frontend_url' => 'http://frontend.example.test',
+            'session.secure' => false,
+            'services.supabase.url' => 'https://project.supabase.co',
+            'services.supabase.anon_key' => 'publishable-key',
+            'services.supabase.service_key' => 'service-key',
+            'services.admin_emails' => ['admin@example.test'],
+            'database.connections.pgsql.host' => 'db.example.test',
+            'database.connections.pgsql.username' => 'postgres',
+            'database.connections.pgsql.password' => 'password',
+            'database.connections.pgsql.sslmode' => 'require',
+        ]);
+
+        $this->artisan('system:verify-config', ['--production' => true])
+            ->expectsOutput('FRONTEND_URL must use HTTPS in production.')
+            ->expectsOutput('SESSION_SECURE_COOKIE must be true in production.')
             ->assertExitCode(1);
     }
 }

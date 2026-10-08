@@ -10,6 +10,7 @@ import { useQueueNotifications } from "../hooks/useQueueNotifications";
 import { getAppPath, getAppView } from "../lib/routes";
 import {
   dashboardGridClass,
+  dashboardPanelClass,
   dashboardViewClass,
   dashboardTripsPanelClass,
   intradayCardClass,
@@ -231,7 +232,7 @@ function ViewLoading({ view }: { view: AppView }) {
               <SkeletonTable columns={2} rows={3} compact />
             </div>
           </article>
-          <article className={`min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}>
+          <article className={`${dashboardPanelClass} ${dashboardTripsPanelClass}`}>
             <div className="flex items-start justify-between gap-3 px-3.5 pt-3.5">
               <div>
                 <Skeleton width={120} variant="head" />
@@ -242,7 +243,7 @@ function ViewLoading({ view }: { view: AppView }) {
               <SkeletonTable columns={4} rows={4} compact />
             </div>
           </article>
-          <article className="min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card">
+          <article className={`${dashboardPanelClass} min-h-[15.5rem]`}>
             <div className="flex items-start justify-between gap-3 px-3.5 pt-3.5">
               <div>
                 <Skeleton width={120} variant="head" />

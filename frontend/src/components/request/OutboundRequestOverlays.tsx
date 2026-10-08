@@ -1,6 +1,5 @@
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
-import { ApprovalStateBadge } from "../approval/ApprovalStateBadge";
 import { Modal } from "../Modal";
 import {
   compactFormDialogClass,
@@ -72,10 +71,6 @@ export function OutboundRequestDrawer({
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <StatusBadge status={request.status} uppercase />
-            <ApprovalStateBadge
-              status={request.status}
-              approvalStatus={request.approval_status}
-            />
           </div>
         </div>
         <dl className={requestDrawerFieldsClass}>

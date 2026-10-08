@@ -5,6 +5,7 @@ import {
   dashboardPanelBodyClass,
   dashboardPanelHeadClass,
   dashboardPanelKickerClass,
+  dashboardPanelClass,
   dashboardTripsPanelClass,
   dashboardViewClass,
   donutCenterClass,
@@ -15,7 +16,7 @@ import {
   donutLegendClass,
   donutLegendItemClass,
   donutLegendSwatchClass,
-  donutLegendTextClass,
+  mutedCaptionClass,
   donutLegendValueClass,
   dialogHeadClass,
   iconButtonClass,
@@ -438,7 +439,7 @@ export function Overview({
                       className={donutLegendSwatchClass}
                       style={{ background: `#${palette[index]}` }}
                     />
-                    <span className={donutLegendTextClass}>{size}</span>
+                    <span className={mutedCaptionClass}>{size}</span>
                     <strong className={donutLegendValueClass}>
                       {count}{" "}
                       <small>
@@ -453,7 +454,7 @@ export function Overview({
           </div>
         </Panel>
         <article
-          className={`min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}
+          className={`${dashboardPanelClass} ${dashboardTripsPanelClass}`}
         >
           <div
             className={`${dashboardPanelHeadClass} border-b border-[#087f7c]/[.24] pb-[.65rem]`}
@@ -512,7 +513,7 @@ export function Overview({
             />
           </div>
         </article>
-        <article className="min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card">
+        <article className={`${dashboardPanelClass} min-h-[15.5rem]`}>
           <div className={dashboardPanelHeadClass}>
             <div>
               <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>

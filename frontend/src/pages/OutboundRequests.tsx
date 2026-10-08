@@ -32,10 +32,7 @@ import {
   requestWorkspaceClass,
   tableShellClass,
 } from "../lib/uiClasses";
-import {
-  ApprovalStateBadge,
-  approvalStateFor,
-} from "../components/approval/ApprovalStateBadge";
+import { approvalStateFor } from "../components/approval/ApprovalStateBadge";
 import {
   linehaulColumnOptions,
   linehaulPrimaryColumnKeys,
@@ -520,10 +517,6 @@ export function OutboundRequests({
                                     />
                                   )}
                                 <StatusText status={row.status} />
-                                <ApprovalStateBadge
-                                  status={row.status}
-                                  approvalStatus={row.approval_status}
-                                />
                               </span>
                             )}
                             {hasColumn("runningTime") && (
@@ -737,10 +730,6 @@ export function OutboundRequests({
                       </strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
                       <StatusBadge status={row.status} uppercase />
-                      <ApprovalStateBadge
-                        status={row.status}
-                        approvalStatus={row.approval_status}
-                      />
                       <button
                         type="button"
                         className={textButtonClass}

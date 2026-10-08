@@ -9,7 +9,8 @@ export const toastClass =
 
 export const toastContentClass = "grid min-w-0 gap-[.1rem]";
 export const toastTitleClass = "text-sm font-semibold";
-export const toastBodyClass = "text-xs text-[#777]";
+export const mutedCaptionClass = "text-xs text-[#777]";
+export const toastBodyClass = mutedCaptionClass;
 
 export const dashboardViewClass =
   "workspace-view dashboard-view min-h-[calc(100dvh_-_3.8rem)] w-full min-w-0 overflow-wrap-anywhere bg-[radial-gradient(circle_at_96%_2%,rgb(214_250_45_/_11%),transparent_27.733333rem),var(--soc5-page)] px-[var(--app-page-gutter)] pt-[clamp(1.25rem,1.5vw,1.75rem)] pb-[clamp(3rem,5vw,5rem)] max-[960px]:px-[.8rem] max-[960px]:pt-[.8rem] max-[960px]:pb-16 max-[480px]:px-2";
@@ -336,7 +337,6 @@ export const donutLegendClass = "grid gap-[.3rem]";
 export const donutLegendItemClass =
   "grid grid-cols-[.45rem_1fr_auto] items-center gap-[.35rem] rounded-[.4rem] border border-[rgb(25_45_47_/_5%)] bg-[#f9fbfa] p-[.35rem]";
 export const donutLegendSwatchClass = "size-[.4rem] rounded-[.1rem]";
-export const donutLegendTextClass = "text-xs text-[#777]";
 export const donutLegendValueClass = "text-xs font-semibold text-[#333] tabular-nums";
 
 export const printDialogClass =

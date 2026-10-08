@@ -32,19 +32,19 @@ const roleNames = {
 type MenuGroup = "outbound" | "midmile";
 
 const mobileToggleClass =
-  "fixed bottom-[.6rem] left-[.6rem] z-40 hidden items-center gap-[.25rem] rounded-lg bg-soc5-lime px-2 py-[.4rem] text-xs font-medium text-soc5-ink shadow-[0_.4rem_1rem_rgb(0_0_0_/_12%)] max-[960px]:inline-flex";
+  "fixed bottom-4 left-4 z-40 hidden items-center gap-2 rounded-xl border border-[#dfe4e1] bg-white px-3 py-2 text-xs font-medium text-[#33403f] shadow-[0_.7rem_1.5rem_rgb(25_45_47_/_12%)] max-[960px]:inline-flex";
 const scrimClass =
-  "fixed inset-0 z-25 hidden bg-[rgb(17_18_19_/_42%)] opacity-0 transition-[opacity,visibility] duration-[250ms] ease-[ease] max-[960px]:block max-[960px]:invisible";
+  "fixed inset-0 z-25 hidden bg-[rgb(15_31_31_/_26%)] opacity-0 transition-[opacity,visibility] duration-[250ms] ease-[ease] max-[960px]:block max-[960px]:invisible";
 const sidebarClass =
-  "fixed inset-y-0 left-0 z-30 flex w-[9.5rem] flex-col border-r border-[#39393b] bg-soc5-sidebar text-[#929398] transition-transform duration-[280ms] ease-[ease] max-[1100px]:w-[9rem] max-[960px]:-translate-x-full max-[960px]:shadow-[.7rem_0_2rem_rgb(0_0_0_/_20%)]";
+  "fixed inset-y-0 left-0 z-30 flex w-[15.5rem] flex-col border-r border-[#e2e8e5] bg-[#fbfcfb] text-[#6d7a79] transition-transform duration-[280ms] ease-[ease] max-[1100px]:w-[14rem] max-[960px]:-translate-x-full max-[960px]:shadow-[.7rem_0_2rem_rgb(25_45_47_/_14%)]";
 const navItemClass =
-  "relative flex min-h-[1.85rem] w-full items-center gap-2 rounded-lg border border-transparent px-2 text-left text-xs font-medium leading-snug text-[#a3a5a9] transition-[color,background,border-color,box-shadow,transform] duration-200 ease-[ease] hover:translate-x-[.1rem] hover:bg-[linear-gradient(180deg,rgb(255_255_255_/_4%),rgb(255_255_255_/_2%))] hover:text-[#f2f6ff] focus-visible:outline-[.1rem] focus-visible:outline-soc5-lime focus-visible:outline-offset-[.1rem]";
+  "relative flex min-h-[2.55rem] w-full items-center gap-3 rounded-xl border border-transparent px-3 text-left text-sm font-medium leading-snug text-[#71807f] transition-[color,background,border-color,box-shadow,transform] duration-200 ease-[ease] hover:bg-[#f2f5f4] hover:text-[#243534] focus-visible:outline-[.15rem] focus-visible:outline-[#8d9a97] focus-visible:outline-offset-[.1rem] [&_svg]:size-[1.05rem] [&_svg]:shrink-0";
 const activeNavItemClass =
-  "bg-[linear-gradient(90deg,rgb(214_250_45_/_12%),rgb(255_255_255_/_3%))] font-semibold text-[#f2f6ff] before:absolute before:top-1/2 before:left-[-.45rem] before:h-5 before:w-[.15rem] before:-translate-y-1/2 before:rounded-r-[.3rem] before:bg-[linear-gradient(180deg,#d9ff2d,#a7d62b)] before:shadow-[0_0_.8rem_rgb(214_250_45_/_40%)] before:content-['']";
+  "bg-[#eef1f0] font-semibold text-[#273837] shadow-[inset_0_0_0_1px_rgb(95_112_108_/_10%)] before:absolute before:top-1/2 before:left-0 before:h-[1.4rem] before:w-[.2rem] before:-translate-y-1/2 before:rounded-r-full before:bg-[#667773] before:content-['']";
 const groupToggleClass = `${navItemClass} justify-start`;
 const subItemClass =
-  "relative mt-1 ml-[.3rem] flex min-h-[1.45rem] w-full items-center gap-2 rounded-r-lg border border-transparent bg-[rgb(255_255_255_/_2%)] py-0 pr-2 pl-[1.45rem] text-left text-xs font-medium leading-snug text-[#a3a5a9] transition-[color,background,border-color,box-shadow,transform] duration-200 ease-[ease] hover:translate-x-[.1rem] hover:bg-[linear-gradient(90deg,rgb(214_250_45_/_7%),rgb(255_255_255_/_3%))] hover:text-[#f2f6ff] focus-visible:outline-[.1rem] focus-visible:outline-soc5-lime focus-visible:outline-offset-[.1rem] animate-[sidebar-subitem-in_.2s_ease_both]";
-const activeSubItemClass = `${activeNavItemClass} bg-[linear-gradient(90deg,rgb(214_250_45_/_7%),rgb(255_255_255_/_3%))]`;
+  "relative mt-1 ml-2 flex min-h-[2.25rem] w-full items-center gap-3 rounded-lg border border-transparent py-1 pr-2 pl-4 text-left text-sm font-medium leading-snug text-[#879391] transition-[color,background,border-color,box-shadow,transform] duration-200 ease-[ease] hover:bg-[#f2f5f4] hover:text-[#243534] focus-visible:outline-[.15rem] focus-visible:outline-[#8d9a97] focus-visible:outline-offset-[.1rem] animate-[sidebar-subitem-in_.2s_ease_both] [&_svg]:size-4 [&_svg]:shrink-0";
+const activeSubItemClass = activeNavItemClass;
 
 function groupForView(view: AppView): MenuGroup | null {
   if (view === "lh-request") return "outbound";
@@ -135,18 +135,18 @@ export function AppSidebar({
         inert={isMobile && !open ? true : undefined}
       >
         <nav id="primary-navigation" aria-label="Primary navigation" className="contents">
-        <div className="flex min-h-[3.8rem] items-center gap-[.45rem] border-b border-[#39393b] py-0 pr-[.95rem] pl-5">
-          <div className="relative grid size-[1.6rem] shrink-0 place-items-center overflow-hidden rounded-[.35rem] bg-soc5-lime">
+        <div className="flex min-h-[4.5rem] items-center gap-3 border-b border-[#e7ece9] px-5">
+          <div className="relative grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#dfe7e3] bg-[#eef3f0] shadow-[0_.25rem_.6rem_rgb(25_45_47_/_8%)]">
             <img className="block size-full object-cover" src="/dashboard-icon/icon_logo.png" alt="SOC 5" />
           </div>
           <div className="grid min-w-0 gap-[.1rem]">
-            <strong className="text-sm font-semibold tracking-tight text-[#f7f7f7]">SOC 5</strong>
+            <strong className="text-base font-semibold tracking-tight text-[#273837]">SOC 5</strong>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 py-[.9rem] pb-[.8rem] [scrollbar-color:#454548_transparent] scrollbar-thin">
+        <nav className="flex-1 overflow-y-auto px-4 py-5 pb-4 [scrollbar-color:#cdd8d4_transparent] scrollbar-thin">
           <div className="mb-[.9rem]">
-            <p className="mb-[.4rem] ml-2 text-xs font-semibold text-[#7d7e83]">Workspace</p>
+            <p className="mb-2 px-3 text-xs font-medium text-[#a0adaa]">Workspace</p>
             <button
               className={`${navItemClass}${activeView === "overview" ? ` ${activeNavItemClass}` : ""}`}
               type="button"
@@ -158,7 +158,7 @@ export function AppSidebar({
           </div>
           {showOutbound && (
             <div className="mb-[.9rem]">
-              <p className="mb-[.4rem] ml-2 text-xs font-semibold text-[#7d7e83]">Outbound</p>
+              <p className="mb-2 px-3 text-xs font-medium text-[#a0adaa]">Outbound</p>
               <button
                 className={`${groupToggleClass}${visibleGroup === "outbound" ? ` ${activeNavItemClass}` : ""}`}
                 type="button"
@@ -182,7 +182,7 @@ export function AppSidebar({
                   <Route size={17} />
                   <span>LH Request</span>
                   {user.role === "fte_ops" && pendingCount > 0 && (
-                    <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18/20%)]">
+                    <span className="ml-auto grid min-h-[1.2rem] min-w-[1.2rem] place-items-center rounded-md border border-[#dce5e1] bg-[#f4f7f5] px-1 text-xs font-semibold tabular-nums text-[#53635f]">
                       {pendingCount > 99 ? "99+" : pendingCount}
                     </span>
                   )}
@@ -192,7 +192,7 @@ export function AppSidebar({
           )}
           {showMidmile && (
             <div className="mb-[.9rem]">
-              <p className="mb-[.4rem] ml-2 text-xs font-semibold text-[#7d7e83]">Midmile</p>
+              <p className="mb-2 px-3 text-xs font-medium text-[#a0adaa]">Midmile</p>
               <button
                 className={`${groupToggleClass}${visibleGroup === "midmile" ? ` ${activeNavItemClass}` : ""}`}
                 type="button"
@@ -216,7 +216,7 @@ export function AppSidebar({
                   <Truck size={17} />
                   <span>Truck Request</span>
                   {pendingCount > 0 && (
-                    <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18/20%)]">
+                    <span className="ml-auto grid min-h-[1.2rem] min-w-[1.2rem] place-items-center rounded-md border border-[#dce5e1] bg-[#f4f7f5] px-1 text-xs font-semibold tabular-nums text-[#53635f]">
                       {pendingCount > 99 ? "99+" : pendingCount}
                     </span>
                   )}
@@ -226,7 +226,7 @@ export function AppSidebar({
           )}
           {showDocking && (
             <div className="mb-[.9rem]">
-              <p className="mb-[.4rem] ml-2 text-xs font-semibold text-[#7d7e83]">Docking</p>
+              <p className="mb-2 px-3 text-xs font-medium text-[#a0adaa]">Docking</p>
               <button
                 className={`${navItemClass}${activeView === "docking" ? ` ${activeNavItemClass}` : ""}`}
                 type="button"
@@ -235,14 +235,14 @@ export function AppSidebar({
                 <ShipWheel size={18} />
                 <span>Docking Confirmation</span>
                 {pendingCount > 0 && (
-                  <span className="ml-auto grid min-h-[.85rem] min-w-[.85rem] place-items-center rounded-full bg-[linear-gradient(180deg,#dfff50,#c7eb2d)] px-[.2rem] text-xs font-semibold tabular-nums text-[#1a1b1d] shadow-[0_0_0_.1rem_rgb(17_17_18/20%)]">{pendingCount}</span>
+                  <span className="ml-auto grid min-h-[1.2rem] min-w-[1.2rem] place-items-center rounded-md border border-[#dce5e1] bg-[#f4f7f5] px-1 text-xs font-semibold tabular-nums text-[#53635f]">{pendingCount}</span>
                 )}
               </button>
             </div>
           )}
           {showKpi && (
             <div className="mb-[.9rem]">
-              <p className="mb-[.4rem] ml-2 text-xs font-semibold text-[#7d7e83]">Performance</p>
+              <p className="mb-2 px-3 text-xs font-medium text-[#a0adaa]">Performance</p>
               <button
                 className={`${navItemClass}${activeView === "kpi" ? ` ${activeNavItemClass}` : ""}`}
                 type="button"
@@ -255,7 +255,7 @@ export function AppSidebar({
           )}
           {showUsers && (
             <div className="mb-[.9rem]">
-              <p className="mb-[.4rem] ml-2 text-xs font-semibold text-[#7d7e83]">Administration</p>
+              <p className="mb-2 px-3 text-xs font-medium text-[#a0adaa]">Administration</p>
               <button
                 className={`${navItemClass}${activeView === "users" ? ` ${activeNavItemClass}` : ""}`}
                 type="button"
@@ -268,16 +268,16 @@ export function AppSidebar({
           )}
         </nav>
 
-        <div className="flex min-h-[3.6rem] items-center gap-2 border-t border-[#39393b] bg-[linear-gradient(180deg,rgb(255_255_255/3%),rgb(255_255_255/1%))] px-[.7rem] py-2 pl-[.9rem]">
-          <div className="grid size-6 shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,#6d89d7,#243b80)] text-xs font-bold text-[#d6e2ff]" aria-hidden="true">
+        <div className="flex min-h-[4.75rem] items-center gap-3 border-t border-[#e7ece9] px-4 py-3">
+          <div className="grid size-8 shrink-0 place-items-center rounded-full border border-[#dce5e1] bg-[#eef3f0] text-xs font-bold text-[#53635f]" aria-hidden="true">
             {user.name.slice(0, 1).toUpperCase()}
           </div>
           <div className="grid min-w-0 gap-[.1rem]">
-            <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-xs font-medium text-[#efefef]">{user.name}</strong>
-            <small className="text-xs text-[#85868a]">{roleNames[user.role]}</small>
+            <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-[#33403f]">{user.name}</strong>
+            <small className="text-xs text-[#91a09d]">{roleNames[user.role]}</small>
           </div>
           <button
-            className="ml-auto grid size-[1.4rem] place-items-center rounded-md bg-transparent text-soc5-muted transition-[color,background,transform] duration-200 hover:-translate-y-px hover:bg-[#2a2a2d] hover:text-soc5-lime focus-visible:outline-[.1rem] focus-visible:outline-soc5-lime focus-visible:outline-offset-[.1rem]"
+            className="ml-auto grid size-8 place-items-center rounded-lg bg-transparent text-[#8b9996] transition-[color,background,transform] duration-200 hover:-translate-y-px hover:bg-[#f2f5f4] hover:text-[#33403f] focus-visible:outline-[.15rem] focus-visible:outline-[#8d9a97] focus-visible:outline-offset-[.1rem]"
             type="button"
             title="Sign out"
             aria-label="Sign out"

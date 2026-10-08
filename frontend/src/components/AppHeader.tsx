@@ -57,22 +57,22 @@ const page = {
 };
 
 const topbarIconButtonClass =
-  "relative grid size-[1.9rem] place-items-center rounded-lg bg-transparent text-[#687078] transition-[color,background,transform] duration-200 hover:-translate-y-px hover:bg-[#f1f2f2] hover:text-soc5-ink aria-expanded:bg-[#f1f2f2] aria-expanded:text-soc5-ink max-[480px]:size-[1.7rem]";
+  "relative grid size-9 place-items-center rounded-lg bg-transparent text-[#7b8987] transition-[color,background,transform] duration-200 hover:-translate-y-px hover:bg-[#f1f5f3] hover:text-[#33403f] aria-expanded:bg-[#eef1f0] aria-expanded:text-[#33403f] max-[480px]:size-8";
 const topbarMenuWrapClass = "relative min-w-0";
 const topbarPopoverClass =
   "absolute top-[2.3rem] right-0 z-50 min-w-[8.75rem] rounded-[.6rem] border border-[#e4e5e5] bg-white p-[.55rem] text-xs text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30_/_14%)]";
 const filterOptionClass =
   "flex w-full items-center justify-between gap-[.4rem] border-t border-[#f0f0f0] bg-transparent py-[.4rem] text-left text-[#666] first:border-t-0 hover:text-soc5-ink";
 const notificationBadgeClass =
-  "absolute -top-[.15rem] -right-[.15rem] grid min-h-[.8rem] min-w-[.8rem] place-items-center rounded-[.45rem] bg-[#ef6b78] px-[.2rem] text-xs font-semibold tabular-nums text-white";
+  "absolute -top-[.15rem] -right-[.15rem] grid min-h-[1.05rem] min-w-[1.05rem] place-items-center rounded-md border border-white bg-[#687a75] px-[.25rem] text-xs font-semibold tabular-nums text-white";
 const mailDotClass =
-  "absolute top-[.4rem] right-[.4rem] size-[.35rem] rounded-full border-[.075rem] border-white bg-[#ef6b78]";
+  "absolute top-[.4rem] right-[.4rem] size-[.35rem] rounded-full border-[.075rem] border-white bg-[#687a75]";
 const mailPopoverClass =
   "absolute top-[2.3rem] right-0 z-50 w-[min(18rem,calc(100vw_-_1.2rem))] max-h-[min(23rem,calc(100dvh_-_3.6rem))] overflow-hidden rounded-[.6rem] border border-[#e4e5e5] bg-white text-[#393a3c] shadow-[0_.6rem_1.25rem_rgb(28_29_30_/_14%)] max-[600px]:right-1";
 const messageListClass =
   "grid max-h-[min(19rem,calc(100dvh_-_7rem))] gap-1 overflow-y-auto overscroll-contain p-1";
 const messageItemClass =
-  "grid w-full min-w-0 grid-cols-[auto_1fr] items-center gap-[.15rem] rounded-[.45rem] border border-[#f0f0f0] border-l-2 border-l-transparent bg-white px-[.55rem] py-2 text-left text-[#333] transition-[background-color,border-color] duration-150 hover:border-[#e4e8d4] hover:bg-[#f7f9eb] focus-visible:outline-[.1rem] focus-visible:outline-[#71820e] focus-visible:outline-offset-[.1rem] active:bg-[#eff3dc] [&.is-unread]:border-l-[#91a61b] [&.is-unread]:bg-[#f7f9eb] [&_svg]:row-span-2 [&_svg]:text-[#8aa80f] [&_span]:min-w-0 [&_span]:text-xs [&_span]:font-semibold [&_small]:text-xs [&_small]:leading-snug [&_small]:text-[#696c70]";
+  "grid w-full min-w-0 grid-cols-[auto_1fr] items-center gap-[.15rem] rounded-[.45rem] border border-[#e6ece9] border-l-2 border-l-transparent bg-white px-[.55rem] py-2 text-left text-[#333] transition-[background-color,border-color] duration-150 hover:border-[#d6e0dc] hover:bg-[#f4f7f5] focus-visible:outline-[.1rem] focus-visible:outline-[#8d9a97] focus-visible:outline-offset-[.1rem] active:bg-[#eef2f0] [&.is-unread]:border-l-[#687a75] [&.is-unread]:bg-[#f4f7f5] [&_svg]:row-span-2 [&_svg]:text-[#687a75] [&_span]:min-w-0 [&_span]:text-xs [&_span]:font-semibold [&_small]:text-xs [&_small]:leading-snug [&_small]:text-[#696c70]";
 const profileButtonClass =
   "flex min-h-[1.9rem] max-w-[min(11rem,22vw)] min-w-0 items-center gap-[.35rem] rounded-lg bg-transparent px-2 py-0 text-left text-[#77787c] hover:bg-[#f1f2f2] max-[960px]:max-w-[1.9rem] max-[600px]:max-w-[1.9rem] [&>div]:grid [&>div]:min-w-0 [&>div]:gap-[.05rem] max-[600px]:[&>div]:hidden max-[600px]:[&>svg:last-child]:hidden [&_strong]:max-w-[5.5rem] [&_strong]:overflow-hidden [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap [&_strong]:text-xs [&_strong]:text-[#343538] [&_small]:text-xs [&_small]:capitalize [&_small]:text-[#999] [&>svg:last-child]:ml-[.15rem]";
 const profileMenuClass =
@@ -303,7 +303,7 @@ export function AppHeader({
       className={
         preview
           ? "hidden"
-          : "fixed top-0 right-0 left-38 z-99999 flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255/94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-36 max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"
+          : "fixed top-0 right-0 left-[15.5rem] z-99999 flex min-h-[4.5rem] items-center justify-between gap-4 border-b border-[#e2e8e5] bg-[rgb(255_255_255/92%)] px-6 backdrop-blur-[.7rem] max-[1100px]:left-[14rem] max-[960px]:left-0 max-[960px]:min-h-[3.8rem] max-[960px]:px-4 max-[600px]:min-h-[3.4rem]"
       }
     >
       {toast && (
@@ -317,20 +317,20 @@ export function AppHeader({
       )}
       <div className="min-w-0 flex-1 overflow-hidden">
         <div className="grid min-w-0 gap-[.1rem]">
-          <h1 className="m-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-semibold leading-tight tracking-tight text-[#242427] max-[600px]:text-xl">
+          <h1 className="m-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xl font-medium leading-tight tracking-tight text-[#273837] max-[600px]:text-lg">
             {page[view].name}
           </h1>
           <nav
             className="flex min-h-[.7rem] items-center gap-[.3rem] text-xs leading-none text-[#a1a2a6] max-[960px]:hidden"
             aria-label="Breadcrumb"
           >
-            <span className="font-semibold text-soc5-muted">Operations</span>
+            <span className="font-medium text-[#84928f]">Operations</span>
             <ChevronRight
               className="text-[#c4c5c7]"
               size={12}
               aria-hidden="true"
             />
-            <span className="font-bold text-soc5-lime-deep" aria-current="page">
+            <span className="font-medium text-[#667773]" aria-current="page">
               {page[view].section}
             </span>
           </nav>
@@ -338,7 +338,7 @@ export function AppHeader({
       </div>
       <div className="flex min-w-0 flex-[0_1_auto] items-center gap-[.35rem] max-[960px]:gap-[.2rem]">
         <form
-          className="group flex h-[1.9rem] w-[clamp(7rem,22vw,12.5rem)] max-w-full min-w-0 items-center gap-[.35rem] rounded-lg border border-[#e7e7e7] bg-[#f5f5f5] px-2 text-[#686a6e] max-[1100px]:w-[clamp(6rem,20vw,10rem)] max-[960px]:w-34 max-[600px]:w-[1.9rem] max-[600px]:justify-center max-[600px]:px-0 focus-within:max-[600px]:w-27 focus-within:max-[600px]:justify-start focus-within:max-[600px]:px-[.4rem]"
+          className="group flex h-9 w-[clamp(8rem,22vw,15rem)] max-w-full min-w-0 items-center gap-2 rounded-lg border border-[#e1e9e5] bg-[#f5f8f6] px-3 text-[#7b8987] max-[1100px]:w-[clamp(7rem,20vw,12rem)] max-[960px]:w-36 max-[600px]:w-9 max-[600px]:justify-center max-[600px]:px-0 focus-within:max-[600px]:w-28 focus-within:max-[600px]:justify-start focus-within:max-[600px]:px-3"
           onSubmit={(event) => {
             event.preventDefault();
             if (search.trim()) onSearch();
@@ -478,7 +478,7 @@ export function AppHeader({
             <section className={mailPopoverClass} aria-label="Messages">
               <div className="flex items-center justify-between border-b border-[#f0f0f0] px-[.6rem] py-[.6rem]">
                 <strong className="text-xs">Messages</strong>
-                <span className="text-xs text-[#6b7a00]">{count} new</span>
+                <span className="text-xs text-[#667773]">{count} new</span>
               </div>
               {alerts.length ? (
                 <div className={messageListClass}>
@@ -505,7 +505,7 @@ export function AppHeader({
               )}
               {count > 0 && (
                 <button
-                  className="w-full rounded-none bg-[#fafafa] px-2 py-2 text-center text-xs font-semibold text-[#6b7a00] outline-offset-2 focus-visible:outline-[.1rem] focus-visible:outline-[#71820e]"
+                  className="w-full rounded-none bg-[#f7f9f8] px-2 py-2 text-center text-xs font-semibold text-[#667773] outline-offset-2 focus-visible:outline-[.1rem] focus-visible:outline-[#8d9a97]"
                   type="button"
                   onClick={() => {
                     readAll.mutate();
@@ -562,7 +562,7 @@ export function AppHeader({
                   roles.map((role) => (
                     <button
                       key={role.value}
-                      className="flex w-full items-center justify-between rounded-[.35rem] bg-transparent px-2 py-[.45rem] text-left text-xs text-[#666] hover:bg-[#f2f5df] hover:text-soc5-ink"
+                      className="flex w-full items-center justify-between rounded-[.5rem] bg-transparent px-2 py-[.45rem] text-left text-xs text-[#666] hover:bg-[#f1f5f3] hover:text-soc5-ink"
                       type="button"
                       onClick={() => {
                         setProfileOpen(false);

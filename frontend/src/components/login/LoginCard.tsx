@@ -47,7 +47,7 @@ export function LoginCard({
               <span className="h-px flex-1 bg-line" />
             </div>
             <section className="flex items-center justify-center px-4 py-4 sm:px-5">
-              <Reveal delay={140} className="w-full max-w-[330px]">
+              <Reveal delay={140} className="w-full max-w: 330px">
                 {children}
               </Reveal>
             </section>
@@ -59,7 +59,7 @@ export function LoginCard({
   }
 
   return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-gradient-to-br from-page via-page to-page-2 px-4 py-6">
+    <div className="relative flex min-height: 100dvh items-center justify-center overflow-hidden bg-linear-to-br from-page via-page to-page-2 px-4 py-6">
       <AmbientGlows />
 
       <main className="relative w-full max-w-[860px] overflow-hidden rounded-2xl border border-white/20 bg-white/[0.08] shadow-[0_30px_70px_-28px_rgba(14,24,54,0.65)] backdrop-blur-2xl">

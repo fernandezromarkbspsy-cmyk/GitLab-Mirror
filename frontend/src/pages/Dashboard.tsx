@@ -131,7 +131,7 @@ export function Dashboard({
         onSignOut={() => void signOut()}
         pendingCount={queue.count}
       />
-      <main className={`relative z-0 isolate flex h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-soc5-page ${preview ? "ml-0 w-full pt-0" : "w-[calc(100%_-_9.5rem)] ml-[9.5rem] pt-[3.8rem] max-[1100px]:ml-[9rem] max-[1100px]:w-[calc(100%_-_9rem)] max-[960px]:ml-0 max-[960px]:min-h-[100dvh] max-[960px]:w-full max-[960px]:pt-[3.4rem] max-[600px]:pt-[3.1rem]"}`} aria-label="Primary content">
+      <main className={`relative z-0 isolate flex h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-[#f6f8f7] ${preview ? "ml-0 w-full pt-0" : "w-[calc(100%_-_15.5rem)] ml-[15.5rem] pt-[4.5rem] max-[1100px]:ml-[14rem] max-[1100px]:w-[calc(100%_-_14rem)] max-[960px]:ml-0 max-[960px]:min-h-[100dvh] max-[960px]:w-full max-[960px]:pt-[3.8rem] max-[600px]:pt-[3.4rem]"}`} aria-label="Primary content">
         <div className="relative z-[1] flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-clip">
           <AppHeader
             user={activeUser}

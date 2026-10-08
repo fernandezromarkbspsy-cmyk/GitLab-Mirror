@@ -89,3 +89,35 @@ test('opens and closes mobile navigation without trapping focus', async ({
   await expect(menuToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(menuToggle).toBeFocused();
 });
+
+test('keeps the closed mobile navigation out of the tab order', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 800, height: 900 });
+  await page.goto('/dashboard');
+
+  const menuToggle = page.getByRole('button', { name: 'Open navigation' });
+  const navigation = page.locator('#primary-navigation');
+
+  await menuToggle.focus();
+  await page.keyboard.press('Tab');
+
+  await expect(navigation.locator(':focus')).toHaveCount(0);
+});
+
+test('rotates the request group chevron when expanded', async ({ page }) => {
+  await page.goto('/dashboard');
+
+  const toggle = page.getByRole('button', {
+    name: 'Toggle outbound requests',
+  });
+  const chevron = toggle.locator('svg.lucide-chevron-right');
+
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(chevron).not.toHaveClass(/rotate-90/);
+
+  await toggle.click();
+
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(chevron).toHaveClass(/rotate-90/);
+});

@@ -71,6 +71,7 @@ export function Dashboard({
   const routerNavigate = useNavigate();
   const viewRole = useUiStore((state) => state.viewRole);
   const setViewRole = useUiStore((state) => state.setViewRole);
+  const isPreview = preview || builderPreview;
   const activeUser = {
     ...user,
     role: user.is_admin && viewRole ? viewRole : user.role,
@@ -152,7 +153,7 @@ export function Dashboard({
                 <Overview
                   user={activeUser}
                   onNavigate={navigate}
-                  preview={preview}
+                  preview={isPreview}
                 />
               )}
               {view === "lh-request" && (

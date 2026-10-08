@@ -12,6 +12,18 @@ export default defineConfig({
   test: {
     exclude: ['**/e2e/**', '**/node_modules/**'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.endsWith('/src/lib/api.ts')) {
+            return 'api';
+          }
+          return undefined;
+        },
+      },
+    },
+  },
   server: {
     host: true,
     port: 5173,

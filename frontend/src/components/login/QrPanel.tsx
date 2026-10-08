@@ -2,6 +2,7 @@ import { Loader2, MapPin, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import trucksImage from "../../assets/trucks.jpg";
 import { createSingleFlight } from "../../lib/singleFlight";
+import { isAllowedSeaTalkSdkUrl } from "../../lib/seatalkSecurity";
 import { Reveal } from "./Reveal";
 
 declare global {
@@ -20,7 +21,9 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
   const widgetRef = useRef<HTMLFieldSetElement>(null);
   const sdkContainerRef = useRef<HTMLDivElement>(null);
   const renderLoginOnce = useRef<(() => Promise<void>) | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
   const [error, setError] = useState("");
 
   function renderSeaTalkLogin() {
@@ -78,7 +81,11 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
       setStatus("ready");
     } catch (cause) {
       setStatus("error");
-      setError(cause instanceof Error ? cause.message : "Unable to load SeaTalk login.");
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to load SeaTalk login.",
+      );
       throw cause;
     }
   }
@@ -129,19 +136,33 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
 
       <Reveal delay={180} className="mt-6">
         <div className="rounded-2xl border border-line bg-white/[0.03] p-4 text-center">
-          <fieldset ref={widgetRef} aria-label="SeaTalk login" className="mx-auto flex min-h-[176px] items-center justify-center rounded-xl border-0 bg-white p-3">
+          <fieldset
+            ref={widgetRef}
+            aria-label="SeaTalk login"
+            className="mx-auto flex min-h-[176px] items-center justify-center rounded-xl border-0 bg-white p-3"
+          >
             <div ref={sdkContainerRef} />
-            {status === "loading" && <Loader2 className="h-6 w-6 animate-spin text-accent" />}
+            {status === "loading" && (
+              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            )}
           </fieldset>
           {status === "error" && (
             <div className="mt-3 text-xs leading-relaxed text-danger">
               <p>{error}</p>
-              <button type="button" onClick={() => void renderSeaTalkLogin().catch(() => undefined)} className="mt-2 inline-flex items-center gap-1.5 font-semibold text-link hover:underline">
+              <button
+                type="button"
+                onClick={() => void renderSeaTalkLogin().catch(() => undefined)}
+                className="mt-2 inline-flex items-center gap-1.5 font-semibold text-link hover:underline"
+              >
                 <RefreshCw className="h-3.5 w-3.5" /> Retry SeaTalk login
               </button>
             </div>
           )}
-          {status !== "error" && <p className="mt-3 text-xs leading-relaxed text-muted">Continue with SeaTalk to sign in.</p>}
+          {status !== "error" && (
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              Continue with SeaTalk to sign in.
+            </p>
+          )}
         </div>
       </Reveal>
 
@@ -169,7 +190,9 @@ export function QrPanel({ enabled: _enabled = true }: QrPanelProps) {
 
 function loadSeaTalkSdk(url?: string): Promise<void> {
   if (window.SEATALK_LOGIN) return Promise.resolve();
-  if (!url) return Promise.reject(new Error("SeaTalk SDK URL is not configured."));
+  if (typeof url !== "string" || !isAllowedSeaTalkSdkUrl(url)) {
+    return Promise.reject(new Error("SeaTalk SDK URL is not allowed."));
+  }
   if (seaTalkSdkPromise) return seaTalkSdkPromise;
 
   seaTalkSdkPromise = new Promise((resolve, reject) => {

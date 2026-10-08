@@ -1,11 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   avatarClass,
-  chartGridLineClass,
-  chartHoverStateClass,
-  chartPointGroupClass,
-  chartXLabelClass,
-  chartYLabelClass,
   dashboardGridClass,
   dashboardPanelBodyClass,
   dashboardPanelHeadClass,
@@ -25,16 +20,6 @@ import {
   dialogHeadClass,
   iconButtonClass,
   intradayCardClass,
-  intradayDateIconClass,
-  intradayFiltersClass,
-  intradayKpiAccentClass,
-  intradayKpiClass,
-  intradayKpiLabelClass,
-  intradayKpiSuffixClass,
-  intradayKpiValueClass,
-  intradayLiveDotClass,
-  intradayLiveLabelClass,
-  intradayLiveStatusClass,
   intradayMetaDotClass,
   intradayShellClass,
   loadingChipClass,
@@ -43,10 +28,6 @@ import {
   overviewMetricsClass,
   scorecardsLayoutClass,
   timingMetricsClass,
-  lineChartClass,
-  lineChartSvgClass,
-  lineAreaClass,
-  lineStrokeClass,
   linehaulRowClass,
   queueRowGroupClass,
   requestDetailContentClass,
@@ -57,16 +38,21 @@ import {
   truckDotClass,
   tripsPanelBodyClass,
 } from "../lib/uiClasses";
+import { CheckCircle2, ClipboardList, Clock3, Truck, X } from "lucide-react";
 import {
-  CalendarDays,
-  CheckCircle2,
-  ClipboardList,
-  Clock3,
-  Truck,
-  X,
-} from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { ChartHeader } from "../components/dashboard/ChartHeader";
+import {
+  IntradayDateSelector,
+  IntradayKpi,
+  IntradayLineChart,
+  IntradayLiveStatus,
+} from "../components/dashboard/IntradayCharts";
 import { MetricCard } from "../components/dashboard/MetricCard";
 import { Panel } from "../components/dashboard/Panel";
 import { QueuePreview } from "../components/dashboard/QueuePreview";
@@ -90,13 +76,7 @@ const INTRADAY_HOURS = [
   6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2,
   3, 4, 5,
 ] as const;
-type IntradayChartPoint = {
-  label: string;
-  hour: number;
-  count: number;
-  x: number;
-  y: number;
-};
+import type { IntradayChartPoint } from "../components/dashboard/IntradayCharts";
 
 function getTodayDate(now = new Date()) {
   const year = now.getFullYear();
@@ -104,7 +84,6 @@ function getTodayDate(now = new Date()) {
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
-
 function formatDurationMinutes(minutes?: number | null) {
   if (minutes == null || !Number.isFinite(minutes)) return "-";
   const rounded = Math.round(minutes);
@@ -216,8 +195,9 @@ export function Overview({
     };
   }, [intraday.data?.data]);
   const sizes = ["4W", "6W", "10W", "6WF"] as const;
+  const truckSizes = analytics.data?.truck_sizes ?? {};
   const sizeTotal = sizes.reduce(
-    (sum, size) => sum + (analytics.data?.truck_sizes[size] ?? 0),
+    (sum, size) => sum + (truckSizes[size] ?? 0),
     0,
   );
   const rows = requests.data?.data ?? [];
@@ -236,17 +216,18 @@ export function Overview({
     let offset = 0;
     return sizes
       .map((size, index) => {
-        const value = analytics.data?.truck_sizes[size] ?? 0;
+        const value = truckSizes[size] ?? 0;
         const start = offset;
         offset += sizeTotal ? (value / sizeTotal) * 100 : 0;
         return `#${palette[index]} ${start}% ${offset}%`;
       })
       .join(",");
-  }, [analytics.data, sizeTotal]);
+  }, [sizeTotal, truckSizes]);
   const totalRequests = metrics.data?.total ?? 0;
-  const pendingRequests = metrics.data?.by_status.PENDING ?? 0;
-  const forDockingRequests = metrics.data?.by_status.DOCKING ?? 0;
-  const dockedRequests = metrics.data?.by_status.DOCKED ?? 0;
+  const byStatus = metrics.data?.by_status ?? {};
+  const pendingRequests = byStatus.PENDING ?? 0;
+  const forDockingRequests = byStatus.DOCKING ?? 0;
+  const dockedRequests = byStatus.DOCKED ?? 0;
   const completionRate = totalRequests
     ? Math.round((dockedRequests / totalRequests) * 100)
     : 0;
@@ -337,7 +318,10 @@ export function Overview({
             />
           ))}
         </section>
-        <section className={intradayShellClass} aria-label="Intraday dispatch card">
+        <section
+          className={intradayShellClass}
+          aria-label="Intraday dispatch card"
+        >
           <article className={intradayCardClass}>
             <ChartHeader
               title="Hourly Throughput"
@@ -388,11 +372,18 @@ export function Overview({
           </article>
         </section>
       </section>
-      <section className={timingMetricsClass} aria-label="Request timing metrics">
+      <section
+        className={timingMetricsClass}
+        aria-label="Request timing metrics"
+      >
         <MetricCard
           label="Average Dwell time"
           value={
-            analytics.isPending ? <Skeleton width={64} height={26} /> : formatDurationMinutes(analytics.data?.average_dwell_minutes)
+            analytics.isPending ? (
+              <Skeleton width={64} height={26} />
+            ) : (
+              formatDurationMinutes(analytics.data?.average_dwell_minutes)
+            )
           }
           icon={<Clock3 size={22} aria-hidden="true" />}
           chip="Request to Depart"
@@ -402,7 +393,11 @@ export function Overview({
         <MetricCard
           label="Average Waiting Time"
           value={
-            analytics.isPending ? <Skeleton width={64} height={26} /> : formatDurationMinutes(analytics.data?.average_waiting_minutes)
+            analytics.isPending ? (
+              <Skeleton width={64} height={26} />
+            ) : (
+              formatDurationMinutes(analytics.data?.average_waiting_minutes)
+            )
           }
           icon={<Truck size={22} aria-hidden="true" />}
           chip="Request to plate"
@@ -431,12 +426,18 @@ export function Overview({
                 <small className={donutCenterLabelClass}>Total</small>
               </span>
             </div>
-            <section className={donutLegendClass} aria-label="Truck size breakdown">
+            <section
+              className={donutLegendClass}
+              aria-label="Truck size breakdown"
+            >
               {sizes.map((size, index) => {
-                const count = analytics.data?.truck_sizes[size] ?? 0;
+                const count = truckSizes[size] ?? 0;
                 return (
                   <div className={donutLegendItemClass} key={size}>
-                    <i className={donutLegendSwatchClass} style={{ background: `#${palette[index]}` }} />
+                    <i
+                      className={donutLegendSwatchClass}
+                      style={{ background: `#${palette[index]}` }}
+                    />
                     <span className={donutLegendTextClass}>{size}</span>
                     <strong className={donutLegendValueClass}>
                       {count}{" "}
@@ -451,12 +452,22 @@ export function Overview({
             </section>
           </div>
         </Panel>
-        <article className={`min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}>
-          <div className={`${dashboardPanelHeadClass} border-b border-[#087f7c]/[.24] pb-[.65rem]`}>
+        <article
+          className={`min-w-0 overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card ${dashboardTripsPanelClass}`}
+        >
+          <div
+            className={`${dashboardPanelHeadClass} border-b border-[#087f7c]/[.24] pb-[.65rem]`}
+          >
             <div>
-              <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>Live dispatch board</p>
-              <h2 className="m-0 text-sm font-semibold text-[#183f42]">Recent linehaul trips</h2>
-              <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">Latest trips with driver assignments</p>
+              <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>
+                Live dispatch board
+              </p>
+              <h2 className="m-0 text-sm font-semibold text-[#183f42]">
+                Recent linehaul trips
+              </h2>
+              <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">
+                Latest trips with driver assignments
+              </p>
             </div>
             <span className="trips-live-status">
               <i aria-hidden="true" /> Live
@@ -490,7 +501,9 @@ export function Overview({
                     <b>{request.driver_id || "Driver pending"}</b>
                     <small>Assigned driver</small>
                   </span>
-                  <span className={`${queueRowGroupClass} justify-items-end text-right`}>
+                  <span
+                    className={`${queueRowGroupClass} justify-items-end text-right`}
+                  >
                     <b>{request.cluster}</b>
                     <small>Cluster</small>
                   </span>
@@ -502,9 +515,15 @@ export function Overview({
         <article className="min-w-0 min-h-[15.5rem] overflow-hidden rounded-card border border-card-line bg-card-surface shadow-card">
           <div className={dashboardPanelHeadClass}>
             <div>
-              <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>Docking queue</p>
-              <h2 className="m-0 text-sm font-semibold text-[#183f42]">Trucks awaiting docking</h2>
-              <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">Assigned trucks ready for dock confirmation</p>
+              <p className={`${dashboardPanelKickerClass} !text-[#087f7c]`}>
+                Docking queue
+              </p>
+              <h2 className="m-0 text-sm font-semibold text-[#183f42]">
+                Trucks awaiting docking
+              </h2>
+              <p className="mt-1 mb-0 text-xs leading-normal text-[#526467]">
+                Assigned trucks ready for dock confirmation
+              </p>
             </div>
             <button
               className={textButtonClass}
@@ -514,13 +533,18 @@ export function Overview({
               View All
             </button>
           </div>
-          <div className={`${dashboardPanelBodyClass} bg-[linear-gradient(135deg,#fbfdec,#f5f9e5)]`}>
+          <div
+            className={`${dashboardPanelBodyClass} bg-[linear-gradient(135deg,#fbfdec,#f5f9e5)]`}
+          >
             <QueuePreview
               items={assignedTrucks}
               className="truck-list"
               emptyMessage="No assigned trucks are ready for docking."
               renderItem={(request) => (
-                <div className={`${linehaulRowClass} border-[#dce7b5] bg-white shadow-[0_.25rem_.7rem_rgb(83_104_13_/_8%)]`} key={request.id}>
+                <div
+                  className={`${linehaulRowClass} border-[#dce7b5] bg-white shadow-[0_.25rem_.7rem_rgb(83_104_13_/_8%)]`}
+                  key={request.id}
+                >
                   <span className={truckDotClass}>
                     <Truck size={15} />
                   </span>
@@ -577,208 +601,6 @@ export function Overview({
           />
         )}
       </Modal>
-    </div>
-  );
-}
-
-function IntradayDateSelector({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <fieldset className={intradayFiltersClass} aria-label="Intraday dispatch date">
-      <label className="sr-only" htmlFor="intraday-date-filter">
-        Intraday dispatch date
-      </label>
-      <span className={intradayDateIconClass} aria-hidden="true">
-        <CalendarDays size={16} strokeWidth={2.1} />
-      </span>
-      <input
-        id="intraday-date-filter"
-        className={"min-w-0 flex-1 rounded-[.5rem] border border-transparent bg-transparent px-1 text-xs font-bold text-[#162538] outline-none focus:border-[#9bd7cf] focus:bg-white focus:ring-[.2rem] focus:ring-[rgb(20_184_166_/_14%)] max-[600px]:w-full"}
-        type="date"
-        value={value}
-        onChange={(event) => {
-          if (event.target.value) onChange(event.target.value);
-        }}
-      />
-    </fieldset>
-  );
-}
-
-function IntradayKpi({
-  label,
-  loading,
-  value,
-  suffix,
-  accent = false,
-}: {
-  label: string;
-  loading: boolean;
-  value: string;
-  suffix?: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className={intradayKpiClass}>
-      <span className={intradayKpiLabelClass}>{label}</span>
-      <strong className={`${intradayKpiValueClass}${accent ? ` ${intradayKpiAccentClass}` : ""}`}>
-        {loading ? (
-          <Skeleton width={118} height={36} />
-        ) : (
-          <>
-            {value}
-            {suffix ? <small className={intradayKpiSuffixClass}>{suffix}</small> : null}
-          </>
-        )}
-      </strong>
-    </div>
-  );
-}
-
-function IntradayLiveStatus({
-  error,
-  refreshing,
-  refreshed,
-  text,
-}: {
-  error: boolean;
-  refreshing: boolean;
-  refreshed: boolean;
-  text: string;
-}) {
-  return (
-    <span
-      className={`${intradayLiveStatusClass}${error ? " text-[#a8523d]" : ""}`}
-      aria-live="polite"
-    >
-      <i className={intradayLiveDotClass} aria-hidden="true" />
-      <span>{text}</span>
-      <b className={intradayLiveLabelClass}>{refreshing ? "Refreshing" : refreshed ? "Updated" : "Live"}</b>
-    </span>
-  );
-}
-
-function IntradayLineChart({
-  activePoint,
-  area,
-  formatHour,
-  line,
-  maximum,
-  points,
-  onActivePointChange,
-}: {
-  activePoint: IntradayChartPoint | null;
-  area: string;
-  formatHour: (hour: number) => string;
-  line: string;
-  maximum: number;
-  points: IntradayChartPoint[];
-  onActivePointChange: (point: IntradayChartPoint | null) => void;
-}) {
-  const tooltipX = activePoint
-    ? activePoint.x > 540
-      ? activePoint.x - 130
-      : activePoint.x + 14
-    : 0;
-  const tooltipY = activePoint ? Math.max(18, activePoint.y - 58) : 0;
-
-  return (
-    <div className={lineChartClass}>
-      <svg
-        className={lineChartSvgClass}
-        viewBox="0 0 700 200"
-        role="img"
-        aria-label="Intraday dispatch volume over a 24-hour period"
-      >
-        <desc>
-          Line chart showing dispatch order volume from 6 AM through 5 AM.
-        </desc>
-        <defs>
-          <linearGradient id="lineAreaTop" x1="0" x2="0" y1="0" y2="1">
-            <stop
-              offset="0%"
-              stopColor="#b5d93f"
-              stopOpacity=".16"
-            />
-            <stop
-              offset="100%"
-              stopColor="#b5d93f"
-              stopOpacity="0"
-            />
-          </linearGradient>
-        </defs>
-        {[160, 112, 64].map((y) => (
-          <line
-            key={y}
-            className={chartGridLineClass}
-            x1="46"
-            y1={y}
-            x2="654"
-            y2={y}
-          />
-        ))}
-        <text className={chartYLabelClass} x="38" y="163">
-          0
-        </text>
-        <text className={chartYLabelClass} x="38" y="115">
-          {Math.round(maximum / 2).toLocaleString()}
-        </text>
-        <text className={chartYLabelClass} x="38" y="67">
-          {maximum.toLocaleString()}
-        </text>
-        {area && <path className={lineAreaClass} d={area} />}
-        <path className={lineStrokeClass} d={line} />
-        {points.map((point, index) => {
-          const active = activePoint?.hour === point.hour;
-          const timeLabel = formatHour(point.hour);
-          return (
-            // biome-ignore lint/a11y/useSemanticElements: SVG data points need keyboard interaction but cannot be native buttons.
-            <g
-              key={point.label}
-              role="button"
-              tabIndex={0}
-              aria-label={`${timeLabel}: ${point.count.toLocaleString()} dispatched orders`}
-              className={chartPointGroupClass}
-              data-active={active || undefined}
-              onBlur={() => onActivePointChange(null)}
-              onFocus={() => onActivePointChange(point)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onActivePointChange(point);
-                }
-              }}
-              onClick={() => onActivePointChange(point)}
-              onMouseEnter={() => onActivePointChange(point)}
-              onMouseLeave={() => onActivePointChange(null)}
-            >
-              <circle cx={point.x} cy={point.y} r="4.2" />
-              {index % 3 === 0 && (
-                <text className={chartXLabelClass} x={point.x} y="184">
-                  {timeLabel}
-                </text>
-              )}
-            </g>
-          );
-        })}
-        {activePoint ? (
-          <g className={chartHoverStateClass}>
-            <line x1={activePoint.x} y1="44" x2={activePoint.x} y2="160" />
-            <circle cx={activePoint.x} cy={activePoint.y} r="5.2" />
-            <rect x={tooltipX} y={tooltipY} width="118" height="44" rx="10" />
-            <text x={tooltipX + 12} y={tooltipY + 18}>
-              {formatHour(activePoint.hour)}
-            </text>
-            <text x={tooltipX + 12} y={tooltipY + 34}>
-              {activePoint.count.toLocaleString()} orders
-            </text>
-          </g>
-        ) : null}
-      </svg>
     </div>
   );
 }

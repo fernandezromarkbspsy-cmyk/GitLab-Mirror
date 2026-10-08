@@ -65,8 +65,8 @@ test('keeps the login modal compact on desktop viewports', async ({ page }) => {
   const box = await dialog.boundingBox();
   expect(box).not.toBeNull();
   expect(box?.width).toBeLessThanOrEqual(608);
-  await expect(dialog).toHaveCSS('overflow-y', 'visible');
-  await expect(dialog.locator('..')).toHaveCSS('overflow-y', 'hidden');
+  await expect(dialog).toHaveCSS('overflow-y', 'auto');
+  await expect(dialog.locator('..')).toHaveCSS('overflow-y', 'auto');
 });
 
 test('uses a compact app scale only on desktop viewports', async ({ page }) => {
@@ -74,6 +74,9 @@ test('uses a compact app scale only on desktop viewports', async ({ page }) => {
   await page.goto('/');
 
   const appShell = page.locator('.app-shell');
+  await expect(page.getByText('Login as')).toBeVisible({
+    timeout: loginEntryTimeout,
+  });
   await expect(appShell).toHaveCSS('zoom', '0.88');
 
   await page.setViewportSize({ width: 800, height: 800 });
@@ -98,4 +101,16 @@ test('normalizes an unknown route to the dashboard entry flow', async ({ page })
   });
   await expect(page.getByRole('tab', { name: 'FTE' })).toBeVisible();
   expect(new URL(page.url()).pathname).toBe('/dashboard');
+});
+
+test('renders the authenticated builder preview shell when requested', async ({
+  page,
+}) => {
+  await page.goto('/dashboard?builderPreview=1');
+
+  await expect(
+    page.getByRole('main', { name: 'Primary content' }),
+  ).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('header')).toBeVisible();
+  await expect(page.getByText('Login as')).not.toBeVisible();
 });

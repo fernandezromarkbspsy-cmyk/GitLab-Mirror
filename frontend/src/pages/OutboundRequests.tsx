@@ -1,6 +1,5 @@
 import {
   BadgeCheck,
-  ChevronDown,
   CircleCheck,
   Clock3,
   Hash,
@@ -11,11 +10,28 @@ import {
   SlidersHorizontal,
   Table2,
   Truck,
-  X,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { textButtonClass } from "../lib/uiClasses";
-import { compactFormDialogClass, compactRequestRowClass, dialogActionsClass, dialogFormClass, dialogHeadClass, dialogLabelClass, dialogTextareaClass, formErrorClass, inlineCreateShellClass, recordsScrollClass, recordsTableClass, requestApproveClass, requestCheckboxClass, requestDrawerAvatarClass, requestDrawerBackdropClass, requestDrawerClass, requestDrawerFieldsClass, requestDrawerHeaderClass, requestDrawerProfileClass, requestDrawerCloseClass, requestExpandedRowClass, requestPageClass, requestRejectClass, requestRowClass, requestSelectedRowClass, requestTableBodyClass, requestTableHeadClass, requestToolbarIconClass, requestViewToggleClass, requestWorkspaceClass, tableShellClass, secondaryButtonClass } from "../lib/uiClasses";
+import {
+  compactRequestRowClass,
+  inlineCreateShellClass,
+  recordsScrollClass,
+  recordsTableClass,
+  requestApproveClass,
+  requestCheckboxClass,
+  requestExpandedRowClass,
+  requestPageClass,
+  requestRejectClass,
+  requestRowClass,
+  requestSelectedRowClass,
+  requestTableBodyClass,
+  requestTableHeadClass,
+  requestToolbarIconClass,
+  requestViewToggleClass,
+  requestWorkspaceClass,
+  tableShellClass,
+} from "../lib/uiClasses";
 import {
   ApprovalStateBadge,
   approvalStateFor,
@@ -26,40 +42,38 @@ import {
 } from "../components/ColumnVisibilityMenu";
 import { LhRowActionMenu } from "../components/LhRowActionMenu";
 import { LhTableToolbar } from "../components/LhTableToolbar";
-import { Modal } from "../components/Modal";
 import {
-  InlineCreateRow,
-  InlineEditRow,
-} from "../components/OutboundRequestForms";
+  OutboundRejectDialog,
+  OutboundRequestDrawer,
+} from "../components/request/OutboundRequestOverlays";
 import { Pagination } from "../components/Pagination";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge, StatusText } from "../components/StatusBadge";
 import { RequestElapsedTime } from "../components/RequestTable";
+import { RequestExpandButton } from "../components/request/RequestExpandButton";
+import {
+  displayRequestValue as displayValue,
+  formatRequestDateTime as formatDateTime,
+  formatRequestDetailDateTime as formatDetailDateTime,
+} from "../components/request/requestPresentation";
 import { useLinehaulTablePreferences } from "../hooks/useLinehaulTablePreferences";
 import { useOutboundRequests } from "../hooks/useOutboundRequests";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
 import { openRequestsSheet } from "../lib/requests";
 import type { TruckRequest, User } from "../types";
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}
-function displayValue(value?: string | null) {
-  return value?.trim() ? value : "-";
-}
-function formatDetailDateTime(value?: string | null) {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      });
-}
+const InlineCreateRow = lazy(() =>
+  import("../components/OutboundRequestForms").then(({ InlineCreateRow }) => ({
+    default: InlineCreateRow,
+  })),
+);
+const InlineEditRow = lazy(() =>
+  import("../components/OutboundRequestForms").then(({ InlineEditRow }) => ({
+    default: InlineEditRow,
+  })),
+);
+
 function formatCluster(value: string) {
   return value
     .split(",")
@@ -235,31 +249,35 @@ export function OutboundRequests({
       <section className={requestWorkspaceClass} aria-label="Linehaul requests">
         {editing && (
           <div className={inlineCreateShellClass}>
-            <InlineEditRow
-              request={editing}
-              busy={updateRequest.isPending}
-              error={updateRequest.error?.message}
-              onCancel={() => {
-                updateRequest.reset();
-                setEditing(null);
-              }}
-              onSubmit={(payload) =>
-                updateRequest.mutate({ id: editing.id, payload })
-              }
-            />
+            <Suspense fallback={null}>
+              <InlineEditRow
+                request={editing}
+                busy={updateRequest.isPending}
+                error={updateRequest.error?.message}
+                onCancel={() => {
+                  updateRequest.reset();
+                  setEditing(null);
+                }}
+                onSubmit={(payload) =>
+                  updateRequest.mutate({ id: editing.id, payload })
+                }
+              />
+            </Suspense>
           </div>
         )}
         {creating && (
           <div className={inlineCreateShellClass}>
-            <InlineCreateRow
-              busy={createRequest.isPending}
-              error={createRequest.error?.message}
-              onCancel={() => {
-                createRequest.reset();
-                setCreating(false);
-              }}
-              onSubmit={(payload) => createRequest.mutate(payload)}
-            />
+            <Suspense fallback={null}>
+              <InlineCreateRow
+                busy={createRequest.isPending}
+                error={createRequest.error?.message}
+                onCancel={() => {
+                  createRequest.reset();
+                  setCreating(false);
+                }}
+                onSubmit={(payload) => createRequest.mutate(payload)}
+              />
+            </Suspense>
           </div>
         )}
         {printRequest && (
@@ -464,29 +482,18 @@ export function OutboundRequests({
                         _queue.alerts.some((alert) => alert.id === row.id);
                       return (
                         <div className="contents" key={row.id}>
-                          {/* biome-ignore lint/a11y/useSemanticElements: The row contains nested action buttons, so it cannot be converted to a native button. */}
                           <div
                             className={`${requestRowClass} ${density === "compact" ? compactRequestRowClass : ""} ${isExpanded ? requestExpandedRowClass : ""} ${selectedIds.has(row.id) ? requestSelectedRowClass : ""} ${isAlerting ? "bg-[#f6f9e9]! ring-1 ring-inset ring-[#a2c500] motion-safe:animate-pulse" : ""}`}
                             style={
                               { "--row-index": index } as React.CSSProperties
                             }
-                            role="button"
-                            tabIndex={0}
-                            aria-expanded={isExpanded}
-                            aria-label={`View details for request ${row.id}`}
-                            onClick={() => toggleExpanded(row)}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                toggleExpanded(row);
-                              }
-                            }}
                           >
                             {hasColumn("status") && (
                               <span className="flex min-w-max items-center gap-2 overflow-visible whitespace-nowrap">
-                                <ChevronDown
-                                  aria-hidden="true"
-                                  className={`size-3.5 shrink-0 text-[#718071] transition-transform ${isExpanded ? "rotate-180 text-[#536500]" : ""}`}
+                                <RequestExpandButton
+                                  requestId={row.id}
+                                  expanded={isExpanded}
+                                  onToggle={() => toggleExpanded(row)}
                                 />
                                 {canApprove &&
                                   (row.status === "PENDING" ||
@@ -769,149 +776,24 @@ export function OutboundRequests({
         </section>
       </section>
       {selectedRequest && (
-        <>
-          <button
-            type="button"
-            className={requestDrawerBackdropClass}
-            aria-label="Dismiss request details"
-            onClick={() => setSelectedRequest(null)}
-          />
-          <section
-            className={requestDrawerClass}
-            aria-label={`Details for request ${selectedRequest.id}`}
-          >
-            <div className={requestDrawerHeaderClass}>
-              <div>
-                <span className="lh-drawer-eyebrow">Request details</span>
-                <h2>{selectedRequest.id}</h2>
-              </div>
-              <button
-                className={requestDrawerCloseClass}
-                type="button"
-                aria-label="Close request details"
-                onClick={() => setSelectedRequest(null)}
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            </div>
-            <div className={requestDrawerProfileClass}>
-              <div className={requestDrawerAvatarClass} aria-hidden="true">
-                {selectedRequest.cluster.slice(0, 1).toUpperCase()}
-              </div>
-              <div>
-                <strong>{selectedRequest.cluster}</strong>
-                <span>
-                  {selectedRequest.region} · Dock {selectedRequest.dock_no}
-                </span>
-              </div>
-              <div className="flex flex-wrap justify-end gap-2">
-                <StatusBadge status={selectedRequest.status} uppercase />
-                <ApprovalStateBadge
-                  status={selectedRequest.status}
-                  approvalStatus={selectedRequest.approval_status}
-                />
-              </div>
-            </div>
-            <dl className={requestDrawerFieldsClass}>
-              <div>
-                <dt>Request time</dt>
-                <dd>
-                  {formatDetailDateTime(selectedRequest.request_timestamp)}
-                </dd>
-              </div>
-              <div>
-                <dt>Backlogs</dt>
-                <dd>{selectedRequest.backlogs.toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt>LH size</dt>
-                <dd>{selectedRequest.truck_size}</dd>
-              </div>
-              <div>
-                <dt>Truck type</dt>
-                <dd>{selectedRequest.truck_type}</dd>
-              </div>
-              <div>
-                <dt>SOC PIC</dt>
-                <dd>
-                  {displayValue(
-                    selectedRequest.ob_fte_name ?? selectedRequest.ob_fte,
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>LH trip #</dt>
-                <dd>{displayValue(selectedRequest.linehaul_trip_no)}</dd>
-              </div>
-              <div>
-                <dt>Plate #</dt>
-                <dd>{displayValue(selectedRequest.plate_number)}</dd>
-              </div>
-            </dl>
-          </section>
-        </>
+        <OutboundRequestDrawer
+          request={selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+        />
       )}
       {rejecting && (
-        <Modal
-          open
+        <OutboundRejectDialog
+          request={rejecting}
+          busy={rejectRequest.isPending}
+          error={rejectRequest.error?.message}
           onClose={() => setRejecting(null)}
-          className={compactFormDialogClass}
-          role="dialog"
-          ariaLabelledBy="outbound-reject-title"
-        >
-          <div className={dialogHeadClass}>
-            <div>
-              <p className="mb-[0.35rem] text-soc5-lime-deep text-xs font-bold tracking-wider uppercase">
-                FTE Ops action
-              </p>
-              <h2 id="outbound-reject-title">Reject request</h2>
-              <p>{rejecting.id}</p>
-            </div>
-          </div>
-          <form
-            className={dialogFormClass}
-            onSubmit={(event) => {
-              event.preventDefault();
-              const data = new FormData(event.currentTarget);
-              rejectRequest.mutate(
-                {
-                  id: rejecting.id,
-                  rejection_remarks: String(
-                    data.get("rejection_remarks") ?? "",
-                  ),
-                },
-                { onSuccess: () => setRejecting(null) },
-              );
-            }}
-          >
-            <label className={dialogLabelClass}>
-              Rejection remarks
-              <textarea className={dialogTextareaClass} name="rejection_remarks" required rows={4} />
-            </label>
-            {rejectRequest.error && (
-              <p className={formErrorClass}>
-                {rejectRequest.error.message}
-              </p>
-            )}
-            <div className={dialogActionsClass}>
-              <button
-                className={secondaryButtonClass}
-                type="button"
-                onClick={() => setRejecting(null)}
-                disabled={rejectRequest.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                className={requestRejectClass}
-                type="submit"
-                disabled={rejectRequest.isPending}
-              >
-                {rejectRequest.isPending ? "Rejecting…" : "Reject request"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          onSubmit={(remarks) =>
+            rejectRequest.mutate(
+              { id: rejecting.id, rejection_remarks: remarks },
+              { onSuccess: () => setRejecting(null) },
+            )
+          }
+        />
       )}
       {toast && (
         <div

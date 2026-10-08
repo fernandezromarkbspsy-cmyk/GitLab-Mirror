@@ -92,11 +92,23 @@ function describeFailure(cause: unknown): Failure {
 
 export default function App() {
   const navigate = useNavigate();
-  const [state, setState] = useState<AppState>("loading");
+  // Local Vite development should render the production-style application
+  // shell directly so UI work is not obscured by the unauthenticated preview.
+  // Production builds keep the normal authentication flow.
+  const isBuilderPreview =
+    import.meta.env.DEV &&
+    (import.meta.env.VITE_E2E_AUTH_ENTRY !== "1" ||
+      new URLSearchParams(window.location.search).get("builderPreview") ===
+        "1");
+  const [state, setState] = useState<AppState>(
+    isBuilderPreview ? "ready" : "loading",
+  );
   const [startupAnimationComplete, setStartupAnimationComplete] =
-    useState(false);
+    useState(isBuilderPreview);
   const [failure, setFailure] = useState<Failure>(defaultFailure);
-  const [profile, setProfile] = useState<User | null>(null);
+  const [profile, setProfile] = useState<User | null>(
+    isBuilderPreview ? previewUser : null,
+  );
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
   const seatalkSession = useRef(false);
@@ -195,6 +207,8 @@ export default function App() {
   }, [resolveSession]);
 
   useEffect(() => {
+    if (isBuilderPreview) return;
+
     let cancelled = false;
     seatalkSession.current = rememberSeatalkSession(
       window.location.search,
@@ -227,7 +241,7 @@ export default function App() {
       cancelled = true;
       data.subscription.unsubscribe();
     };
-  }, [resolveSession]);
+  }, [isBuilderPreview, resolveSession]);
 
   if (!startupAnimationComplete) return <StartupLoading />;
   if (state === "loading") return <StartupLoading />;
@@ -251,7 +265,7 @@ export default function App() {
     return <ChangePassword onComplete={() => setState("ready")} />;
   return profile ? (
     <Suspense fallback={<StartupLoading />}>
-      <Dashboard user={profile} />
+      <Dashboard user={profile} builderPreview={isBuilderPreview} />
     </Suspense>
   ) : (
     <StartupLoading />

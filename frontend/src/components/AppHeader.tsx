@@ -11,19 +11,21 @@ import {
   UserCircle,
   X,
 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 import { api } from "../lib/api";
-import { toastBodyClass, toastClass, toastContentClass, toastTitleClass } from "../lib/uiClasses";
+import {
+  toastBodyClass,
+  toastClass,
+  toastContentClass,
+  toastTitleClass,
+} from "../lib/uiClasses";
 import {
   createRealtimeRecoveryTracker,
   type RealtimeSubscriptionStatus,
 } from "../hooks/useRequestRealtime";
 import { supabase } from "../lib/supabase";
 import { useUiStore } from "../stores/ui";
-import Notification4, {
-  type NotificationEvent,
-  type NotificationGroup,
-} from "./ui/notification-4";
+import type { NotificationEvent, NotificationGroup } from "./ui/notification-4";
 import type {
   Notification as AppNotification,
   AppView,
@@ -45,6 +47,7 @@ const roles: Array<{ value: Role; label: string }> = [
   { value: "ops_pic", label: "Ops PIC" },
   { value: "doc_officer", label: "Document Officer" },
 ];
+const Notification4 = lazy(() => import("./ui/notification-4"));
 const page = {
   overview: { name: "Dashboard", section: "Overview" },
   "lh-request": { name: "LH Request", section: "Outbound" },
@@ -120,7 +123,11 @@ function notificationGroups(alerts: AppNotification[]): NotificationGroup[] {
 
   return ["Today", "Yesterday", "Earlier"]
     .filter((label) => groups.has(label))
-    .map((label) => ({ id: label.toLowerCase(), label, items: groups.get(label)! }));
+    .map((label) => ({
+      id: label.toLowerCase(),
+      label,
+      items: groups.get(label)!,
+    }));
 }
 
 export function AppHeader({
@@ -156,7 +163,7 @@ export function AppHeader({
     queryFn: () =>
       api<{ data: AppNotification[]; unread: number }>("/notifications"),
     refetchInterval: false,
-    enabled: !preview,
+    enabled: !preview && !builderPreview,
   });
   const read = useMutation({
     mutationFn: (id: number) =>
@@ -171,7 +178,7 @@ export function AppHeader({
   const alerts = notifications.data?.data ?? [];
   const groupedNotifications = notificationGroups(alerts);
   useEffect(() => {
-    if (preview) return;
+    if (preview || builderPreview) return;
     const recoverAfterReconnect = createRealtimeRecoveryTracker(() =>
       client.invalidateQueries({ queryKey: ["notifications"] }),
     );
@@ -195,7 +202,7 @@ export function AppHeader({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [client, preview, user.id]);
+  }, [builderPreview, client, preview, user.id]);
 
   useEffect(() => {
     const latest = alerts.find((item) => !item.read_at);
@@ -294,7 +301,13 @@ export function AppHeader({
       : `Search ${page[view].section.toLowerCase()} requests, then press Enter`;
 
   return (
-    <header className={`${preview && !builderPreview ? "hidden" : "fixed top-0 right-0 left-38 z-99999 flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255/94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-36 max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"}`}>
+    <header
+      className={
+        preview && !builderPreview
+          ? "hidden"
+          : "fixed top-0 right-0 left-38 z-99999 flex min-h-[3.8rem] items-center justify-between gap-[.9rem] border-b border-soc5-line bg-[rgb(255_255_255/94%)] px-[.95rem] backdrop-blur-[.7rem] max-[1100px]:left-36 max-[960px]:left-0 max-[960px]:min-h-[3.4rem] max-[960px]:px-[.6rem] max-[600px]:min-h-[3.1rem]"
+      }
+    >
       {toast && (
         <div className={toastClass} role="status">
           <Bell size={17} />
@@ -306,10 +319,19 @@ export function AppHeader({
       )}
       <div className="min-w-0 flex-1 overflow-hidden">
         <div className="grid min-w-0 gap-[.1rem]">
-          <h1 className="m-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-semibold leading-tight tracking-tight text-[#242427] max-[600px]:text-xl">{page[view].name}</h1>
-          <nav className="flex min-h-[.7rem] items-center gap-[.3rem] text-xs leading-none text-[#a1a2a6] max-[960px]:hidden" aria-label="Breadcrumb">
+          <h1 className="m-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-semibold leading-tight tracking-tight text-[#242427] max-[600px]:text-xl">
+            {page[view].name}
+          </h1>
+          <nav
+            className="flex min-h-[.7rem] items-center gap-[.3rem] text-xs leading-none text-[#a1a2a6] max-[960px]:hidden"
+            aria-label="Breadcrumb"
+          >
             <span className="font-semibold text-soc5-muted">Operations</span>
-            <ChevronRight className="text-[#c4c5c7]" size={12} aria-hidden="true" />
+            <ChevronRight
+              className="text-[#c4c5c7]"
+              size={12}
+              aria-hidden="true"
+            />
             <span className="font-bold text-soc5-lime-deep" aria-current="page">
               {page[view].section}
             </span>
@@ -334,7 +356,9 @@ export function AppHeader({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <kbd className="shrink-0 rounded-[.2rem] border border-[#ddd] bg-white px-[.2rem] py-[.1rem] text-xs text-[#999] max-[960px]:hidden">Ctrl F</kbd>
+          <kbd className="shrink-0 rounded-[.2rem] border border-[#ddd] bg-white px-[.2rem] py-[.1rem] text-xs text-[#999] max-[960px]:hidden">
+            Ctrl F
+          </kbd>
         </form>
         <div ref={filterMenuRef} className={topbarMenuWrapClass}>
           <button
@@ -351,7 +375,9 @@ export function AppHeader({
               className={topbarPopoverClass}
               aria-label="Dashboard filters"
             >
-              <strong className="mb-[.3rem] block text-xs">Quick filters</strong>
+              <strong className="mb-[.3rem] block text-xs">
+                Quick filters
+              </strong>
               <button
                 className={filterOptionClass}
                 type="button"
@@ -412,23 +438,27 @@ export function AppHeader({
             )}
           </button>
           {open && (
-            <Notification4
-              countLabel={String(count)}
-              groups={groupedNotifications}
-              id={notificationMenuId}
-              onMarkAllRead={() => readAll.mutate()}
-              onDismiss={() => {
-                setOpen(false);
-                notificationButtonRef.current?.focus();
-              }}
-              onSelect={(event) => {
-                const item = alerts.find((alert) => String(alert.id) === event.id);
-                if (item && !item.read_at) read.mutate(item.id);
-                setOpen(false);
-                notificationButtonRef.current?.focus();
-              }}
-              title="Notifications"
-            />
+            <Suspense fallback={null}>
+              <Notification4
+                countLabel={String(count)}
+                groups={groupedNotifications}
+                id={notificationMenuId}
+                onMarkAllRead={() => readAll.mutate()}
+                onDismiss={() => {
+                  setOpen(false);
+                  notificationButtonRef.current?.focus();
+                }}
+                onSelect={(event) => {
+                  const item = alerts.find(
+                    (alert) => String(alert.id) === event.id,
+                  );
+                  if (item && !item.read_at) read.mutate(item.id);
+                  setOpen(false);
+                  notificationButtonRef.current?.focus();
+                }}
+                title="Notifications"
+              />
+            </Suspense>
           )}
         </div>
         <div ref={mailMenuRef} className={topbarMenuWrapClass}>
@@ -447,10 +477,7 @@ export function AppHeader({
             {count > 0 && <i className={mailDotClass} />}
           </button>
           {mailOpen && (
-            <section
-              className={mailPopoverClass}
-              aria-label="Messages"
-            >
+            <section className={mailPopoverClass} aria-label="Messages">
               <div className="flex items-center justify-between border-b border-[#f0f0f0] px-[.6rem] py-[.6rem]">
                 <strong className="text-xs">Messages</strong>
                 <span className="text-xs text-[#6b7a00]">{count} new</span>
@@ -474,7 +501,9 @@ export function AppHeader({
                   ))}
                 </div>
               ) : (
-                <p className="p-4 text-center text-xs text-[#696c70]">No new messages.</p>
+                <p className="p-4 text-center text-xs text-[#696c70]">
+                  No new messages.
+                </p>
               )}
               {count > 0 && (
                 <button
@@ -510,7 +539,10 @@ export function AppHeader({
                     : user.role.replaceAll("_", " ")}
                 </small>
               </div>
-              <ChevronDown size={14} className="ml-[.15rem] max-[600px]:hidden" />
+              <ChevronDown
+                size={14}
+                className="ml-[.15rem] max-[600px]:hidden"
+              />
             </button>
             {profileOpen && (
               <section
@@ -523,7 +555,9 @@ export function AppHeader({
                   <ShieldCheck size={18} />
                   <div className="grid gap-[.1rem]">
                     <strong className="text-xs">Test role view</strong>
-                    <small className="text-xs text-[#999]">Admin access remains enabled</small>
+                    <small className="text-xs text-[#999]">
+                      Admin access remains enabled
+                    </small>
                   </div>
                 </header>
                 {user.is_admin ? (
@@ -543,7 +577,9 @@ export function AppHeader({
                     </button>
                   ))
                 ) : (
-                  <p className="p-2 text-xs text-[#777]">Signed in as {user.role.replaceAll("_", " ")}</p>
+                  <p className="p-2 text-xs text-[#777]">
+                    Signed in as {user.role.replaceAll("_", " ")}
+                  </p>
                 )}
               </section>
             )}

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
-  ChevronDown,
   CircleCheck,
   Clock3,
   Hash,
@@ -16,7 +15,35 @@ import {
 import type { FormEvent } from "react";
 import { Fragment, useState } from "react";
 import { iconButtonClass, textButtonClass } from "../lib/uiClasses";
-import { compactFormDialogClass, compactRequestRowClass, dialogActionsClass, dialogFormClass, dialogHeadClass, dialogInputClass, dialogLabelClass, dialogTextareaClass, formErrorClass, recordsScrollClass, recordsTableClass, requestAssignClass, requestCheckboxClass, requestExpandedRowClass, requestPageClass, requestRejectClass, requestRowClass, requestSelectedRowClass, requestTableBodyClass, requestTableHeadClass, requestToolbarIconClass, requestViewToggleClass, requestWorkspaceClass, selectedRequestActionsClass, selectedRequestLabelClass, tableShellClass, secondaryButtonClass } from "../lib/uiClasses";
+import {
+  compactFormDialogClass,
+  compactRequestRowClass,
+  dialogActionsClass,
+  dialogFormClass,
+  dialogHeadClass,
+  dialogInputClass,
+  dialogLabelClass,
+  dialogTextareaClass,
+  formErrorClass,
+  recordsScrollClass,
+  recordsTableClass,
+  requestAssignClass,
+  requestCheckboxClass,
+  requestExpandedRowClass,
+  requestPageClass,
+  requestRejectClass,
+  requestRowClass,
+  requestSelectedRowClass,
+  requestTableBodyClass,
+  requestTableHeadClass,
+  requestToolbarIconClass,
+  requestViewToggleClass,
+  requestWorkspaceClass,
+  selectedRequestActionsClass,
+  selectedRequestLabelClass,
+  tableShellClass,
+  secondaryButtonClass,
+} from "../lib/uiClasses";
 import {
   linehaulColumnOptions,
   linehaulPrimaryColumnKeys,
@@ -29,6 +56,12 @@ import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
 import { StatusBadge, StatusText } from "../components/StatusBadge";
 import { RequestElapsedTime } from "../components/RequestTable";
+import { RequestExpandButton } from "../components/request/RequestExpandButton";
+import {
+  displayRequestValue as displayValue,
+  formatRequestDateTime as formatDateTime,
+  formatRequestDetailDateTime as formatDetailDateTime,
+} from "../components/request/requestPresentation";
 import { useRequestFilters } from "../hooks/useRequestFilters";
 import { useLinehaulTablePreferences } from "../hooks/useLinehaulTablePreferences";
 import { api } from "../lib/api";
@@ -43,21 +76,6 @@ import type { Page, RequestSort, TruckRequest, User } from "../types";
 
 type MmAction = "assign-truck" | "reject-mm";
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}
-function displayValue(value?: string | null) {
-  return value?.trim() ? value : "-";
-}
-function formatDetailDateTime(value?: string | null) {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
 function formatCluster(value: string) {
   return value
     .split(",")
@@ -218,9 +236,15 @@ export function MidmileRequests({ user }: { user: User }) {
           ? "Truck confirmed."
           : "Request returned to Outbound.",
       );
-      await queryClient.invalidateQueries({ queryKey: requestQueryKey("midmile-all") });
-      await queryClient.invalidateQueries({ queryKey: requestQueryKey("outbound-all") });
-      await queryClient.invalidateQueries({ queryKey: requestQueryKey("notification-queue") });
+      await queryClient.invalidateQueries({
+        queryKey: requestQueryKey("midmile-all"),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: requestQueryKey("outbound-all"),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: requestQueryKey("notification-queue"),
+      });
       await queryClient.invalidateQueries({ queryKey: ["request-metrics"] });
     },
   });
@@ -241,9 +265,7 @@ export function MidmileRequests({ user }: { user: User }) {
     window.setTimeout(() => setExporting(false), 700);
   }
   return (
-    <div
-      className={`${requestPageClass}${selected ? " lh-drawer-open" : ""}`}
-    >
+    <div className={`${requestPageClass}${selected ? " lh-drawer-open" : ""}`}>
       <section
         className={requestWorkspaceClass}
         aria-label="Midmile linehaul requests"
@@ -286,8 +308,12 @@ export function MidmileRequests({ user }: { user: User }) {
               <button
                 className={`${requestToolbarIconClass}${requests.isFetching ? " animate-spin" : ""}`}
                 type="button"
-                aria-label={requests.isFetching ? "Refreshing records" : "Refresh records"}
-                title={requests.isFetching ? "Refreshing records" : "Refresh records"}
+                aria-label={
+                  requests.isFetching ? "Refreshing records" : "Refresh records"
+                }
+                title={
+                  requests.isFetching ? "Refreshing records" : "Refresh records"
+                }
                 aria-busy={requests.isFetching}
                 disabled={requests.isFetching}
                 onClick={() => void requests.refetch()}
@@ -297,8 +323,13 @@ export function MidmileRequests({ user }: { user: User }) {
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               {selectedRequest && (
-                <fieldset className={`${selectedRequestActionsClass} m-0 border-0 p-0`} aria-label="Selected request actions">
-                  <span className={selectedRequestLabelClass}>Selected request</span>
+                <fieldset
+                  className={`${selectedRequestActionsClass} m-0 border-0 p-0`}
+                  aria-label="Selected request actions"
+                >
+                  <span className={selectedRequestLabelClass}>
+                    Selected request
+                  </span>
                   <button
                     className={requestAssignClass}
                     type="button"
@@ -325,7 +356,10 @@ export function MidmileRequests({ user }: { user: User }) {
                   </button>
                 </fieldset>
               )}
-              <fieldset className={`${requestViewToggleClass} m-0 border-0 p-0`} aria-label="Request view">
+              <fieldset
+                className={`${requestViewToggleClass} m-0 border-0 p-0`}
+                aria-label="Request view"
+              >
                 <button
                   className={requestToolbarIconClass}
                   type="button"
@@ -350,197 +384,210 @@ export function MidmileRequests({ user }: { user: User }) {
             </div>
           </div>
           {view === "table" ? (
-              <div className={recordsScrollClass}>
-                <div
-                  className={recordsTableClass}
-                  style={{
-                    gridTemplateColumns: `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
-                  }}
-                >
-              <div className={requestTableHeadClass}>
-                {hasColumn("status") && (
-                  <span className="flex items-center gap-2">
-                    <CircleCheck size={14} />
-                    Status
-                  </span>
-                )}
-                {hasColumn("runningTime") && (
-                  <span className="flex items-center gap-2">
-                    <Clock3 size={14} />
-                    Running time
-                  </span>
-                )}
-                {hasColumn("requestTime") && (
-                  <button
-                    type="button"
-                    onClick={() => sortBy("request_timestamp")}
-                  >
-                    <Clock3 size={14} />
-                    <span>Request Time</span>
-                  </button>
-                )}
-                {hasColumn("cluster") && (
-                  <button type="button" onClick={() => sortBy("cluster")}>
-                    <Hash size={14} />
-                    <span>Cluster</span>
-                  </button>
-                )}
-                {hasColumn("region") && (
-                  <span>
-                    <BadgeCheck size={14} />
-                    Region
-                  </span>
-                )}
-                {hasColumn("dock") && (
-                  <button type="button" onClick={() => sortBy("dock_no")}>
-                    <Truck size={14} />
-                    <span>Dock #</span>
-                  </button>
-                )}
-                {hasColumn("backlogs") && (
-                  <button type="button" onClick={() => sortBy("backlogs")}>
-                    <ListChecks size={14} />
-                    <span>Backlogs</span>
-                  </button>
-                )}
-                {hasColumn("backlogsTime") && <span>Backlogs Time Stamp</span>}
-                {hasColumn("lhTypeRequest") && <span>LH Type (Request)</span>}
-                {hasColumn("opsFte") && <span>Ops FTE</span>}
-                {hasColumn("plateNumber") && (
-                  <button type="button" onClick={() => sortBy("plate_number")}>
-                    <Hash size={14} />
-                    <span>Plate number</span>
-                  </button>
-                )}
-                {hasColumn("mmFte") && <span>MM FTE</span>}
-                {hasColumn("truckSize") && (
-                  <span>
-                    <Truck size={14} />
-                    LH Size
-                  </span>
-                )}
-                {hasColumn("lhTypeInput") && (
-                  <span>LH type (input by FTE MM)</span>
-                )}
-                {hasColumn("provideTime") && <span>Provide Time</span>}
-                {hasColumn("linehaulTrip") && <span>Linehaul Trip</span>}
-                {hasColumn("assignedTime") && <span>Assigned time</span>}
-                {hasColumn("dockedTime") && <span>Docked Time</span>}
-                {hasColumn("docOfficer") && <span>DOC Officer</span>}
-                {hasColumn("opsPic") && <span>OPS/PIC</span>}
-                <span />
-              </div>
-              <div className={requestTableBodyClass}>
-                {requests.isPending && (
-                  <SkeletonRequestTable rows={6} columns={visibleColumns.length + 1} />
-                )}
-                {requests.error && (
-                  <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
-                    {requests.error.message}
-                  </div>
-                )}
-                {!requests.isPending &&
-                  !requests.error &&
-                  (requests.data?.data ?? []).map((row, index) => (
-                    <Fragment key={row.id}>
-                    {/* biome-ignore lint/a11y/useSemanticElements: The row contains nested action buttons, so it cannot be converted to a native button. */}
-                    <div
-                      className={`${requestRowClass} ${density === "compact" ? compactRequestRowClass : ""} ${expandedRow === row.id ? requestExpandedRowClass : ""} ${selectedIds.has(row.id) ? requestSelectedRowClass : ""}`}
-                      key={row.id}
-                      style={{ "--row-index": index } as React.CSSProperties}
-                      role="button"
-                      tabIndex={0}
-                      aria-expanded={expandedRow === row.id}
-                      aria-label={`${expandedRow === row.id ? "Collapse" : "Expand"} details for request ${row.id}`}
-                      onClick={() =>
-                        setExpandedRow((current) =>
-                          current === row.id ? null : row.id,
-                        )
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          setExpandedRow((current) =>
-                            current === row.id ? null : row.id,
-                          );
-                        }
-                      }}
+            <div className={recordsScrollClass}>
+              <div
+                className={recordsTableClass}
+                style={{
+                  gridTemplateColumns: `repeat(${visibleColumns.length + 1}, minmax(112px, max-content))`,
+                }}
+              >
+                <div className={requestTableHeadClass}>
+                  {hasColumn("status") && (
+                    <span className="flex items-center gap-2">
+                      <CircleCheck size={14} />
+                      Status
+                    </span>
+                  )}
+                  {hasColumn("runningTime") && (
+                    <span className="flex items-center gap-2">
+                      <Clock3 size={14} />
+                      Running time
+                    </span>
+                  )}
+                  {hasColumn("requestTime") && (
+                    <button
+                      type="button"
+                      onClick={() => sortBy("request_timestamp")}
                     >
-                      {hasColumn("status") && (
-                        <span className="flex items-center gap-2">
-                        {row.status === "REQUESTED" && (
-                          <input
-                            type="checkbox"
-                            className={requestCheckboxClass}
-                            aria-label={`Select request ${row.id}`}
-                            checked={selectedIds.has(row.id)}
-                            onChange={() => toggleSelected(row.id)}
-                            onClick={(event) => event.stopPropagation()}
-                          />
-                        )}
-                        <ChevronDown
-                          aria-hidden="true"
-                          className={`size-3.5 shrink-0 text-[#718071] transition-transform ${expandedRow === row.id ? "rotate-180 text-[#536500]" : ""}`}
-                        />
-                        <StatusText status={row.status} />
-                        </span>
-                      )}
-                      {hasColumn("runningTime") && (
-                        <RequestElapsedTime request={row} />
-                      )}
-                      {hasColumn("requestTime") && (
-                        <span>{formatDateTime(row.request_timestamp)}</span>
-                      )}
-                      {hasColumn("cluster") && (
-                        <span title={row.cluster}>{row.cluster}</span>
-                      )}
-                      {hasColumn("region") && <span>{row.region}</span>}
-                      {hasColumn("dock") && <span>{row.dock_no}</span>}
-                      {hasColumn("backlogs") && (
-                        <span>{row.backlogs.toLocaleString()}</span>
-                      )}
-                      {hasColumn("backlogsTime") && (
-                        <span>{formatDateTime(row.backlogs_timestamp)}</span>
-                      )}
-                      {hasColumn("lhTypeRequest") && (
-                        <span>{displayValue(row.truck_type)}</span>
-                      )}
-                      {hasColumn("opsFte") && (
-                        <span>{displayValue(row.ob_fte_name ?? row.ob_fte)}</span>
-                      )}
-                      {hasColumn("plateNumber") && (
-                        <span>{displayValue(row.plate_number)}</span>
-                      )}
-                      {hasColumn("mmFte") && (
-                        <span>{displayValue(row.created_by_name ?? row.created_by)}</span>
-                      )}
-                      {hasColumn("truckSize") && <span>{row.truck_size}</span>}
-                      {hasColumn("lhTypeInput") && (
-                        <span>{displayValue(row.truck_type)}</span>
-                      )}
-                      {hasColumn("provideTime") && (
-                        <span>{formatDateTime(row.provide_time)}</span>
-                      )}
-                      {hasColumn("linehaulTrip") && (
-                        <span>{displayValue(row.linehaul_trip_no)}</span>
-                      )}
-                      {hasColumn("assignedTime") && <span>-</span>}
-                      {hasColumn("dockedTime") && (
-                        <span>{formatDateTime(row.docked_time)}</span>
-                      )}
-                      {hasColumn("docOfficer") && (
-                        <span>{displayValue(row.created_by_name ?? row.created_by)}</span>
-                      )}
-                      {hasColumn("opsPic") && (
-                        <span>{displayValue(row.ob_fte_name ?? row.ob_fte)}</span>
-                      )}
-                      <LhRowActionMenu
-                        open={openRow === row.id}
-                        ariaLabel={`Actions for request ${row.id}`}
-                        onToggle={() =>
-                          setOpenRow(openRow === row.id ? null : row.id)
-                        }
-                      >
+                      <Clock3 size={14} />
+                      <span>Request Time</span>
+                    </button>
+                  )}
+                  {hasColumn("cluster") && (
+                    <button type="button" onClick={() => sortBy("cluster")}>
+                      <Hash size={14} />
+                      <span>Cluster</span>
+                    </button>
+                  )}
+                  {hasColumn("region") && (
+                    <span>
+                      <BadgeCheck size={14} />
+                      Region
+                    </span>
+                  )}
+                  {hasColumn("dock") && (
+                    <button type="button" onClick={() => sortBy("dock_no")}>
+                      <Truck size={14} />
+                      <span>Dock #</span>
+                    </button>
+                  )}
+                  {hasColumn("backlogs") && (
+                    <button type="button" onClick={() => sortBy("backlogs")}>
+                      <ListChecks size={14} />
+                      <span>Backlogs</span>
+                    </button>
+                  )}
+                  {hasColumn("backlogsTime") && (
+                    <span>Backlogs Time Stamp</span>
+                  )}
+                  {hasColumn("lhTypeRequest") && <span>LH Type (Request)</span>}
+                  {hasColumn("opsFte") && <span>Ops FTE</span>}
+                  {hasColumn("plateNumber") && (
+                    <button
+                      type="button"
+                      onClick={() => sortBy("plate_number")}
+                    >
+                      <Hash size={14} />
+                      <span>Plate number</span>
+                    </button>
+                  )}
+                  {hasColumn("mmFte") && <span>MM FTE</span>}
+                  {hasColumn("truckSize") && (
+                    <span>
+                      <Truck size={14} />
+                      LH Size
+                    </span>
+                  )}
+                  {hasColumn("lhTypeInput") && (
+                    <span>LH type (input by FTE MM)</span>
+                  )}
+                  {hasColumn("provideTime") && <span>Provide Time</span>}
+                  {hasColumn("linehaulTrip") && <span>Linehaul Trip</span>}
+                  {hasColumn("assignedTime") && <span>Assigned time</span>}
+                  {hasColumn("dockedTime") && <span>Docked Time</span>}
+                  {hasColumn("docOfficer") && <span>DOC Officer</span>}
+                  {hasColumn("opsPic") && <span>OPS/PIC</span>}
+                  <span />
+                </div>
+                <div className={requestTableBodyClass}>
+                  {requests.isPending && (
+                    <SkeletonRequestTable
+                      rows={6}
+                      columns={visibleColumns.length + 1}
+                    />
+                  )}
+                  {requests.error && (
+                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
+                      {requests.error.message}
+                    </div>
+                  )}
+                  {!requests.isPending &&
+                    !requests.error &&
+                    (requests.data?.data ?? []).map((row, index) => (
+                      <Fragment key={row.id}>
+                        <div
+                          className={`${requestRowClass} ${density === "compact" ? compactRequestRowClass : ""} ${expandedRow === row.id ? requestExpandedRowClass : ""} ${selectedIds.has(row.id) ? requestSelectedRowClass : ""}`}
+                          key={row.id}
+                          style={
+                            { "--row-index": index } as React.CSSProperties
+                          }
+                        >
+                          {hasColumn("status") && (
+                            <span className="flex items-center gap-2">
+                              <RequestExpandButton
+                                requestId={row.id}
+                                expanded={expandedRow === row.id}
+                                onToggle={() =>
+                                  setExpandedRow((current) =>
+                                    current === row.id ? null : row.id,
+                                  )
+                                }
+                              />
+                              {row.status === "REQUESTED" && (
+                                <input
+                                  type="checkbox"
+                                  className={requestCheckboxClass}
+                                  aria-label={`Select request ${row.id}`}
+                                  checked={selectedIds.has(row.id)}
+                                  onChange={() => toggleSelected(row.id)}
+                                  onClick={(event) => event.stopPropagation()}
+                                />
+                              )}
+                              <StatusText status={row.status} />
+                            </span>
+                          )}
+                          {hasColumn("runningTime") && (
+                            <RequestElapsedTime request={row} />
+                          )}
+                          {hasColumn("requestTime") && (
+                            <span>{formatDateTime(row.request_timestamp)}</span>
+                          )}
+                          {hasColumn("cluster") && (
+                            <span title={row.cluster}>{row.cluster}</span>
+                          )}
+                          {hasColumn("region") && <span>{row.region}</span>}
+                          {hasColumn("dock") && <span>{row.dock_no}</span>}
+                          {hasColumn("backlogs") && (
+                            <span>{row.backlogs.toLocaleString()}</span>
+                          )}
+                          {hasColumn("backlogsTime") && (
+                            <span>
+                              {formatDateTime(row.backlogs_timestamp)}
+                            </span>
+                          )}
+                          {hasColumn("lhTypeRequest") && (
+                            <span>{displayValue(row.truck_type)}</span>
+                          )}
+                          {hasColumn("opsFte") && (
+                            <span>
+                              {displayValue(row.ob_fte_name ?? row.ob_fte)}
+                            </span>
+                          )}
+                          {hasColumn("plateNumber") && (
+                            <span>{displayValue(row.plate_number)}</span>
+                          )}
+                          {hasColumn("mmFte") && (
+                            <span>
+                              {displayValue(
+                                row.created_by_name ?? row.created_by,
+                              )}
+                            </span>
+                          )}
+                          {hasColumn("truckSize") && (
+                            <span>{row.truck_size}</span>
+                          )}
+                          {hasColumn("lhTypeInput") && (
+                            <span>{displayValue(row.truck_type)}</span>
+                          )}
+                          {hasColumn("provideTime") && (
+                            <span>{formatDateTime(row.provide_time)}</span>
+                          )}
+                          {hasColumn("linehaulTrip") && (
+                            <span>{displayValue(row.linehaul_trip_no)}</span>
+                          )}
+                          {hasColumn("assignedTime") && <span>-</span>}
+                          {hasColumn("dockedTime") && (
+                            <span>{formatDateTime(row.docked_time)}</span>
+                          )}
+                          {hasColumn("docOfficer") && (
+                            <span>
+                              {displayValue(
+                                row.created_by_name ?? row.created_by,
+                              )}
+                            </span>
+                          )}
+                          {hasColumn("opsPic") && (
+                            <span>
+                              {displayValue(row.ob_fte_name ?? row.ob_fte)}
+                            </span>
+                          )}
+                          <LhRowActionMenu
+                            open={openRow === row.id}
+                            ariaLabel={`Actions for request ${row.id}`}
+                            onToggle={() =>
+                              setOpenRow(openRow === row.id ? null : row.id)
+                            }
+                          >
                             <button
                               type="button"
                               onClick={(event) => {
@@ -584,56 +631,75 @@ export function MidmileRequests({ user }: { user: User }) {
                                 </button>
                               </>
                             )}
-                      </LhRowActionMenu>
-                    </div>
-                    {expandedRow === row.id && (
-                      <section
-                        className="col-span-full min-w-0 w-full max-w-full overflow-x-hidden border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
-                        aria-label={`Expanded details for request ${row.id}`}
-                      >
-                        <div className="grid w-full min-w-0 max-w-full gap-3 overflow-x-hidden">
-                          <dl>
-                            <div className="border-b border-[#e9eeea] pb-3">
-                              <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">Cluster</dt>
-                              <dd className="wrap-break-word text-base font-bold leading-6 tracking-normal text-[#26352d]">{formatCluster(row.cluster)}</dd>
-                            </div>
-                          </dl>
-                          <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(13rem,100%),1fr))] gap-3 overflow-x-hidden pt-3">
-                            {expandedRequestGroups(row, visibleColumns).map(({ fields }) => (
-                              <section className="min-w-0" key={fields[0]?.key}>
-                                <dl className="grid gap-2">
-                                  {fields.map(({ key, label, value }) => (
-                                    <div className="min-w-0 border-b border-[#e9eeea] pb-2" key={key}>
-                                      <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">{label}</dt>
-                                      <dd className="wrap-break-word text-xs font-medium leading-4 text-[#33423a]">{value}</dd>
-                                    </div>
-                                  ))}
-                                </dl>
-                              </section>
-                            ))}
-                          </div>
+                          </LhRowActionMenu>
                         </div>
-                      </section>
+                        {expandedRow === row.id && (
+                          <section
+                            className="col-span-full min-w-0 w-full max-w-full overflow-x-hidden border-b border-[#e5ebe6] border-l-2 border-l-[#a2c500] bg-[#fbfcf7] px-5 py-3 text-xs text-[#202b2e]"
+                            aria-label={`Expanded details for request ${row.id}`}
+                          >
+                            <div className="grid w-full min-w-0 max-w-full gap-3 overflow-x-hidden">
+                              <dl>
+                                <div className="border-b border-[#e9eeea] pb-3">
+                                  <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">
+                                    Cluster
+                                  </dt>
+                                  <dd className="wrap-break-word text-base font-bold leading-6 tracking-normal text-[#26352d]">
+                                    {formatCluster(row.cluster)}
+                                  </dd>
+                                </div>
+                              </dl>
+                              <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(13rem,100%),1fr))] gap-3 overflow-x-hidden pt-3">
+                                {expandedRequestGroups(row, visibleColumns).map(
+                                  ({ fields }) => (
+                                    <section
+                                      className="min-w-0"
+                                      key={fields[0]?.key}
+                                    >
+                                      <dl className="grid gap-2">
+                                        {fields.map(({ key, label, value }) => (
+                                          <div
+                                            className="min-w-0 border-b border-[#e9eeea] pb-2"
+                                            key={key}
+                                          >
+                                            <dt className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#718071]">
+                                              {label}
+                                            </dt>
+                                            <dd className="wrap-break-word text-xs font-medium leading-4 text-[#33423a]">
+                                              {value}
+                                            </dd>
+                                          </div>
+                                        ))}
+                                      </dl>
+                                    </section>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          </section>
+                        )}
+                      </Fragment>
+                    ))}
+                  {!requests.isPending &&
+                    !requests.error &&
+                    (requests.data?.data ?? []).length === 0 && (
+                      <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
+                        No live requests match the current filters.
+                      </div>
                     )}
-                    </Fragment>
-                  ))}
-                {!requests.isPending &&
-                  !requests.error &&
-                  (requests.data?.data ?? []).length === 0 && (
-                    <div className="col-span-full grid min-h-[220px] place-items-center content-center gap-[6px] p-8 text-center text-xs text-soc5-muted bg-soc5-panel">
-                      No live requests match the current filters.
-                    </div>
-                  )}
-              </div>
                 </div>
               </div>
+            </div>
           ) : (
             <div className="grid min-h-0 content-start grid-cols-[repeat(auto-fill,minmax(min(100%,250px),1fr))] gap-[10px] p-3 overflow-auto bg-[#f8f9f7]">
               {requests.isPending ? (
                 <SkeletonCardList rows={4} />
               ) : (
                 (requests.data?.data ?? []).map((row) => (
-                  <article className="flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39/4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39/7%)] hover:transform-none max-[680px]:flex-wrap" key={row.id}>
+                  <article
+                    className="flex min-w-0 min-h-[118px] justify-between gap-[14px] p-[14px] border border-soc5-line rounded-[8px] bg-soc5-panel shadow-[0_1px_2px_rgb(37_37_39/4%)] transition-[border-color,box-shadow] duration-150 ease-[ease] hover:border-[#c7cead] hover:shadow-[0_3px_10px_rgb(37_37_39/7%)] hover:transform-none max-[680px]:flex-wrap"
+                    key={row.id}
+                  >
                     <div>
                       <small className="text-soc5-muted text-xs">
                         {row.id}
@@ -746,7 +812,12 @@ function MidmileActionDialog({
           <>
             <label className={dialogLabelClass}>
               Plate number
-              <input className={dialogInputClass} name="plate_number" required maxLength={30} />
+              <input
+                className={dialogInputClass}
+                name="plate_number"
+                required
+                maxLength={30}
+              />
             </label>
             <label className={dialogLabelClass}>
               Truck size
@@ -776,14 +847,21 @@ function MidmileActionDialog({
         ) : (
           <label className={dialogLabelClass}>
             Rejection remarks
-            <textarea className={dialogTextareaClass} name="rejection_remarks" required rows={4} />
+            <textarea
+              className={dialogTextareaClass}
+              name="rejection_remarks"
+              required
+              rows={4}
+            />
           </label>
         )}
-        {error && (
-          <p className={formErrorClass}>{error}</p>
-        )}
+        {error && <p className={formErrorClass}>{error}</p>}
         <div className={dialogActionsClass}>
-          <button className={secondaryButtonClass} type="button" onClick={onClose}>
+          <button
+            className={secondaryButtonClass}
+            type="button"
+            onClick={onClose}
+          >
             Cancel
           </button>
           <button type="submit" disabled={busy}>

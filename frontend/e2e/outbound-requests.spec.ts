@@ -234,10 +234,10 @@ test('selects requests, approves them, and expands a row inline', async ({ page 
   });
   await openOutboundRequests(page);
 
-  const row = page.getByRole('button', {
-    name: 'View details for request request-1',
-  });
-  await row.click();
+  const row = page.locator('.lh-table-row').filter({ hasText: 'North Hub' });
+  await row
+    .getByRole('button', { name: 'Expand details for request request-1' })
+    .click();
   await expect(
     page.getByLabel('Expanded details for request request-1'),
   ).toBeVisible();
@@ -317,9 +317,7 @@ test('alerts FTE Ops to pending requests and acknowledges opened rows', async ({
 }) => {
   await page.goto('/outbound/lh-request');
 
-  const row = page.getByRole('button', {
-    name: 'View details for request request-1',
-  });
+  const row = page.locator('.lh-table-row').filter({ hasText: 'North Hub' });
   await expect(row).toBeVisible();
   await expect(row).toHaveClass(/animate-pulse/);
   await expect
@@ -330,7 +328,9 @@ test('alerts FTE Ops to pending requests and acknowledges opened rows', async ({
     )
     .toBeGreaterThan(0);
 
-  await row.click();
+  await row
+    .getByRole('button', { name: 'Expand details for request request-1' })
+    .click();
   await expect(row).not.toHaveClass(/animate-pulse/);
 });
 

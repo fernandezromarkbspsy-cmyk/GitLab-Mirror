@@ -72,8 +72,19 @@ export function AppSidebar({
   const [expanded, setExpanded] = useState<MenuGroup | null>(() =>
     groupForView(activeView),
   );
+  const [isMobile, setIsMobile] = useState(() =>
+    window.matchMedia("(max-width: 960px)").matches,
+  );
   const mobileToggleRef = useRef<HTMLButtonElement>(null);
   const previousOpen = useRef(open);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 960px)");
+    const update = () => setIsMobile(mediaQuery.matches);
+    update();
+    mediaQuery.addEventListener("change", update);
+    return () => mediaQuery.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     setExpanded(groupForView(activeView));
@@ -118,7 +129,11 @@ export function AppSidebar({
         className={`${scrimClass}${open ? " max-[960px]:visible max-[960px]:opacity-100" : ""}`}
         onClick={() => onOpenChange(false)}
       />
-      <aside className={`${sidebarClass}${open ? " max-[960px]:translate-x-0!" : ""}`}>
+      <aside
+        className={`${sidebarClass}${open ? " max-[960px]:translate-x-0!" : ""}`}
+        aria-hidden={isMobile && !open}
+        inert={isMobile && !open ? true : undefined}
+      >
         <nav id="primary-navigation" aria-label="Primary navigation" className="contents">
         <div className="flex min-h-[3.8rem] items-center gap-[.45rem] border-b border-[#39393b] py-0 pr-[.95rem] pl-5">
           <div className="relative grid size-[1.6rem] shrink-0 place-items-center overflow-hidden rounded-[.35rem] bg-soc5-lime">
@@ -126,9 +141,6 @@ export function AppSidebar({
           </div>
           <div className="grid min-w-0 gap-[.1rem]">
             <strong className="text-sm font-semibold tracking-tight text-[#f7f7f7]">SOC 5</strong>
-            <small className="whitespace-nowrap text-xs text-soc5-muted">
-              Outbound operations
-            </small>
           </div>
         </div>
 
@@ -156,7 +168,10 @@ export function AppSidebar({
               >
                 <Route size={17} />
                 <span>Requests</span>
-                <ChevronRight size={15} className="ml-auto transition-transform duration-200 aria-expanded:rotate-90" />
+                <ChevronRight
+                  size={15}
+                  className={`ml-auto transition-transform duration-200 ${visibleGroup === "outbound" ? "rotate-90" : ""}`}
+                />
               </button>
               {visibleGroup === "outbound" && (
                 <button
@@ -187,7 +202,10 @@ export function AppSidebar({
               >
                 <Truck size={17} />
                 <span>Requests</span>
-                <ChevronRight size={15} className="ml-auto transition-transform duration-200 aria-expanded:rotate-90" />
+                <ChevronRight
+                  size={15}
+                  className={`ml-auto transition-transform duration-200 ${visibleGroup === "midmile" ? "rotate-90" : ""}`}
+                />
               </button>
               {visibleGroup === "midmile" && (
                 <button

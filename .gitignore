@@ -135,3 +135,5 @@ Desktop.ini
 .taskplane/
 /output/playwright/
 /frontend/chrome_dev_elements/
+
+/playwright-auth.json

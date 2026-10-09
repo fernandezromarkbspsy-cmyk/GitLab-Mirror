@@ -47,6 +47,8 @@ The initial checkout contained unresolved markers in the seven reported source f
 | Frontend formatting | PASS | `npm run format:check`. |
 | Frontend unit tests | PASS | 18 files, 62 tests passed. |
 | Frontend production build | PASS | Vite build completed successfully. |
+| Frontend Playwright Chromium install | PASS | Chromium installed successfully through the project Playwright version. |
+| Frontend local E2E | PASS | 21 Chromium tests passed in 1.1 minutes. These are local/mock-oriented UI tests; backend proxy connection-refused messages were observed for SeaTalk config calls, so this is not authenticated staging acceptance. |
 | Backend Composer validation | PASS with warning | Valid; Composer reports only missing license metadata. |
 | Laravel Pint | PASS | `vendor/bin/pint --test`. |
 | Backend non-PostgreSQL tests | PASS | 125 tests, 437 assertions; PostgreSQL group excluded. |
@@ -60,7 +62,7 @@ The initial checkout contained unresolved markers in the seven reported source f
 | Docker Compose config/image/startup/health | NOT RUN | Docker-backed runtime was not used in this checkout; no deployment or service startup was performed. |
 | Edge Function type/tests | PASS | Deno `2.9.7`: `deno check` passed and 8 function tests passed. |
 | Dependency vulnerability scans | PASS | Root and frontend npm audits found 0 vulnerabilities; `composer --working-dir=backend audit --locked --no-dev --abandoned=ignore` reported no security vulnerability advisories. The same commands are configured in CI. |
-| Browser authenticated E2E | NOT RUN | Requires approved local storage state and isolated HTTPS services; no production integration was contacted. |
+| Browser authenticated E2E | NOT RUN | Requires approved local storage state and isolated HTTPS services; no production integration was contacted. The 21-test local Chromium suite is recorded separately above and is not a substitute. |
 
 ## Fresh-install and upgrade instructions
 
@@ -92,7 +94,9 @@ Upgrade: inspect the deployment's applied migration ledger before applying pendi
 - Runtime versions: Node `v26.7.0`, PHP `8.5.9`, Composer `2.10.3`, Vite `8.2.2`.
 - `npm run check:conflicts`: exit 0; 288 release files scanned.
 - `git diff --check`: exit 0; only Git's normal line-ending warnings were emitted.
+- `npm ci --cache .npm --prefer-offline`: exit 0; 250 packages audited and 0 vulnerabilities. The first pre-flight attempt failed transiently during dependency installation and was reproducible as successful on retry; the Recharts line is a deprecation warning, not a failure.
 - `npm --prefix frontend run lint`, `format:check`, `test`, and `build`: exit 0; 62 frontend tests passed and the production bundle built.
+- `npm run test:e2e -- --project=chromium`: exit 0; 21 local UI tests passed. Backend proxy connection-refused messages were observed, so authenticated staging acceptance remains outstanding.
 - `php -l` on changed PHP files, `vendor/bin/pint --test`, and `php artisan test --fail-on-skipped --exclude-group=postgres`: exit 0; 125 tests and 437 assertions passed.
 - `composer validate --no-check-publish` and backend Composer audit: exit 0; validation has only the existing missing-license warning and the audit reported no advisories.
 - Root and frontend npm audits: exit 0; both reported 0 vulnerabilities.

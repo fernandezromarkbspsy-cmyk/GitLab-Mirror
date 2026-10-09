@@ -68,11 +68,11 @@ jobs:
         - sudo apt-get update
         - sudo apt-get install -y --no-install-recommends unzip libxml2-dev libonig-dev libsqlite3-dev
         - cd backend
-        - composer install --no-interaction --prefer-dist --optimize-autoloader
         - cp .env.example .env
-        - php artisan key:generate --force
         - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
-        - composer install --no-interaction --prefer-dist --no-progress
+        - composer install --no-interaction --prefer-dist --no-progress --no-scripts
+        - php artisan key:generate --force
+        - composer dump-autoload --optimize
       script:
         - composer validate --no-check-publish
         - composer audit --locked --no-dev --abandoned=ignore
@@ -98,9 +98,10 @@ jobs:
         - sudo apt-get install -y --no-install-recommends unzip libxml2-dev libonig-dev libpq-dev
         - cd backend
         - cp .env.example .env
-        - php artisan key:generate --force
         - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
-        - composer install --no-interaction --prefer-dist --no-progress
+        - composer install --no-interaction --prefer-dist --no-progress --no-scripts
+        - php artisan key:generate --force
+        - composer dump-autoload --optimize
       script:
         - php artisan test --group=postgres --fail-on-skipped
 

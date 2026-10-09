@@ -7,20 +7,12 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-<<<<<<< HEAD
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { navigationGroups as defaultNavigationGroups, type NavigationGroup } from "../../data";
 
 export function DashboardTopbar({ navigationGroups = defaultNavigationGroups }: { navigationGroups?: NavigationGroup[] }) {
   const { pathname } = useDashboardNavigation();
   const { isMobile, openMobile } = useSidebar();
-=======
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { navigationGroups } from "../../data";
-
-export function DashboardTopbar() {
-  const { pathname } = useDashboardNavigation();
->>>>>>> c236f8f (medesk-nav)
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -101,11 +93,8 @@ export function DashboardTopbar() {
             <SidebarTrigger
               size="icon"
               className="shrink-0 md:hidden [&_svg]:size-5!"
-<<<<<<< HEAD
               aria-label={isMobile ? (openMobile ? "Close navigation" : "Open navigation") : "Toggle Sidebar"}
               aria-expanded={isMobile ? openMobile : undefined}
-=======
->>>>>>> c236f8f (medesk-nav)
             />
             <div className="hidden items-end gap-4 md:flex">
               <div className="flex h-6 items-center gap-3">

@@ -1,10 +1,5 @@
 // C:\Users\phlspxuser\Documents\development\e2e\realtime.spec.js
 const { test, expect } = require("@playwright/test");
-<<<<<<< HEAD
-
-test.use({
-  storageState: "playwright-auth.json",
-=======
 const path = require("path");
 
 const productionAuthState = process.env.PRODUCTION_PLAYWRIGHT_AUTH_STATE;
@@ -18,7 +13,6 @@ test.use({
   storageState: productionAuthState
     ? path.resolve(productionAuthState)
     : undefined,
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 });
 
 test("production Supabase realtime connection is active", async ({ page }) => {
@@ -35,11 +29,7 @@ test("production Supabase realtime connection is active", async ({ page }) => {
     });
   });
 
-<<<<<<< HEAD
-  await page.goto("https://soc5outboundops.app");
-=======
   await page.goto(process.env.PRODUCTION_PLAYWRIGHT_BASE_URL ?? "https://soc5outboundops.app");
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 
   await page.waitForTimeout(120000);
 
@@ -48,8 +38,4 @@ test("production Supabase realtime connection is active", async ({ page }) => {
       url.includes("/realtime/v1/websocket"),
     ),
   ).toBeTruthy();
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852

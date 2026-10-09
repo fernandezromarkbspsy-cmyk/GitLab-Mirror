@@ -4,6 +4,7 @@
     "@types/node": "^26.6.3"
   },
   "scripts": {
+    "check:conflicts": "node scripts/check-conflict-markers.mjs",
     "test:production-realtime": "playwright test --config=tests/playwright.realtime.config.js",
     "build": "npm --prefix frontend run build"
   }

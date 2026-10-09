@@ -128,6 +128,10 @@ function Run-Step {
     }
 }
 
+Invoke-CommandChecked {
+    npm.cmd run check:conflicts
+} "conflict-marker guard failed"
+
 function Get-ChangedFiles {
 
     $files = @()

@@ -1,16 +1,5 @@
 // C:\Users\phlspxuser\Documents\development\e2e\realtime.spec.js
-<<<<<<< HEAD
-const path = require("path");
 const { test, expect } = require("@playwright/test");
-
-test.use({
-  storageState: path.resolve(__dirname, "..", "playwright-auth.json"),
-});
-
-=======
-const { test, expect } = require("@playwright/test");
-
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 test("production Supabase realtime channels join and reconnect", async ({
   page,
 }) => {
@@ -52,15 +41,10 @@ test("production Supabase realtime channels join and reconnect", async ({
     websocketErrors.push(errorMessage);
   });
 
-<<<<<<< HEAD
-  await page.goto("https://soc5outboundops.app", { waitUntil: "domcontentloaded" });
-  await expect(page.locator(".app-shell")).toBeVisible({ timeout: 30_000 });
-=======
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("main", { name: "Primary content" }),
   ).toBeVisible({ timeout: 30_000 });
->>>>>>> c236f8f480a319b1f6ad5dfba8e98324d31e5852
 
   await expect
     .poll(() => [...websocketConnections.values()].some(({ status }) => status === 101))

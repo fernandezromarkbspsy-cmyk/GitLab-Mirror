@@ -25,6 +25,7 @@ final class PostgresSchemaHardeningTest extends TestCase
         Schema::dropIfExists('user_events');
         Schema::dropIfExists('user_imports');
         Schema::dropIfExists('profiles');
+        Schema::dropIfExists('notifications');
         Schema::create('profiles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('ops_id')->nullable();
@@ -39,6 +40,12 @@ final class PostgresSchemaHardeningTest extends TestCase
             $table->uuid('actor_id')->nullable();
             $table->string('event_type');
         });
+        Schema::create('notifications', function (Blueprint $table): void {
+            $table->id();
+            $table->uuid('user_id')->nullable();
+            $table->string('target_role')->nullable();
+            $table->text('message')->nullable();
+        });
     }
 
     protected function tearDown(): void
@@ -47,6 +54,7 @@ final class PostgresSchemaHardeningTest extends TestCase
             Schema::dropIfExists('user_events');
             Schema::dropIfExists('user_imports');
             Schema::dropIfExists('profiles');
+            Schema::dropIfExists('notifications');
         }
 
         parent::tearDown();
@@ -61,6 +69,17 @@ final class PostgresSchemaHardeningTest extends TestCase
 
         $this->assertSame('ops123', DB::table('profiles')->where('id', '00000000-0000-0000-0000-000000000001')->value('ops_id'));
         $this->assertSame('ops456', DB::table('user_imports')->where('id', '00000000-0000-0000-0000-000000000002')->value('ops_id'));
+    }
+
+    public function test_access_request_notification_migration_adds_updated_at(): void
+    {
+        $migration = dirname(base_path()).'/supabase/migrations/20261009000003_add_notification_updated_at.sql';
+        DB::unprepared((string) file_get_contents($migration));
+
+        $this->assertTrue(Schema::hasColumn('notifications', 'updated_at'));
+        $column = DB::selectOne("select is_nullable, column_default from information_schema.columns where table_schema = 'public' and table_name = 'notifications' and column_name = 'updated_at'");
+        $this->assertSame('NO', $column->is_nullable);
+        $this->assertStringContainsString('now()', strtolower((string) $column->column_default));
     }
 
     public function test_identity_migration_allows_supported_audit_event(): void

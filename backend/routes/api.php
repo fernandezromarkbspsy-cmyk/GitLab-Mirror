@@ -33,11 +33,8 @@ $registerApiRoutes = static function (string $prefix): void {
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
             StartSession::class,
+            'session.csrf',
             'throttle:api-ip',
-<<<<<<< HEAD
-=======
-            'supabase.auth',
->>>>>>> c236f8f (medesk-nav)
             'throttle:api',
         ])->group(function (): void {
             Route::get('/auth/seatalk/config', [SeatalkController::class, 'config']);
@@ -52,7 +49,7 @@ $registerApiRoutes = static function (string $prefix): void {
             Route::post('/integrations/seatalk/approval/reject', [SeaTalkApprovalCallbackController::class, 'reject']);
         });
 
-        Route::middleware([StartSession::class, 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
+        Route::middleware([EncryptCookies::class, AddQueuedCookiesToResponse::class, StartSession::class, 'session.csrf', 'throttle:api-ip', 'supabase.auth', 'throttle:api'])->group(function (): void {
             Route::get('/auth/me', fn (Request $r) => response()->json($r->attributes->get('actor')));
             Route::post('/auth/password-changed', [BackroomController::class, 'changePassword']);
             Route::get('/users', [UserController::class, 'index']);

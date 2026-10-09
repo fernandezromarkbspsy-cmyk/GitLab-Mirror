@@ -6,10 +6,7 @@ import {
   MoonIcon,
   SunIcon,
 } from "lucide-react";
-<<<<<<< HEAD
 import { useState } from "react";
-=======
->>>>>>> c236f8f (medesk-nav)
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MedeskLogo } from "./logo";
 import { SidebarCollapseIcon } from "./icons";
@@ -45,7 +42,6 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-<<<<<<< HEAD
 import { currentUser as defaultCurrentUser, navigationGroups as defaultNavigationGroups, type NavigationGroup, type NavigationItem } from "../../data";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/types";
@@ -56,10 +52,6 @@ const roleOptions: Array<{ value: Role; label: string }> = [
   { value: "fte_mm", label: "FTE Midmile" },
   { value: "doc_officer", label: "Document Officer" },
 ];
-=======
-import { currentUser, navigationGroups, type NavigationItem } from "../../data";
-import { cn } from "@/lib/utils";
->>>>>>> c236f8f (medesk-nav)
 
 const menuButtonClassName = cn(
   "h-12.5 gap-2.5 rounded-lg bg-transparent py-2.5 pl-3 pr-2 text-base font-normal text-muted-foreground transition-colors",
@@ -105,7 +97,6 @@ function NavItem({ item }: { item: NavigationItem }) {
   );
 }
 
-<<<<<<< HEAD
 type DashboardSidebarProps = {
   navigationGroups?: NavigationGroup[];
   currentUser?: { name: string; email: string; avatar?: string; role?: Role; isAdmin?: boolean };
@@ -123,19 +114,11 @@ export function DashboardSidebar({
   const { state, toggleSidebar } = useSidebar();
   const { pathname } = useDashboardNavigation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-=======
-export function DashboardSidebar() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const { state, toggleSidebar } = useSidebar();
->>>>>>> c236f8f (medesk-nav)
   const isDark = resolvedTheme === "dark";
 
   return (
     <Sidebar collapsible="icon" className="border-r-0!">
-<<<<<<< HEAD
       <nav id="primary-navigation" aria-label="Primary navigation" className="contents">
-=======
->>>>>>> c236f8f (medesk-nav)
       <SidebarHeader className="relative h-20 flex-row items-center justify-between gap-3 px-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
         <div className="flex min-w-0 items-center gap-3 transition-opacity group-data-[collapsible=icon]:hidden">
           <MedeskLogo className="size-7 shrink-0" />
@@ -160,7 +143,6 @@ export function DashboardSidebar() {
           const isCollapsible = group.collapsible ?? false;
 
           if (isCollapsible) {
-<<<<<<< HEAD
             const isOpen =
               openGroups[group.label] ??
               group.items.some(
@@ -175,12 +157,6 @@ export function DashboardSidebar() {
                 onOpenChange={(open) =>
                   setOpenGroups((groups) => ({ ...groups, [group.label]: open }))
                 }
-=======
-            return (
-              <Collapsible
-                key={group.label}
-                defaultOpen
->>>>>>> c236f8f (medesk-nav)
                 className="group/collapsible"
               >
                 <SidebarGroup className="gap-1 p-0">
@@ -188,7 +164,6 @@ export function DashboardSidebar() {
                     asChild
                     className={sidebarGroupLabelClassName}
                   >
-<<<<<<< HEAD
                     <CollapsibleTrigger
                       aria-label={`Toggle ${group.label.toLowerCase()} requests`}
                       className="flex w-full items-center justify-between transition-colors hover:text-foreground"
@@ -200,11 +175,6 @@ export function DashboardSidebar() {
                           isOpen && "rotate-90",
                         )}
                       />
-=======
-                    <CollapsibleTrigger className="flex w-full items-center justify-between transition-colors hover:text-foreground">
-                      <span>{group.label}</span>
-                      <ChevronRight className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
->>>>>>> c236f8f (medesk-nav)
                     </CollapsibleTrigger>
                   </SidebarGroupLabel>
                   <CollapsibleContent>
@@ -289,7 +259,6 @@ export function DashboardSidebar() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-<<<<<<< HEAD
                   {currentUser.isAdmin && onRoleChange ? (
                     <>
                       <DropdownMenuLabel className="font-normal">Test role view</DropdownMenuLabel>
@@ -304,8 +273,6 @@ export function DashboardSidebar() {
                       <DropdownMenuSeparator />
                     </>
                   ) : null}
-=======
->>>>>>> c236f8f (medesk-nav)
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -335,11 +302,7 @@ export function DashboardSidebar() {
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
-<<<<<<< HEAD
                     <DropdownMenuItem variant="destructive" onClick={onSignOut}>
-=======
-                  <DropdownMenuItem variant="destructive">
->>>>>>> c236f8f (medesk-nav)
                     <LogOutIcon className="size-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
@@ -350,10 +313,7 @@ export function DashboardSidebar() {
         </SidebarGroup>
       </SidebarFooter>
       <SidebarRail />
-<<<<<<< HEAD
       </nav>
-=======
->>>>>>> c236f8f (medesk-nav)
     </Sidebar>
   );
 }

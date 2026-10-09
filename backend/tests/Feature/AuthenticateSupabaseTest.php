@@ -92,4 +92,27 @@ final class AuthenticateSupabaseTest extends TestCase
             ->assertJsonPath('id', $this->userId)
             ->assertJsonPath('must_change_password', 1);
     }
+
+    public function test_cookie_identity_wins_when_bearer_and_seatalk_credentials_are_both_present(): void
+    {
+        $this->withSession(['seatalk_profile_id' => $this->userId])
+            ->withHeader('Authorization', 'Bearer invalid-bearer')
+            ->getJson('/api/v1/auth/me')
+            ->assertOk()
+            ->assertJsonPath('id', $this->userId);
+    }
+
+    public function test_stale_cookie_does_not_fall_back_to_a_bearer_identity(): void
+    {
+        Http::fake([
+            'https://test-project.supabase.co/auth/v1/user' => Http::response(['id' => $this->userId], 200),
+        ]);
+
+        $this->withSession(['seatalk_profile_id' => (string) Str::uuid()])
+            ->withToken('valid-bearer')
+            ->getJson('/api/v1/auth/me')
+            ->assertUnauthorized();
+
+        Http::assertNothingSent();
+    }
 }

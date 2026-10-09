@@ -14,10 +14,6 @@ import {
   UserRoundIcon,
   XIcon,
 } from "lucide-react";
-<<<<<<< HEAD
-=======
-import type { TooltipContentProps } from "recharts";
->>>>>>> c236f8f (medesk-nav)
 import {
   Area,
   AreaChart,
@@ -69,7 +65,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-<<<<<<< HEAD
 type ChartTooltipItem = {
   dataKey?: string | number;
   color?: string;
@@ -83,8 +78,6 @@ type ChartTooltipProps = {
   label?: ReactNode;
 };
 
-=======
->>>>>>> c236f8f (medesk-nav)
 const dashboardColors = {
   scheduled: "var(--dashboard-scheduled)",
   completed: "var(--dashboard-completed)",
@@ -186,11 +179,7 @@ function ChartTooltip({
   active,
   payload,
   label,
-<<<<<<< HEAD
 }: ChartTooltipProps) {
-=======
-}: Partial<TooltipContentProps>) {
->>>>>>> c236f8f (medesk-nav)
   if (!active || !payload?.length) {
     return null;
   }

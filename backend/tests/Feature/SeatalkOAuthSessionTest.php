@@ -15,6 +15,7 @@ final class SeatalkOAuthSessionTest extends TestCase
 
         $this->assertContains(EncryptCookies::class, $route->gatherMiddleware());
         $this->assertContains(AddQueuedCookiesToResponse::class, $route->gatherMiddleware());
+        $this->assertNotContains('supabase.auth', $route->gatherMiddleware());
 
         config()->set('app.frontend_url', 'https://frontend.test');
         config()->set('services.seatalk', [

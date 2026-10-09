@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Features\Users\UserController;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -149,5 +150,83 @@ final class BackroomPasswordResetTest extends TestCase
         $this->assertNotEmpty($response->getData(true)['initial_password']);
         $this->assertTrue((bool) DB::table('profiles')->where('id', $id)->value('must_change_password'));
         $this->assertDatabaseHas('user_event_retries', ['user_id' => $id, 'event_type' => 'PASSWORD_RESET']);
+    }
+
+    public function test_audit_staging_failure_rolls_back_profile_state_and_skips_remote_update(): void
+    {
+        $id = $this->insertProfile();
+        Schema::drop('user_event_retries');
+        Http::fake();
+
+        try {
+            (new UserController)->resetPassword($this->request($id), $id);
+            $this->fail('Preparation failure should return 503.');
+        } catch (HttpException $exception) {
+            $this->assertSame(503, $exception->getStatusCode());
+        }
+
+        $this->assertFalse((bool) DB::table('profiles')->where('id', $id)->value('must_change_password'));
+        Http::assertNothingSent();
+    }
+
+    public function test_ambiguous_remote_timeout_is_left_for_reconciliation_without_returning_password(): void
+    {
+        $id = $this->insertProfile();
+        Http::fake(fn () => throw new ConnectionException('timeout'));
+
+        $response = (new UserController)->resetPassword($this->request($id), $id);
+
+        $this->assertSame(503, $response->getStatusCode());
+        $this->assertFalse($response->getData(true)['ok']);
+        $this->assertArrayNotHasKey('initial_password', $response->getData(true));
+        $this->assertTrue((bool) DB::table('profiles')->where('id', $id)->value('must_change_password'));
+        $this->assertDatabaseHas('user_event_retries', ['user_id' => $id, 'status' => 'remote_unknown']);
+    }
+
+    public function test_stale_remote_failure_compensation_cannot_restore_a_newer_reset(): void
+    {
+        $id = $this->insertProfile();
+        Http::fake(function () use ($id) {
+            DB::table('profiles')->where('id', $id)->update([
+                'password_reset_at' => now()->addSecond(),
+                'must_change_password' => true,
+            ]);
+
+            return Http::response(['error' => 'rejected'], 503);
+        });
+
+        try {
+            (new UserController)->resetPassword($this->request($id), $id);
+            $this->fail('The reset should fail when Supabase rejects the update.');
+        } catch (HttpException $exception) {
+            $this->assertSame(502, $exception->getStatusCode());
+        }
+
+        $this->assertTrue((bool) DB::table('profiles')->where('id', $id)->value('must_change_password'));
+    }
+
+    public function test_retry_worker_processes_confirmed_only_and_preserves_staged_and_cancelled_records(): void
+    {
+        $id = $this->insertProfile();
+        $now = now();
+        foreach (['confirmed', 'staged', 'cancelled'] as $status) {
+            DB::table('user_event_retries')->insert([
+                'user_id' => $id,
+                'actor_id' => null,
+                'event_type' => 'PASSWORD_RESET',
+                'metadata' => json_encode(['ops_id' => 'ops123']),
+                'available_at' => $now,
+                'status' => $status,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+
+        $this->artisan('audit:retry-user-events')->assertExitCode(0);
+
+        $this->assertDatabaseMissing('user_event_retries', ['status' => 'confirmed']);
+        $this->assertDatabaseHas('user_event_retries', ['status' => 'staged']);
+        $this->assertDatabaseHas('user_event_retries', ['status' => 'cancelled']);
+        $this->assertDatabaseHas('user_events', ['user_id' => $id, 'event_type' => 'PASSWORD_RESET']);
     }
 }

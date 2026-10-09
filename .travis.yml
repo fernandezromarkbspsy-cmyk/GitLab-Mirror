@@ -44,6 +44,7 @@ jobs:
         - npm ci --cache .npm --prefer-offline
       script:
         - npm run check:robots
+        - npm run check:encoding
         - npm run lint
         - npm run format:check
         - npm test
@@ -74,6 +75,7 @@ jobs:
         - composer install --no-interaction --prefer-dist --no-progress
       script:
         - composer validate --no-check-publish
+        - composer audit --locked --no-dev --abandoned=ignore
         - vendor/bin/pint --test
         - php artisan test --fail-on-skipped --exclude-group=postgres
 
@@ -122,5 +124,14 @@ jobs:
       language: minimal
       dist: jammy
       script:
-        - grep -q '^services:' docker-compose.yml
-        - grep -q 'scheduler' docker-compose.yml
+        - cp backend/.env.staging.example backend/.env
+        - SUPABASE_URL=https://staging.invalid SUPABASE_PUBLISHABLE_KEY=staging-publishable-key docker compose config -q
+        - SUPABASE_URL=https://staging.invalid SUPABASE_PUBLISHABLE_KEY=staging-publishable-key docker compose build --pull api web
+        - bash scripts/ci/verify-release-static.sh
+
+    - name: "Release Acceptance"
+      if: tag IS present
+      language: minimal
+      dist: jammy
+      script:
+        - bash scripts/ci/require-release-acceptance.sh

@@ -12,6 +12,7 @@ use App\Http\Middleware\IdempotencyMiddleware;
 use App\Http\Middleware\RequestTelemetry;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifySeaTalkCallback;
+use App\Http\Middleware\VerifySessionCsrf;
 use App\Jobs\ExpireSeaTalkAssignments;
 use App\Jobs\SyncRequestsToGoogleSheetJob;
 use App\Support\ApiRequestConsoleLogger;
@@ -61,12 +62,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('seatalk:reconcile-approvals --repair')->everyFiveMinutes()->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        // XSRF-TOKEN is intentionally readable by the same-origin SPA, like
+        // Laravel's standard CSRF cookie. The session cookie remains encrypted.
+        $middleware->encryptCookies(except: ['XSRF-TOKEN']);
+        $trustedProxies = array_values(array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', '')))));
+        $middleware->trustProxies(at: $trustedProxies);
         $middleware->append(SecurityHeaders::class);
         $middleware->append(RequestTelemetry::class);
         $middleware->alias([
             'supabase.auth' => AuthenticateSupabase::class,
             'idempotency' => IdempotencyMiddleware::class,
             'seatalk.callback' => VerifySeaTalkCallback::class,
+            'session.csrf' => VerifySessionCsrf::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

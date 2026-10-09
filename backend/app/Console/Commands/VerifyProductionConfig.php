@@ -82,16 +82,16 @@ final class VerifyProductionConfig extends Command
                 $this->error("APP_URL must use HTTPS in {$deploymentMode}.");
                 $failed = true;
             }
-            if ($deploymentMode === 'production') {
+            if (in_array($deploymentMode, ['staging', 'production'], true)) {
                 if (! str_starts_with((string) config('app.frontend_url'), 'https://')) {
-                    $this->error('FRONTEND_URL must use HTTPS in production.');
+                    $this->error("FRONTEND_URL must use HTTPS in {$deploymentMode}.");
                     $failed = true;
                 }
                 if (config('session.secure') !== true) {
-                    $this->error('SESSION_SECURE_COOKIE must be true in production.');
+                    $this->error("SESSION_SECURE_COOKIE must be true in {$deploymentMode}.");
                     $failed = true;
                 }
-                if (config('services.seatalk.approval.enabled')
+                if ($deploymentMode === 'production' && config('services.seatalk.approval.enabled')
                     && blank(config('services.seatalk.approval.callback_signing_secret'))) {
                     $this->error('SEATALK_CALLBACK_SIGNING_SECRET is required when SeaTalk approvals are enabled.');
                     $failed = true;

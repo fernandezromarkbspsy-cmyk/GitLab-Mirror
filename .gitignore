@@ -9,6 +9,8 @@
 .env.production
 .envrc
 !.env.example
+!backend/.env.staging.example
+!frontend/.env.staging.example
 *.pem
 *.key
 *.p12

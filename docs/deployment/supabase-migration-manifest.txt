@@ -1,0 +1,39 @@
+# Ordered Supabase migration manifest.
+# Apply in this exact order on fresh installs. The numeric prefix is not a
+# complete ordering key because 003, 015, and 017 each have multiple files.
+# Each statement runs in the transaction mode supported by the Supabase SQL
+# editor/CLI; enum ALTER TYPE and publication changes must be validated on the
+# target PostgreSQL version before release.
+001_initial_schema.sql
+002_cluster_import_compatibility.sql
+003_auth_flows.sql
+003_cluster_name_upsert_key.sql
+004_google_fte_auth.sql
+005_repair_existing_fte_profiles.sql
+006_scalability_indexes.sql
+007_user_audit_events.sql
+008_docking_role_support.sql
+009_docking_role_policies.sql
+010_intraday_dispatch.sql
+011_request_reporting_indexes.sql
+013_remove_dock_officer_role.sql
+014_activate_all_clusters.sql
+015_backroom_password_reset_state.sql
+015_fix_intraday_dispatch_rls.sql
+016_migration_hardening.sql
+017_add_assigned_request_status.sql
+017_p2_schema_hygiene.sql
+018_notification_read_receipts.sql
+019_identity_and_audit_hardening.sql
+020_seatalk_employee_identity.sql
+021_approval_center_schema.sql
+022_presence_and_routing_state.sql
+023_seatalk_callback_events.sql
+20260926000908_restore_user_imports_allowlist.sql
+20260929000000_propagate_cluster_backlogs.sql
+20261004000000_enable_request_realtime.sql
+20261005000000_add_workflow_milestone_timestamps.sql
+20261005000001_normalize_docking_status.sql
+20261009000000_normalize_legacy_request_statuses.sql
+20261009000002_harden_active_profile_read_policies.sql
+20261009000003_add_notification_updated_at.sql

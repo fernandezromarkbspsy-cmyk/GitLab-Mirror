@@ -38,6 +38,14 @@ export async function api<T = unknown>(
     if (session?.access_token)
       headers.set("Authorization", `Bearer ${session.access_token}`);
     if (viewRole) headers.set("X-View-Role", viewRole);
+    const xsrf =
+      typeof document === "undefined"
+        ? undefined
+        : document.cookie
+            .split("; ")
+            .find((cookie) => cookie.startsWith("XSRF-TOKEN="))
+            ?.split("=")[1];
+    if (xsrf) headers.set("X-XSRF-TOKEN", decodeURIComponent(xsrf));
     response = await fetch(`${base}${path}`, {
       ...init,
       headers,

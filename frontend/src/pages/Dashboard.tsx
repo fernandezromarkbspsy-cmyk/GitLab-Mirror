@@ -1,9 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRequestRealtime } from "../hooks/useRequestRealtime";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { AppHeader } from "../components/AppHeader";
-import { AppSidebar } from "../components/AppSidebar";
+import DashboardLayout from "../components/watermelon/medesk-dashboard/dashboard-layout";
+import { MedeskNavigationAdapter, createAppNavigationGroups } from "../components/shell/MedeskNavigationAdapter";
 import { Skeleton } from "../components/Skeleton";
 import { SkeletonTable } from "../components/SkeletonTable";
 import { useQueueNotifications } from "../hooks/useQueueNotifications";
@@ -88,8 +88,11 @@ export function Dashboard({
       (activeUser.role === "fte_ops" || activeUser.role === "fte_mm"));
   const requestedView = getAppView(location.pathname);
   const view = allowed(requestedView) ? requestedView : "overview";
-  const [menuOpen, setMenuOpen] = useState(false);
   const queue = useQueueNotifications(activeUser);
+  const navigationGroups = createAppNavigationGroups({
+    role: activeUser.role,
+    pendingCount: queue.count,
+  });
 
   async function switchRole(role: Role) {
     setViewRole(role);
@@ -122,52 +125,27 @@ export function Dashboard({
   }, [location.pathname, routerNavigate, view]);
 
   return (
-    <div className={`${preview ? "dashboard-preview" : ""} app-shell min-h-[100dvh]`}>
-      <AppSidebar
-        user={activeUser}
-        activeView={view}
-        open={menuOpen}
-        onOpenChange={setMenuOpen}
-        onNavigate={navigate}
+    <MedeskNavigationAdapter>
+      <DashboardLayout
+        navigationGroups={navigationGroups}
+        currentUser={{ name: activeUser.name, email: activeUser.email ?? "", role: activeUser.role, isAdmin: activeUser.is_admin }}
         onSignOut={() => void signOut()}
-        pendingCount={queue.count}
-      />
-      <main className={`relative z-0 isolate flex h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-[#f6f8f7] ${preview ? "ml-0 w-full pt-0" : "w-[calc(100%_-_15.5rem)] ml-[15.5rem] pt-[4.5rem] max-[1100px]:ml-[14rem] max-[1100px]:w-[calc(100%_-_14rem)] max-[960px]:ml-0 max-[960px]:min-h-[100dvh] max-[960px]:w-full max-[960px]:pt-[3.8rem] max-[600px]:pt-[3.4rem]"}`} aria-label="Primary content">
-        <div className="relative z-[1] flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-clip">
-          <AppHeader
-            user={activeUser}
-            preview={preview}
-            view={view}
-            onRoleChange={switchRole}
-            onSearch={() =>
-              navigate(
-                activeUser.role === "fte_mm" ? "truck-request" : "lh-request",
-              )
-            }
-          />
-          <section className="relative z-[2] flex min-h-0 max-h-full min-w-0 w-full max-w-full flex-1 flex-col overflow-y-auto overscroll-y-contain" aria-live="polite">
-            <Suspense fallback={<ViewLoading view={view} />}>
-              {view === "overview" && (
-                <Overview
-                  user={activeUser}
-                  onNavigate={navigate}
-                  preview={isPreview}
-                />
-              )}
-              {view === "lh-request" && (
-                <OutboundRequests user={activeUser} queue={queue} />
-              )}
-              {view === "truck-request" && (
-                <MidmileRequests user={activeUser} />
-              )}
-              {view === "docking" && <DockingConfirmation user={activeUser} />}
-              {view === "kpi" && <Kpi />}
-              {view === "users" && <UserManagement />}
-            </Suspense>
-          </section>
-        </div>
-      </main>
-    </div>
+        onRoleChange={(role) => void switchRole(role)}
+      >
+        <section className="relative z-[2] flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-y-auto overscroll-y-contain" aria-live="polite">
+          <Suspense fallback={<ViewLoading view={view} />}>
+            {view === "overview" && (
+              <Overview user={activeUser} onNavigate={navigate} preview={isPreview} />
+            )}
+            {view === "lh-request" && <OutboundRequests user={activeUser} queue={queue} />}
+            {view === "truck-request" && <MidmileRequests user={activeUser} />}
+            {view === "docking" && <DockingConfirmation user={activeUser} />}
+            {view === "kpi" && <Kpi />}
+            {view === "users" && <UserManagement />}
+          </Suspense>
+        </section>
+      </DashboardLayout>
+    </MedeskNavigationAdapter>
   );
 }
 

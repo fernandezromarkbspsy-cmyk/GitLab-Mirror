@@ -2,11 +2,11 @@ import * as React from "react";
 import { Avatar as AvatarPrimitive } from "radix-ui";
 import { cn } from "../../lib/utils";
 
-function Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+function Avatar({ className, size, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root> & { size?: string }) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
-      className={cn("relative flex size-8 shrink-0 overflow-hidden rounded-full", className)}
+      className={cn("relative flex size-8 shrink-0 overflow-hidden rounded-full", size, className)}
       {...props}
     />
   );

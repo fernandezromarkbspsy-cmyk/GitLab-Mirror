@@ -170,4 +170,4 @@ netstat -ano | findstr ":3000 :5173 :4173 :8080"
 
 cd frontend
 npm run build
-npm run preview -- --host 127.0.0.1 --port 5173 --strictPort
+npm run preview -- --host 127.0.0.1 --port 5173 --strictPort .

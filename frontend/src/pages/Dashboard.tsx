@@ -99,7 +99,7 @@ export function Dashboard({
   async function switchRole(role: Role) {
     setViewRole(role);
     routerNavigate(getAppPath("overview"));
-    await queryClient.invalidateQueries();
+    queryClient.clear();
   }
 
   function navigate(next: AppView, replace = false) {
@@ -111,6 +111,7 @@ export function Dashboard({
   async function signOut() {
     try {
       await supabase.auth.signOut();
+      queryClient.clear();
     } finally {
       try {
         await api("/auth/seatalk/logout", { method: "POST" });

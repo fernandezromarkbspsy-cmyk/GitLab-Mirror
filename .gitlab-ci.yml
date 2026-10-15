@@ -7,6 +7,39 @@ frontend-checks:
   script:
     - cd frontend
     - npm ci
+    - npm run check:robots
+    - npm run check:encoding
     - npm run lint
+    - npm run lint:a11y
+    - npm run format:check
     - npm test
     - npm run build
+    - npm audit --audit-level=high
+
+backend-checks:
+  stage: test
+  image: php:8.3-cli
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y --no-install-recommends git unzip libpq-dev libxml2-dev libonig-dev libsqlite3-dev libzip-dev
+    - docker-php-ext-install pdo_pgsql pdo_sqlite mbstring xml zip
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+  script:
+    - cd backend
+    - cp .env.example .env
+    - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+    - composer install --no-interaction --prefer-dist --no-progress
+    - php artisan key:generate --force
+    - composer validate --no-check-publish
+    - composer audit --locked --no-dev --abandoned=ignore
+    - vendor/bin/pint --test
+    - php artisan test --fail-on-skipped --exclude-group=postgres
+
+edge-function-checks:
+  stage: test
+  image: denoland/deno:alpine
+  script:
+    - deno check supabase/functions/sync-clusters/index.ts supabase/functions/sync-intraday/index.ts
+    - deno test --allow-env supabase/functions/sync-clusters/index_test.ts supabase/functions/sync-intraday/index_test.ts

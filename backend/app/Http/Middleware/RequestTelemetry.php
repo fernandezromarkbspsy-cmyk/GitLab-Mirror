@@ -49,7 +49,6 @@ final class RequestTelemetry
 
         if ($capturePerformance) {
             $queries = array_map(static fn (array $query): array => [
-                'sql' => $query['query'],
                 'duration_ms' => round((float) $query['time'], 2),
             ], DB::getQueryLog());
             DB::disableQueryLog();
@@ -62,8 +61,7 @@ final class RequestTelemetry
                 'total_duration_ms' => $durationMs,
                 'sql_query_count' => count($queries),
                 'sql_duration_ms' => round(array_sum(array_column($queries, 'duration_ms')), 2),
-                'slowest_sql' => $slowest,
-                'sql_queries' => $queries,
+                'slowest_query_duration_ms' => $slowest['duration_ms'] ?? null,
             ]);
         }
 

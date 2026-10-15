@@ -7,7 +7,7 @@ This checklist applies to the React/Vite frontend, Laravel API, Supabase Postgre
 - [ ] Laravel PHPUnit suite, PostgreSQL integration suite, Pint and Composer audit pass.
 - [ ] Edge Function tests and Docker Compose build pass.
 - [ ] Production configuration verifier passes with production secrets (never commit secrets).
-- [ ] GitLab merge protection requires a successful pipeline and resolved discussions.
+- [ ] GitLab merge protection requires resolved discussions and a trusted Travis CI commit status (verify integration before enabling a pipeline requirement).
 
 ## Runtime acceptance (must be tested in an isolated staging environment)
 - [ ] Anonymous requests to protected endpoints return 401.

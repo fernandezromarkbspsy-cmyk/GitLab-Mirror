@@ -19,6 +19,23 @@ final class SecurityHeadersTest extends TestCase
         $response->assertHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
     }
 
+    public function test_api_responses_disallow_caching_sensitive_data(): void
+    {
+        foreach (['/api/auth/status', '/api/v1/auth/status', '/api/requests'] as $uri) {
+            $response = $this->getJson($uri);
+            $response->assertHeader('Cache-Control', 'no-store, private');
+            $response->assertHeader('Pragma', 'no-cache');
+        }
+    }
+
+    public function test_non_api_response_does_not_receive_api_cache_policy(): void
+    {
+        $request = Request::create('https://frontend.example.test/');
+        $response = (new SecurityHeaders)->handle($request, fn () => response('ok'));
+
+        $this->assertNotSame('no-store, private', $response->headers->get('Cache-Control'));
+    }
+
     public function test_cors_preflight_allows_only_the_configured_frontend_origin(): void
     {
         config()->set('cors.allowed_origins', ['https://frontend.example.test']);

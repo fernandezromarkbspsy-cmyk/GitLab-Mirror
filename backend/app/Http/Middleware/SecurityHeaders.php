@@ -17,7 +17,10 @@ final class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
-        if ($request->is('api/*')) {
+        if ($request->is('api', 'api/*')) {
+            // Never cache operational records or responses containing credentials.
+            $response->headers->set('Cache-Control', 'no-store, private');
+            $response->headers->set('Pragma', 'no-cache');
             $response->headers->set(
                 'Content-Security-Policy',
                 "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",

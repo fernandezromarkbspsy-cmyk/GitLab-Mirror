@@ -10,6 +10,18 @@ use Tests\TestCase;
 
 final class RequestTelemetryTest extends TestCase
 {
+    public function test_performance_telemetry_does_not_log_sql_statements(): void
+    {
+        $source = file_get_contents(app_path('Http/Middleware/RequestTelemetry.php'));
+
+        $this->assertIsString($source);
+        $this->assertStringNotContainsString("'sql' =>", $source);
+        $this->assertStringNotContainsString("'sql_queries' =>", $source);
+        $this->assertStringNotContainsString("'slowest_sql' =>", $source);
+        $this->assertStringContainsString("'sql_query_count' =>", $source);
+        $this->assertStringContainsString("'slowest_query_duration_ms' =>", $source);
+    }
+
     public function test_request_id_is_propagated(): void
     {
         $this->get('/up', ['X-Request-Id' => 'phase1-test-request'])

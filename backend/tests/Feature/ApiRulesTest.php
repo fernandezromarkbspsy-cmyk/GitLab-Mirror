@@ -29,6 +29,24 @@ final class ApiRulesTest extends TestCase
         $this->assertStringContainsString('RequestController@action', $workflow->getActionName());
     }
 
+    public function test_public_auth_status_is_rate_limited_on_both_api_versions(): void
+    {
+        foreach (['/api/auth/status', '/api/v1/auth/status'] as $uri) {
+            $route = $this->route('GET', $uri);
+            $this->assertContains('throttle:api-ip', $route->gatherMiddleware());
+        }
+    }
+
+    public function test_protected_request_routes_require_authentication_and_rate_limits(): void
+    {
+        foreach (['/api/requests', '/api/v1/requests'] as $uri) {
+            $middleware = $this->route('GET', $uri)->gatherMiddleware();
+            $this->assertContains('supabase.auth', $middleware);
+            $this->assertContains('throttle:api', $middleware);
+            $this->assertContains('throttle:api-ip', $middleware);
+        }
+    }
+
     private function route(string $method, string $uri): Route
     {
         return app('router')->getRoutes()->match(Request::create($uri, $method));

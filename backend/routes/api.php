@@ -29,7 +29,7 @@ $registerApiRoutes = static function (string $prefix): void {
             );
 
             return response()->json(['configured' => true]);
-        });
+        })->middleware('throttle:api-ip');
 
         Route::middleware([
             EncryptCookies::class,

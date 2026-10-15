@@ -49,13 +49,8 @@ jobs:
         - npm run lint:a11y
         - npm run format:check
         - npm test
-        - |
-          if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
-            test -d "$PLAYWRIGHT_BROWSERS_PATH" && ls "$PLAYWRIGHT_BROWSERS_PATH"/chromium-* >/dev/null 2>&1 || npx playwright install chromium
-            npm run test:e2e
-          else
-            echo "Skipping E2E tests for pull request validation"
-          fi
+        - test -d "$PLAYWRIGHT_BROWSERS_PATH" && ls "$PLAYWRIGHT_BROWSERS_PATH"/chromium-* >/dev/null 2>&1 || npx playwright install chromium
+        - npm run test:e2e
         - npm run build
 
     - name: "Backend"
@@ -81,7 +76,6 @@ jobs:
         - php artisan test --fail-on-skipped --exclude-group=postgres
 
     - name: "Backend PostgreSQL"
-      if: type != pull_request
       language: php
       dist: jammy
       php: "8.3"

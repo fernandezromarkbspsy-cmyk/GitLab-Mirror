@@ -109,15 +109,18 @@ export function Dashboard({
   }
 
   async function signOut() {
+    // Revoke the optional SeaTalk server session while the bearer token is
+    // still available; signing out of Supabase first removes that credential.
     try {
-      await supabase.auth.signOut();
-      queryClient.clear();
+      await api("/auth/seatalk/logout", { method: "POST" });
+    } catch {
+      // A failed optional SeaTalk cleanup must not prevent local sign-out.
     } finally {
       try {
-        await api("/auth/seatalk/logout", { method: "POST" });
-      } catch {
-        // Supabase sign-out still leaves the client signed out if the
-        // optional SeaTalk session cleanup is unavailable.
+        await supabase.auth.signOut();
+      } finally {
+        // Never retain role-scoped operational data after a sign-out attempt.
+        queryClient.clear();
       }
     }
   }

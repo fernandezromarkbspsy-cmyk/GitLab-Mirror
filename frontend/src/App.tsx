@@ -93,25 +93,11 @@ function describeFailure(cause: unknown): Failure {
 export default function App() {
   const navigate = useNavigate();
   const [state, setState] = useState<AppState>("loading");
-  const [startupAnimationComplete, setStartupAnimationComplete] =
-    useState(false);
   const [failure, setFailure] = useState<Failure>(defaultFailure);
   const [profile, setProfile] = useState<User | null>(null);
   const lastToken = useRef<string | null>(null);
   const requestSequence = useRef(0);
   const seatalkSession = useRef(false);
-
-  useEffect(() => {
-    const duration = window.matchMedia("(prefers-reduced-motion: reduce)")
-      .matches
-      ? 400
-      : 250;
-    const timer = window.setTimeout(
-      () => setStartupAnimationComplete(true),
-      duration,
-    );
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const resolveSession = useCallback(
     async (session: { access_token: string } | null, force = false) => {
@@ -229,7 +215,6 @@ export default function App() {
     };
   }, [resolveSession]);
 
-  if (!startupAnimationComplete) return <StartupLoading />;
   if (state === "loading") return <StartupLoading />;
   if (state === "signed-out") return <UnauthenticatedEntry />;
   if (state === "unauthorized") {

@@ -3,13 +3,22 @@ import { supabase } from "./supabase";
 
 const base = import.meta.env.VITE_API_URL ?? "/api/v1";
 
+let pendingRefresh: ReturnType<typeof supabase.auth.refreshSession> | null = null;
+
 async function getApiSession() {
   const current = await supabase.auth.getSession();
   if (current.data.session || current.error) return current.data.session;
 
   // Supabase can briefly expose no session while restoring a persisted one.
   // Recover it before sending a protected request without Authorization.
-  const refreshed = await supabase.auth.refreshSession();
+  // Share a single refresh attempt among simultaneous startup API calls.
+  // Never cache a token across requests or authentication changes.
+  if (!pendingRefresh) {
+    pendingRefresh = supabase.auth.refreshSession().finally(() => {
+      pendingRefresh = null;
+    });
+  }
+  const refreshed = await pendingRefresh;
   return refreshed.data.session;
 }
 

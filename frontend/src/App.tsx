@@ -105,7 +105,7 @@ export default function App() {
     const duration = window.matchMedia("(prefers-reduced-motion: reduce)")
       .matches
       ? 400
-      : 2000;
+      : 250;
     const timer = window.setTimeout(
       () => setStartupAnimationComplete(true),
       duration,

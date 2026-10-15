@@ -103,6 +103,7 @@ function smoothPath(points: Array<{ x: number; y: number }>) {
 }
 
 export function Overview({
+  user,
   onNavigate,
   preview = false,
 }: {
@@ -119,7 +120,8 @@ export function Overview({
   const [refreshPulse, setRefreshPulse] = useState(false);
   const range = `date_from=${from}&date_to=${to}`;
   const requests = useQuery({
-    queryKey: ["requests", "dashboard"],
+    queryKey: ["requests", "dashboard", user.id, user.role],
+    staleTime: 15_000,
     queryFn: () =>
       api<Page<TruckRequest>>(
         "/requests?per_page=20&sort=created_at&direction=desc",
@@ -129,13 +131,14 @@ export function Overview({
     enabled: !preview,
   });
   const summary = useQuery({
-    queryKey: ["request-summary", from, to],
+    queryKey: ["request-summary", user.id, user.role, from, to],
+    staleTime: 15_000,
     queryFn: () => api<RequestDashboardSummary>(`/requests/summary?${range}`),
     refetchInterval: false,
     enabled: !preview,
   });
   const intraday = useQuery({
-    queryKey: ["intraday-dispatch", intradayDate],
+    queryKey: ["intraday-dispatch", user.id, user.role, intradayDate],
     queryFn: () =>
       api<{ data: Array<{ hour: number; orderQty: number }> }>(
         `/dispatch/intraday?date=${intradayDate}`,
@@ -151,7 +154,7 @@ export function Overview({
     return () => window.clearTimeout(timeout);
   }, [intraday.dataUpdatedAt]);
   const details = useQuery({
-    queryKey: ["request-details", detailStatus, from, to],
+    queryKey: ["request-details", user.id, user.role, detailStatus, from, to],
     queryFn: () =>
       api<Page<TruckRequest>>(
         `/requests?per_page=100&${range}${detailStatus !== "ALL" ? `&status=${detailStatus}` : ""}`,
@@ -322,7 +325,7 @@ export function Overview({
                 <>
                   <span className={intradayMetaDotClass} aria-hidden="true" />
                   <span>Live operational feed</span>
-                  <span aria-hidden="true">·</span>
+                  <span aria-hidden="true">Â·</span>
                   <time dateTime={intradayDate}>{intradayDate}</time>
                 </>
               }

@@ -3,8 +3,6 @@ stages:
   - test
   - name: release-acceptance
     if: tag IS present
-  - name: publish-production
-    if: tag IS present AND env(PRODUCTION_DEPLOY_ENABLED) = true
 jobs:
   include:
     - name: "Frontend"
@@ -198,18 +196,3 @@ jobs:
         - npx playwright install --with-deps chromium
       script:
         - bash scripts/ci/require-release-acceptance.sh
-
-    - name: "Publish and Deploy Production"
-      if: tag IS present AND env(PRODUCTION_DEPLOY_ENABLED) = true
-      stage: publish-production
-      language: minimal
-      dist: jammy
-      services:
-        - docker
-      addons:
-        apt:
-          packages:
-            - awscli
-            - jq
-      script:
-        - bash scripts/deploy/deploy-aws-ecs.sh

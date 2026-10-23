@@ -90,47 +90,42 @@ certificate is for the AWS API hostname.
    images while retaining approved release images.
 4. Copy the repository URI, which looks like:
    `123456789012.dkr.ecr.ap-southeast-1.amazonaws.com/soc5-outbound-api`.
-5. Configure the approved CI deployment identity to build the existing
-   `backend/Dockerfile`, tag the image with the source commit SHA, and push it
-   to ECR. The repository has a gated Travis publish/deploy stage, but it needs
-   account-side credentials and ECR/ECS resources before it can run. Do not use
-   a mutable `latest` tag as the release identity.
+5. Configure GitLab CI to build the existing `backend/Dockerfile`, tag the
+   image with the source commit SHA, and push it to ECR. The repository has a
+   gated GitLab publish/deploy stage, but it needs account-side OIDC/IAM setup
+   and ECR/ECS resources before it can run. Do not use a mutable `latest` tag.
 
 At this point ECR may be empty. ECS cannot start until an approved image has
 been pushed.
 
-### Configure Travis to publish an approved image
+### Configure GitLab CI to publish and deploy an approved release
 
-The repository's CI source of truth is GitLab, mirrored to GitHub, where Travis
-CI is connected. Existing Travis jobs test the mirrored code and validate/build
-Docker configuration. A gated ECR/ECS deployment stage is now wired in the
-repository, but it cannot run until the provider/account settings and AWS
-resources are ready.
+GitLab is the source of truth and its pipeline now performs production
+deployment. GitHub is a mirror watched by Travis; keep Travis for validation
+while GitLab CI is being established, but do not give Travis AWS deployment
+credentials. The GitLab job uses OIDC to assume a restricted AWS role.
 
-1. In GitLab, protect `main` and require review plus all required test,
-   PostgreSQL, migration-chain, and deployment-config checks to pass. Confirm
-   the GitHub mirror receives those approved commits. Travis runs against that
-   mirror, not the GitLab project directly.
-2. In AWS IAM, create a deployment identity dedicated to this repository. The
-   included deployment script currently expects a dedicated IAM user's access
-   key and secret key. Keep the policy narrowly scoped and rotate these keys.
-   If your Travis plan supports AWS OIDC, switch the script to short-lived role
-   credentials before removing the key-based authentication.
-3. Scope ECR push permissions to the single `soc5-outbound-api` repository in
-   `ap-southeast-1`. For image publishing, the policy normally needs ECR
-   authorization-token access plus layer upload, image upload, and image
-   manifest operations. Do not grant administrator or account-wide ECR access.
-4. If Travis will also trigger ECS deployment, add only the required ECS
-   describe/register/update permissions for the named cluster/services and
-   `iam:PassRole` for the exact task and execution roles. Keep this separate
-   from the image-publisher permissions when possible.
-5. Add these Travis repository variables. Mark both AWS keys **encrypted**;
-   restrict the production deployment flag to approved release builds:
+1. In GitLab, protect `main` and require review plus the quality, PostgreSQL,
+   migration-chain, and deployment-config jobs to pass. Protect a release-tag
+   pattern such as `v*`; limit who can create those tags to release owners.
+2. In AWS IAM for `ap-southeast-1`, create an IAM OIDC identity provider for
+   `https://gitlab.com` with audience `https://sts.amazonaws.com`.
+3. Create a role such as `soc5-gitlab-production-deploy`. Its trust policy must
+   accept only this GitLab project's OIDC tokens and protected release tags.
+   Use the exact project path from GitLab's Settings → General page; do not
+   trust every project in the GitLab instance. For the current remote path, the
+   project is `outbound-project/soc-5-outbound`.
+4. Attach only the permissions the deploy script needs: ECR login and push to
+   the `soc5-outbound-api` repository; ECS task-definition describe/register
+   and service describe/update for the named production cluster/services; and
+   `iam:PassRole` for the exact ECS task and execution roles, constrained to
+   `ecs-tasks.amazonaws.com`. Do not grant AdministratorAccess.
+5. In GitLab **Settings → CI/CD → Variables**, add the following. Mark
+   environment-specific production values protected; mask secret values.
 
    ```text
    PRODUCTION_DEPLOY_ENABLED=true
-   AWS_ACCESS_KEY_ID=<restricted-deploy-user-key>
-   AWS_SECRET_ACCESS_KEY=<restricted-deploy-user-secret>
+   AWS_ROLE_ARN=arn:aws:iam::<account-id>:role/soc5-gitlab-production-deploy
    AWS_DEFAULT_REGION=ap-southeast-1
    EXPECTED_AWS_ACCOUNT_ID=<12-digit-production-account-id>
    ECR_REPOSITORY_URI=<account-id>.dkr.ecr.ap-southeast-1.amazonaws.com/soc5-outbound-api
@@ -140,39 +135,29 @@ resources are ready.
    ECS_SCHEDULER_SERVICE=<scheduler-service-name>
    ```
 
-   Container names default to `api`, `worker`, and `scheduler`; if your ECS
-   task definitions use different names, also set `ECS_API_CONTAINER_NAME`,
-   `ECS_WORKER_CONTAINER_NAME`, and `ECS_SCHEDULER_CONTAINER_NAME`. Do not put
-   credentials in `.travis.yml`, commit them, expose them to pull-request builds
-   from forks, or print them in logs. Protect release tags in GitLab and make
-   the GitHub mirror read-only to ordinary users so only mirrored, approved
-   tags can trigger Travis.
-6. Add explicit ordered Travis stages so the normal test jobs finish first,
-   tag-gated release acceptance runs next, and publishing/deployment runs last.
-   Add the publish job only for an approved release tag after required checks
-   pass. It should build `backend/Dockerfile`, tag the image with the exact
-   commit SHA, authenticate to ECR, push, then record the pushed image digest.
-   Never publish images from pull-request builds.
-7. Require a human release owner to create the protected release tag in GitLab
-   only after staging passes. Confirm that GitLab mirrors that exact tag and
-   commit to GitHub before Travis starts the deployment stage. The included
-   [`deploy-aws-ecs.sh`](../../scripts/deploy/deploy-aws-ecs.sh) job pushes the
-   immutable commit-SHA image, registers task-definition revisions using the
-   image, then updates API, worker, and scheduler ECS services in that order.
-   It waits for each service to become stable. It does not run database
-   migrations or deploy the Firebase frontend.
-8. Give the IAM identity ECR image push, ECS service/task-definition
-   registration/update/describe, and `iam:PassRole` access only for the named
-   production ECS roles. The deployment script checks the AWS account ID and
-   refuses to run unless it is on a tag and `PRODUCTION_DEPLOY_ENABLED=true`.
-   Record the previous task definition and image digest for rollback.
+   OIDC is preferred and does not require long-lived AWS access keys. The
+   pipeline can use `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` as a
+   restricted fallback only if OIDC cannot be configured. Container names
+   default to `api`, `worker`, and `scheduler`; set
+   `ECS_API_CONTAINER_NAME`, `ECS_WORKER_CONTAINER_NAME`, or
+   `ECS_SCHEDULER_CONTAINER_NAME` only if task definitions use different names.
+6. Keep GitLab's `.gitlab-ci.yml` enabled on the GitLab source project. Merge
+   requests and the default branch run CI; protected tags run staging release
+   acceptance and, when enabled, the production deployment stage. GitLab's
+   protected variable settings and AWS OIDC trust policy must both prevent
+   unprotected tags from obtaining deploy credentials.
+7. Create the protected release tag in GitLab only after staging passes. The
+   pipeline pushes the backend image with the commit SHA, registers ECS task
+   definitions, then updates API, worker, and scheduler services in that order
+   and waits for each to stabilize. It does not run database migrations or
+   deploy Firebase; those remain separately reviewed steps.
+8. Record the image digest, task-definition revisions, and previous known-good
+   revisions for rollback. Start with a non-production AWS role and staging ECS
+   services before setting `PRODUCTION_DEPLOY_ENABLED=true` for production.
 
-GitLab branch/tag protections, GitHub mirror permissions, Travis account
-settings, AWS identities/secrets, and ECR/ECS resources are outside this
-repository. The gated pipeline implementation is present, but it cannot publish
-or deploy until those account-side settings and exact ECS service names are
-supplied. A failed test or staging acceptance must prevent publishing and
-rollout.
+The pipeline code is present, but AWS OIDC, IAM permissions, protected GitLab
+variables/tags, and ECR/ECS resources require account-side setup. Travis stays
+on the GitHub mirror for validation and should not receive AWS deploy secrets.
 
 ## Phase 4: create the network
 

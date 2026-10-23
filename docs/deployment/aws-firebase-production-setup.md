@@ -74,7 +74,8 @@ additional proxy and DNS configuration; it is not provided by this repository.
 | Supabase production project | PostgreSQL, Auth, Realtime, project API | Yes; this app depends on it |
 | DNS/domain management | Firebase and API hostnames, verification records | Yes |
 | Sentry | Application error reporting (and frontend DSN if enabled) | Recommended |
-| Travis CI | Existing CI validation; current pipeline does not deploy | Existing, optional to retain |
+| GitLab CI | Tests and optional gated AWS ECR/ECS deployment | Yes for the current source-of-truth workflow |
+| Travis CI | Validation on the GitHub mirror during transition | Optional; do not give it AWS deployment credentials |
 | Google Sheets | Request export and/or user imports | Optional; keep disabled unless configured |
 | SeaTalk Open Platform | Login and Approval Center provider APIs | Optional; login and approvals have separate settings |
 | Redis/ElastiCache | Cache/queue/session backend if deliberately selected | Optional; current async profile uses PostgreSQL-backed queue/cache/session |
@@ -267,14 +268,14 @@ separate reviewed production change after every prerequisite is evidenced.
    results, operator, and rollback image. Keep schema rollback separate from
    application rollback; migrations may not be safely reversible.
 
-Travis now has an optional tag-gated AWS ECR/ECS backend deployment stage; see
-[`aws-console-setup-simplified.md`](aws-console-setup-simplified.md) and
-[`ci-cd-audit-2026-10-23.md`](ci-cd-audit-2026-10-23.md). It requires protected
-Travis variables and AWS resources/permissions before it can run. It does not
-deploy the Firebase frontend or apply production database migrations. Configure
-Firebase deployment separately, and require protected branches, an approved
-release tag, human release approval, and production secrets unavailable to
-pull-request jobs.
+GitLab CI has an optional tag-gated AWS ECR/ECS backend deployment stage; see
+[`gitlab-ci.md`](gitlab-ci.md), [`aws-console-setup-simplified.md`](aws-console-setup-simplified.md),
+and [`ci-cd-audit-2026-10-23.md`](ci-cd-audit-2026-10-23.md). It requires
+protected GitLab variables and AWS OIDC/IAM resources before it can run. It does
+not deploy the Firebase frontend or apply production database migrations.
+Configure Firebase deployment separately, and require protected branches, an
+approved release tag, human release approval, and production secrets
+unavailable to merge-request jobs.
 
 ## Go-live checklist
 

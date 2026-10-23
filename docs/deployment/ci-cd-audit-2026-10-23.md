@@ -9,28 +9,26 @@ PostgreSQL service, and runs tag-gated staging acceptance. It does not publish
 images or deploy/roll back an application; host deployment is manual through the
 documented Compose procedure.
 
-## Follow-up: gated AWS ECS deployment wiring
+## Follow-up: GitLab AWS ECS deployment wiring
 
-The Travis configuration now orders tag release acceptance before an optional
-`publish-production` stage. When `PRODUCTION_DEPLOY_ENABLED=true` is configured
-in protected Travis repository settings, the job runs
-[`scripts/deploy/deploy-aws-ecs.sh`](../../scripts/deploy/deploy-aws-ecs.sh).
-That script publishes the backend image to ECR under the full commit SHA, checks
-the expected AWS account, registers task-definition revisions using the image,
-and updates the API, worker, then scheduler services while waiting for each to
-stabilize. It does not apply database migrations or deploy the Firebase site.
+GitLab is the source-of-truth repository and runs the optional production
+deployment job directly. The GitHub mirror remains connected to Travis for
+validation during transition; Travis has no production deploy stage or AWS
+credentials. `.gitlab-ci.yml` orders merge/default-branch checks before
+tag-gated release acceptance and the optional production stage. When protected
+GitLab variables enable it, the job uses GitLab OIDC to assume an AWS role and
+runs [`scripts/deploy/deploy-aws-ecs.sh`](../../scripts/deploy/deploy-aws-ecs.sh).
+That script publishes the backend image under the full commit SHA, checks the
+expected AWS account, registers task-definition revisions, then updates API,
+worker, and scheduler services while waiting for stability. It does not apply
+database migrations or deploy Firebase.
 
-This is repository wiring only. No AWS account identity, Travis encrypted
-variables, ECR repository, ECS cluster/services, or production release tag was
-configured or exercised here. The branch/tag protections, exact service and
-container names, and least-privilege IAM permissions still require account-side
-setup. The prior audit rows below describe the earlier implementation state.
-
-GitLab is the source-of-truth repository. It mirrors to GitHub, and Travis CI
-is connected to that GitHub mirror. Protect `main` and release tags in GitLab,
-ensure GitLab mirrors the approved release tag/commit, and restrict direct
-writes/tag creation in GitHub so Travis cannot deploy an unapproved mirror-only
-tag.
+This is repository wiring only. No AWS OIDC provider/role, GitLab protected
+variables/tags, ECR repository, ECS cluster/services, or production release was
+configured or exercised here. The exact service/container names, trust policy,
+and least-privilege IAM permissions still require account-side setup. GitLab
+must mirror approved tags to GitHub; GitHub should be read-only to ordinary
+users so mirror-only tags cannot be mistaken for an approved release.
 
 ## Fixes applied
 

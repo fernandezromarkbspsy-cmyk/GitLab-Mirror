@@ -33,4 +33,18 @@ describe("createAppNavigationGroups", () => {
     expect(hrefs).not.toContain("/users");
     expect(hrefs).not.toContain("/docking");
   });
+
+  it("routes document officers to Truck Request without exposing LH Request or Docking", () => {
+    const groups = createAppNavigationGroups({
+      role: "doc_officer",
+      pendingCount: 2,
+    });
+    const hrefs = groups
+      .flatMap((group) => group.items)
+      .map((item) => item.href);
+
+    expect(hrefs).toEqual(["/dashboard", "/midmile/truck-request", "/kpi"]);
+    expect(hrefs).not.toContain("/outbound/lh-request");
+    expect(hrefs).not.toContain("/docking");
+  });
 });

@@ -77,8 +77,8 @@ vi.mock("../hooks/useOutboundRequests", () => ({
   }),
 }));
 
-import { MidmileRequests } from "./MidmileRequests";
-import { OutboundRequests } from "./OutboundRequests";
+import { canShowDriverIdAssignment, MidmileRequests } from "./MidmileRequests";
+import { canShowTripEncoding, OutboundRequests } from "./OutboundRequests";
 
 const queue = { alerts: [], acknowledge: vi.fn() } as unknown as QueueSnapshot;
 const user = (role: User["role"]): User => ({
@@ -86,6 +86,43 @@ const user = (role: User["role"]): User => ({
   name: "Operator",
   role,
   is_admin: false,
+});
+
+describe("doc officer driver assignment", () => {
+  it("shows the assignment action for docking requests without a driver", () => {
+    expect(
+      canShowDriverIdAssignment(
+        { status: "DOCKING", driver_id: null },
+        "doc_officer",
+      ),
+    ).toBe(true);
+    expect(
+      canShowDriverIdAssignment(
+        { status: "DOCKING", driver_id: "12345" },
+        "doc_officer",
+      ),
+    ).toBe(false);
+  });
+
+  describe("Ops PIC LH Trip encoding", () => {
+    it("is available only after a doc officer assigns a driver ID", () => {
+      expect(
+        canShowTripEncoding({ status: "DOCKING", driver_id: null }, "ops_pic"),
+      ).toBe(false);
+      expect(
+        canShowTripEncoding(
+          { status: "DOCKING", driver_id: "12345" },
+          "ops_pic",
+        ),
+      ).toBe(true);
+      expect(
+        canShowTripEncoding(
+          { status: "DOCKED", driver_id: "12345" },
+          "ops_pic",
+        ),
+      ).toBe(false);
+    });
+  });
 });
 
 describe("request tables with the Status column hidden", () => {

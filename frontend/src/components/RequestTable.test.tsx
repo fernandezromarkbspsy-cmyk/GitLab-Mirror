@@ -4,21 +4,21 @@ import type { TruckRequest } from "../types";
 import { formatElapsed, RequestTable } from "./RequestTable";
 
 describe("request elapsed time", () => {
-  it("runs until Driver ID assignment and then stops at its timestamp", () => {
+  it("formats elapsed time as HH:MM:SS and stops at docking completion", () => {
     expect(
       formatElapsed(
         "2026-10-05T08:00:00Z",
         null,
         new Date("2026-10-05T09:30:00Z"),
       ),
-    ).toBe("1h 30m");
+    ).toBe("01:30:00");
     expect(
       formatElapsed(
         "2026-10-05T08:00:00Z",
-        "2026-10-05T08:42:00Z",
+        "2026-10-05T08:42:15Z",
         new Date("2026-10-05T09:30:00Z"),
       ),
-    ).toBe("42m");
+    ).toBe("00:42:15");
   });
 });
 
@@ -49,6 +49,55 @@ it("announces the active sort and exposes full values in the docking table", () 
   expect(markup).toContain('title="LONG-PLATE-123456789"');
   expect(markup).toContain('aria-label="Request records"');
   expect(markup.match(/>Not recorded</g)).toHaveLength(2);
+});
+
+it("shows a spinner while docking is in progress and hides it after docking", () => {
+  const activeMarkup = renderToStaticMarkup(
+    <RequestTable
+      rows={[
+        {
+          id: "active-row",
+          status: "DOCKING",
+          request_timestamp: "2026-10-12T00:00:00Z",
+          cluster: "North Hub",
+          region: "North",
+          dock_no: "D-01",
+          backlogs: 4,
+          truck_size: "6W",
+          truck_type: "WETLEASE",
+          created_by: "doc-user",
+          created_at: "2026-10-12T00:00:00Z",
+        },
+      ]}
+      visibleColumns={["running_time"]}
+    />,
+  );
+  const dockedMarkup = renderToStaticMarkup(
+    <RequestTable
+      rows={[
+        {
+          id: "docked-row",
+          status: "DOCKED",
+          request_timestamp: "2026-10-12T00:00:00Z",
+          docked_time: "2026-10-12T01:02:03Z",
+          cluster: "North Hub",
+          region: "North",
+          dock_no: "D-01",
+          backlogs: 4,
+          truck_size: "6W",
+          truck_type: "WETLEASE",
+          created_by: "doc-user",
+          created_at: "2026-10-12T00:00:00Z",
+        },
+      ]}
+      visibleColumns={["running_time"]}
+    />,
+  );
+
+  expect(activeMarkup).toContain("Docking in progress");
+  expect(activeMarkup).toMatch(/>\d+:\d{2}:\d{2}<svg/);
+  expect(dockedMarkup).not.toContain("Docking in progress");
+  expect(dockedMarkup).toContain("01:02:03");
 });
 
 it("uses the workflow actor names rather than the request creator", () => {

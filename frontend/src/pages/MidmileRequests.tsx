@@ -7,6 +7,7 @@ import {
   Hash,
   ListChecks,
   Printer,
+  ShipWheel,
   Truck,
 } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
@@ -15,11 +16,15 @@ import {
   linehaulPrimaryColumnKeysForRole,
 } from "../components/ColumnVisibilityMenu";
 import { LhRowActionMenu } from "../components/LhRowActionMenu";
-import { statuses } from "../components/RequestFilters";
 import { Pagination } from "../components/Pagination";
 import { PrintableTruckLabel } from "../components/PrintableTruckLabel";
+import { statuses } from "../components/RequestFilters";
 import { RequestElapsedTime } from "../components/RequestTable";
-import { MidmileActionDialog, type MmAction } from "../components/request/MidmileActionDialog";
+import { DockDialog } from "../components/request/DockDialog";
+import {
+  MidmileActionDialog,
+  type MmAction,
+} from "../components/request/MidmileActionDialog";
 import { RequestExpandButton } from "../components/request/RequestExpandButton";
 import { RequestExpandedDetails } from "../components/request/RequestExpandedDetails";
 import { RequestFetchNotice } from "../components/request/RequestFetchNotice";
@@ -35,7 +40,7 @@ import {
   formatRequestDetailDateTime as formatDetailDateTime,
 } from "../components/request/requestPresentation";
 import { SkeletonCardList, SkeletonRequestTable } from "../components/Skeleton";
-import { StatusBadge, StatusText } from "../components/StatusBadge";
+import { StatusText } from "../components/StatusBadge";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useLinehaulTablePreferences } from "../hooks/useLinehaulTablePreferences";
 import type { QueueSnapshot } from "../hooks/useQueueNotifications";
@@ -60,9 +65,42 @@ import {
   tableShellClass,
   textButtonClass,
 } from "../lib/uiClasses";
-import { workflowActionPath } from "../lib/workflow";
+import { type WorkflowAction, workflowActionPath } from "../lib/workflow";
 import type { Page, RequestSort, TruckRequest, User } from "../types";
 
+type DocOfficerAction = Extract<
+  WorkflowAction,
+  "mark-docked" | "reassign-driver"
+>;
+type SelectedAction =
+  | { request: TruckRequest; action: MmAction }
+  | { request: TruckRequest; action: DocOfficerAction };
+
+function isDocOfficerSelection(
+  selection: SelectedAction,
+): selection is { request: TruckRequest; action: DocOfficerAction } {
+  return (
+    selection.action === "mark-docked" || selection.action === "reassign-driver"
+  );
+}
+
+export function canShowMidmileActions(
+  request: Pick<TruckRequest, "status">,
+  selected: boolean,
+) {
+  return request.status === "REQUESTED" && selected;
+}
+
+export function canShowDriverIdAssignment(
+  request: Pick<TruckRequest, "status" | "driver_id">,
+  role: User["role"],
+) {
+  return (
+    role === "doc_officer" &&
+    request.status === "DOCKING" &&
+    !request.driver_id?.trim()
+  );
+}
 
 function _formatCluster(value: string) {
   return value
@@ -167,10 +205,7 @@ export function MidmileRequests({
   const operationKeys = useRef(createOperationKeys());
   const { filters, appliedFilters, setFilters, changeFilters } =
     useRequestFilters();
-  const [selected, setSelected] = useState<{
-    request: TruckRequest;
-    action: MmAction;
-  } | null>(null);
+  const [selected, setSelected] = useState<SelectedAction | null>(null);
   const [notice, setNotice] = useState("");
   const modalTrigger = useRef<HTMLElement | null>(null);
   const [openRow, setOpenRow] = useState<string | null>(null);
@@ -179,12 +214,11 @@ export function MidmileRequests({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [exporting, setExporting] = useState(false);
-  const { visibleColumns, density } =
-    useLinehaulTablePreferences(
-      "midmile",
-      linehaulColumnOptions.map(({ key }) => key),
-      linehaulPrimaryColumnKeysForRole(user.role),
-    );
+  const { visibleColumns, density } = useLinehaulTablePreferences(
+    "midmile",
+    linehaulColumnOptions.map(({ key }) => key),
+    linehaulPrimaryColumnKeysForRole(user.role),
+  );
   const hasColumn = (key: string) =>
     (visibleColumns as readonly string[]).includes(key);
   const requests = useQuery({
@@ -199,11 +233,14 @@ export function MidmileRequests({
     refetchInterval: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    enabled: user.role === "fte_mm",
+    enabled: user.role === "fte_mm" || user.role === "doc_officer",
   });
 
   function toggleSelected(id: string) {
-    queue.acknowledge(id, requests.data?.data.find(row => row.id === id));
+    queue.acknowledge(
+      id,
+      requests.data?.data.find((row) => row.id === id),
+    );
     setSelectedIds((current) => {
       if (current.has(id)) return new Set();
       return new Set([id]);
@@ -224,22 +261,30 @@ export function MidmileRequests({
       payload,
     }: {
       request: TruckRequest;
-      action: MmAction;
+      action: MmAction | DocOfficerAction;
       payload: Record<string, unknown>;
     }) =>
       api<TruckRequest>(workflowActionPath(request.id, action), {
         method: "POST",
         body: JSON.stringify(payload),
-        headers: operationKeys.current.headers(`midmile-${action}:${request.id}`),
+        headers: operationKeys.current.headers(
+          `midmile-${action}:${request.id}`,
+        ),
       }),
     onSuccess: async (_, variables) => {
-      operationKeys.current.clear(`midmile-${variables.action}:${variables.request.id}`);
+      operationKeys.current.clear(
+        `midmile-${variables.action}:${variables.request.id}`,
+      );
       setSelected(null);
       setSelectedIds(new Set());
       setNotice(
-        variables.action === "assign-truck"
-          ? "Truck confirmed."
-          : variables.action === "cancel" ? "Request cancelled." : "Request returned to Outbound.",
+        variables.action === "mark-docked"
+          ? "Driver ID assigned."
+          : variables.action === "assign-truck"
+            ? "Truck confirmed."
+            : variables.action === "cancel"
+              ? "Request cancelled."
+              : "Request returned to Outbound.",
       );
       await queryClient.invalidateQueries({
         queryKey: requestQueryKey("midmile-all"),
@@ -254,7 +299,10 @@ export function MidmileRequests({
     },
   });
 
-  function openAction(request: TruckRequest, action: MmAction) {
+  function openAction(
+    request: TruckRequest,
+    action: MmAction | DocOfficerAction,
+  ) {
     operationKeys.current.clear(`midmile-${action}:${request.id}`);
     transition.reset();
     setNotice("");
@@ -600,7 +648,10 @@ export function MidmileRequests({
                             <Printer size={14} />
                             Print
                           </button>
-                          {row.status === "REQUESTED" && (
+                          {canShowMidmileActions(
+                            row,
+                            selectedIds.has(row.id),
+                          ) && (
                             <>
                               <button
                                 className={requestAssignClass}
@@ -622,11 +673,31 @@ export function MidmileRequests({
                               >
                                 Reject
                               </button>
-                              <button className={requestRejectClass} type="button"
-                                onClick={(event) => { event.stopPropagation(); openAction(row, "cancel"); }}>
+                              <button
+                                className={requestRejectClass}
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openAction(row, "cancel");
+                                }}
+                              >
                                 Cancel request
                               </button>
                             </>
+                          )}
+                          {canShowDriverIdAssignment(row, user.role) && (
+                            <button
+                              className={requestAssignClass}
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                queue.acknowledge(row.id, row);
+                                openAction(row, "mark-docked");
+                              }}
+                            >
+                              <ShipWheel size={14} />
+                              Assign Driver ID
+                            </button>
                           )}
                         </LhRowActionMenu>
                       </RequestRecordRow>
@@ -679,10 +750,7 @@ export function MidmileRequests({
                         {row.truck_size}
                       </strong>
                       <span>{row.backlogs.toLocaleString()} backlogs</span>
-                      <StatusBadge
-                        status={row.display_status ?? row.status}
-                        uppercase
-                      />
+                      <StatusText status={row.display_status ?? row.status} />
                       <button
                         type="button"
                         className={textButtonClass}
@@ -718,16 +786,31 @@ export function MidmileRequests({
           />
         </section>
 
-        {selected && (
-          <MidmileActionDialog
-            returnFocus={modalTrigger.current}
-            selection={selected}
-            busy={transition.isPending}
-            error={apiErrorMessage(transition.error)}
-            onClose={() => setSelected(null)}
-            onSubmit={(payload) => transition.mutate({ ...selected, payload })}
-          />
-        )}
+        {selected ? (
+          isDocOfficerSelection(selected) ? (
+            <DockDialog
+              request={selected.request}
+              actorRole={user.role}
+              action={selected.action}
+              busy={transition.isPending}
+              onClose={() => setSelected(null)}
+              onSubmit={(payload) =>
+                transition.mutate({ ...selected, payload })
+              }
+            />
+          ) : (
+            <MidmileActionDialog
+              returnFocus={modalTrigger.current}
+              selection={selected}
+              busy={transition.isPending}
+              error={apiErrorMessage(transition.error)}
+              onClose={() => setSelected(null)}
+              onSubmit={(payload) =>
+                transition.mutate({ ...selected, payload })
+              }
+            />
+          )
+        ) : null}
       </section>
     </div>
   );

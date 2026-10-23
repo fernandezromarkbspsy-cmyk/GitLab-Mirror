@@ -108,6 +108,7 @@ function smoothPath(points: Array<{ x: number; y: number }>) {
 }
 
 export function Overview({
+  user,
   onNavigate,
   preview = false,
 }: {
@@ -115,6 +116,8 @@ export function Overview({
   onNavigate: (view: AppView) => void;
   preview?: boolean;
 }) {
+  const requestsDestination =
+    user.role === "doc_officer" ? "truck-request" : "docking";
   const from = useUiStore((state) => state.dateFrom);
   const to = useUiStore((state) => state.dateTo);
   const [detailStatus, setDetailStatus] = useState<Status | "ALL" | null>(null);
@@ -136,7 +139,7 @@ export function Overview({
     queryFn: ({ signal }) =>
       api<Page<TruckRequest>>(
         "/requests?per_page=20&sort=created_at&direction=desc",
-          { signal },
+        { signal },
       ),
     placeholderData: (previous) => previous,
     refetchInterval: false,
@@ -144,7 +147,8 @@ export function Overview({
   });
   const summary = useQuery({
     queryKey: ["request-summary", from, to],
-    queryFn: ({ signal }) => api<RequestDashboardSummary>(`/requests/summary?${range}`, { signal }),
+    queryFn: ({ signal }) =>
+      api<RequestDashboardSummary>(`/requests/summary?${range}`, { signal }),
     refetchInterval: false,
     enabled: !preview,
   });
@@ -156,7 +160,8 @@ export function Overview({
         .select("hour, order_qty")
         .gte("dispatch_date", intradayFrom)
         .lte("dispatch_date", intradayTo)
-          .order("hour", { ascending: true }).abortSignal(signal);
+        .order("hour", { ascending: true })
+        .abortSignal(signal);
 
       if (error) throw error;
 
@@ -188,13 +193,16 @@ export function Overview({
     queryFn: ({ signal }) =>
       api<Page<TruckRequest>>(
         `/requests?per_page=100&${range}${detailStatus !== "ALL" ? `&status=${detailStatus}` : ""}`,
-          { signal },
+        { signal },
       ),
     enabled: !preview && detailStatus !== null,
   });
   const dispatchChart = useMemo(() => {
     const valuesByHour = new Map(
-      (preview ? [] : intraday.data?.data ?? []).map((point) => [point.hour, point.orderQty]),
+      (preview ? [] : (intraday.data?.data ?? [])).map((point) => [
+        point.hour,
+        point.orderQty,
+      ]),
     );
     const points = INTRADAY_HOURS.map((hour) => ({
       hour,
@@ -227,13 +235,13 @@ export function Overview({
     };
   }, [intraday.data?.data, preview]);
   const sizes = ["4W", "4WAUV", "4WCV", "6W", "10W", "6WF"] as const;
-  const truckSizes = preview ? {} : summary.data?.analytics.truck_sizes ?? {};
+  const truckSizes = preview ? {} : (summary.data?.analytics.truck_sizes ?? {});
   const truckMixSegments: TruckMixSegment[] = sizes.map((size, index) => ({
     label: size,
     value: truckSizes[size] ?? 0,
     color: truckMixColors[index],
   }));
-  const rows = preview ? [] : requests.data?.data ?? [];
+  const rows = preview ? [] : (requests.data?.data ?? []);
   const dockItems = preview
     ? DOCK_QUEUE_DEMO_DOCKS
     : dockItemsFromRequests(rows);
@@ -247,8 +255,8 @@ export function Overview({
         request.plate_number,
     )
     .slice(0, 4);
-  const totalRequests = preview ? 0 : summary.data?.metrics.total ?? 0;
-  const byStatus = preview ? {} : summary.data?.metrics.by_status ?? {};
+  const totalRequests = preview ? 0 : (summary.data?.metrics.total ?? 0);
+  const byStatus = preview ? {} : (summary.data?.metrics.by_status ?? {});
   const pendingRequests = byStatus.PENDING ?? 0;
   const forDockingRequests = byStatus.DOCKING ?? 0;
   const dockedRequests = byStatus.DOCKED ?? 0;
@@ -452,7 +460,7 @@ export function Overview({
             <button
               className={textButtonClass}
               type="button"
-              onClick={() => onNavigate("docking")}
+              onClick={() => onNavigate(requestsDestination)}
             >
               View All
             </button>
@@ -507,7 +515,7 @@ export function Overview({
             <button
               className={textButtonClass}
               type="button"
-              onClick={() => onNavigate("docking")}
+              onClick={() => onNavigate(requestsDestination)}
             >
               View All
             </button>

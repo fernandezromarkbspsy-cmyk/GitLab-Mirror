@@ -1,4 +1,3 @@
-import { PrincipalQueryScope } from "../lib/PrincipalQueryScope";
 import { lazy, Suspense, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +8,7 @@ import { useApprovalPresence } from "../hooks/useApprovalPresence";
 import { useQueueNotifications } from "../hooks/useQueueNotifications";
 import { useRequestRealtime } from "../hooks/useRequestRealtime";
 import { api } from "../lib/api";
+import { PrincipalQueryScope } from "../lib/PrincipalQueryScope";
 import { getAppPath, getAppView } from "../lib/routes";
 import { supabase } from "../lib/supabase";
 import {
@@ -43,11 +43,6 @@ const MidmileRequests = lazy(() =>
     default: module.MidmileRequests,
   })),
 );
-const DockingConfirmation = lazy(() =>
-  import("./DockingConfirmation").then((module) => ({
-    default: module.DockingConfirmation,
-  })),
-);
 const Kpi = lazy(() =>
   import("./Kpi").then((module) => ({ default: module.Kpi })),
 );
@@ -60,9 +55,13 @@ const UserManagement = lazy(() =>
 export function Dashboard(props: { user: User; preview?: boolean }) {
   const viewRole = useUiStore((state) => state.viewRole);
   const role = props.user.is_admin && viewRole ? viewRole : props.user.role;
-  return <PrincipalQueryScope key={`${props.preview ? "demo" : "live"}:${props.user.id}:${role}`}>
-    <DashboardContent {...props} />
-  </PrincipalQueryScope>;
+  return (
+    <PrincipalQueryScope
+      key={`${props.preview ? "demo" : "live"}:${props.user.id}:${role}`}
+    >
+      <DashboardContent {...props} />
+    </PrincipalQueryScope>
+  );
 }
 
 function DashboardContent({
@@ -89,13 +88,14 @@ function DashboardContent({
       (activeUser.role === "ops_pic" ||
         activeUser.role === "fte_ops" ||
         activeUser.role === "doc_officer")) ||
-    (candidate === "truck-request" && activeUser.role === "fte_mm") ||
-    (candidate === "docking" && activeUser.role === "doc_officer") ||
+    (candidate === "truck-request" &&
+      (activeUser.role === "fte_mm" || activeUser.role === "doc_officer")) ||
     candidate === "kpi" ||
     (candidate === "users" &&
       (activeUser.role === "fte_ops" || activeUser.role === "fte_mm"));
   const requestedView = getAppView(location.pathname);
-  const view = !isPreview && allowed(requestedView) ? requestedView : "overview";
+  const view =
+    !isPreview && allowed(requestedView) ? requestedView : "overview";
   const queue = useQueueNotifications(activeUser, isPreview);
   const navigationGroups = createAppNavigationGroups({
     role: activeUser.role,
@@ -148,8 +148,12 @@ function DashboardContent({
         aria-live="polite"
       >
         {queue.acknowledgmentError && (
-          <p role="alert" className="px-4 py-2 text-sm text-[var(--color-danger)]">
-            Could not mark notifications as read. Reopen request details to retry. {queue.acknowledgmentError.message}
+          <p
+            role="alert"
+            className="px-4 py-2 text-sm text-[var(--color-danger)]"
+          >
+            Could not mark notifications as read. Reopen request details to
+            retry. {queue.acknowledgmentError.message}
           </p>
         )}
         <Suspense fallback={<ViewLoading view={view} />}>
@@ -165,9 +169,6 @@ function DashboardContent({
           )}
           {view === "truck-request" && (
             <MidmileRequests user={activeUser} queue={queue} />
-          )}
-          {view === "docking" && (
-            <DockingConfirmation user={activeUser} queue={queue} />
           )}
           {view === "kpi" && <Kpi />}
           {view === "users" && <UserManagement />}

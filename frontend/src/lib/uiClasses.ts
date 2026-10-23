@@ -119,9 +119,8 @@ export const usersDisabledStatusClass =
   "inline-flex items-center gap-[.3rem] text-xs font-semibold text-soc5-muted";
 export const usersTableStateClass =
   "grid min-h-[11rem] place-items-center content-center gap-1 p-6 text-center text-soc5-muted";
-
 export const inlineCreateShellClass =
-  "relative z-[4] min-w-0 max-h-[26rem] overflow-visible rounded-[.4rem] border border-soc5-line border-l-2 border-l-soc5-lime-deep bg-linehaul-surface-soft p-[.6rem] shadow-[0_.1rem_.4rem_rgb(37_42_26_/_6%)]";
+  "relative z-[30] min-w-0 max-h-[26rem] overflow-visible rounded-[.4rem] border border-soc5-line border-l-2 border-l-soc5-lime-deep bg-linehaul-surface-soft p-[.6rem] shadow-[0_.1rem_.4rem_rgb(37_42_26_/_6%)]";
 export const inlineCreateFormClass =
   "grid grid-cols-[minmax(7rem,1.2fr)_repeat(4,minmax(4.5rem,.8fr))_minmax(5.5rem,1fr)_auto] items-end gap-2 max-[1120px]:grid-cols-3 max-[820px]:grid-cols-2 max-[680px]:grid-cols-1";
 export const inlineCreateLabelClass =

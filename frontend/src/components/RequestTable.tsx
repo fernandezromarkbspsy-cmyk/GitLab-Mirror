@@ -10,6 +10,7 @@ import {
   Hash,
   Landmark,
   ListChecks,
+  Loader2,
   Truck,
   UserRound,
 } from "lucide-react";
@@ -337,28 +338,34 @@ export function formatElapsed(
   const startMs = new Date(start).getTime();
   const endMs = end ? new Date(end).getTime() : now.getTime();
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return "-";
-  const minutes = Math.max(0, Math.floor((endMs - startMs) / 60_000));
-  const days = Math.floor(minutes / 1_440);
-  const hours = Math.floor((minutes % 1_440) / 60);
-  const remainder = minutes % 60;
-  if (days) return `${days}d ${hours}h`;
-  if (hours) return `${hours}h ${remainder}m`;
-  return `${remainder}m`;
+  const seconds = Math.max(0, Math.floor((endMs - startMs) / 1_000));
+  const hours = Math.floor(seconds / 3_600);
+  const minutes = Math.floor((seconds % 3_600) / 60);
+  const remainder = seconds % 60;
+  return [hours, minutes, remainder]
+    .map((value) => String(value).padStart(2, "0"))
+    .join(":");
 }
 
 export function RequestElapsedTime({ request }: { request: TruckRequest }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    if (request.driver_assigned_at) return;
-    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    if (request.docked_time) return;
+    const timer = window.setInterval(() => setNow(new Date()), 1_000);
     return () => window.clearInterval(timer);
-  }, [request.driver_assigned_at]);
+  }, [request.docked_time]);
+  const isRunning = !request.docked_time;
   return (
-    <span title="Request to Driver ID assignment">
-      {formatElapsed(
-        request.request_timestamp,
-        request.driver_assigned_at,
-        now,
+    <span
+      className="inline-flex items-center gap-1.5 tabular-nums"
+      title="Request to docking completion"
+    >
+      {formatElapsed(request.request_timestamp, request.docked_time, now)}
+      {isRunning && (
+        <Loader2
+          className="h-3.5 w-3.5 animate-spin text-soc5-muted"
+          aria-label="Docking in progress"
+        />
       )}
     </span>
   );

@@ -1,11 +1,4 @@
-import {
-  BarChart3,
-  LayoutDashboard,
-  Route,
-  ShipWheel,
-  Truck,
-  Users,
-} from "lucide-react";
+import { BarChart3, LayoutDashboard, Route, Truck, Users } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import type { Role, User } from "../../types";
 
@@ -39,7 +32,7 @@ export function createAppNavigationGroups({
     },
   ];
 
-  if (role === "ops_pic" || role === "fte_ops" || role === "doc_officer") {
+  if (role === "ops_pic" || role === "fte_ops") {
     groups.push({
       label: "Outbound",
       collapsible: true,
@@ -54,7 +47,7 @@ export function createAppNavigationGroups({
     });
   }
 
-  if (role === "fte_mm") {
+  if (role === "fte_mm" || role === "doc_officer") {
     groups.push({
       label: "Midmile",
       collapsible: true,
@@ -66,13 +59,6 @@ export function createAppNavigationGroups({
           badge,
         },
       ],
-    });
-  }
-
-  if (role === "doc_officer") {
-    groups.push({
-      label: "Operations",
-      items: [{ name: "Docking", href: "/docking", icon: ShipWheel, badge }],
     });
   }
 

@@ -137,7 +137,7 @@ export function DockQueueStatus({
     body = <p className={messageClass}>{emptyMessage}</p>;
   else
     body = (
-      <ul className={gridClass} aria-label="Docks" tabIndex={0}>
+      <ul className={gridClass} aria-label="Docks">
         {docks.map((dock) => {
           const config = statusConfig[dock.status];
           const StatusIcon = config.icon;

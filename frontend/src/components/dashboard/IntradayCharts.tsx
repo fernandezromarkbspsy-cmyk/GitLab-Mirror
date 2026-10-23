@@ -54,11 +54,8 @@ export function IntradayDateSelector({
     : "Select dates";
 
   return (
-    <div
-      className={intradayFiltersClass}
-      role="group"
-      aria-label="Intraday dispatch date range"
-    >
+    <fieldset className={intradayFiltersClass}>
+      <legend className="sr-only">Intraday dispatch date range</legend>
       <span className={intradayDateIconClass} aria-hidden="true">
         <CalendarDays size={16} strokeWidth={2.1} />
       </span>
@@ -87,7 +84,7 @@ export function IntradayDateSelector({
           />
         </PopoverContent>
       </Popover>
-    </div>
+    </fieldset>
   );
 }
 

@@ -6,8 +6,8 @@ fail() {
   exit 1
 }
 
-[[ "${TRAVIS_TAG:-}" != "" ]] || fail "this job must run from a release tag"
-[[ "${TRAVIS_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]] || fail "TRAVIS_COMMIT must be a full commit SHA"
+[[ -n "${CI_COMMIT_TAG:-}" ]] || fail "this job must run from a release tag"
+[[ "${CI_COMMIT_SHA:-}" =~ ^[0-9a-f]{40}$ ]] || fail "CI_COMMIT_SHA must be a full commit SHA"
 [[ "${PRODUCTION_DEPLOY_ENABLED:-}" == "true" ]] || fail "PRODUCTION_DEPLOY_ENABLED is not true"
 
 required_vars=(
@@ -22,10 +22,8 @@ required_vars=(
   ECS_SCHEDULER_SERVICE
 )
 for name in "${required_vars[@]}"; do
-  [[ -n "${!name:-}" ]] || fail "required Travis variable ${name} is missing"
+  [[ -n "${!name:-}" ]] || fail "required deployment variable ${name} is missing"
 done
-
-[[ "${TRAVIS_PULL_REQUEST:-false}" == "false" ]] || fail "pull-request builds cannot deploy"
 
 actual_account_id="$(aws sts get-caller-identity --query Account --output text)"
 [[ "$actual_account_id" == "$EXPECTED_AWS_ACCOUNT_ID" ]] || fail "AWS credentials resolve to an unexpected account"
@@ -35,7 +33,7 @@ repository_name="${ECR_REPOSITORY_URI#*/}"
 [[ "$registry_host" != "$repository_name" && "$repository_name" != */* ]] || fail "ECR_REPOSITORY_URI must identify one repository"
 [[ "$registry_host" == "$EXPECTED_AWS_ACCOUNT_ID.dkr.ecr."* ]] || fail "ECR registry account does not match EXPECTED_AWS_ACCOUNT_ID"
 
-image_uri="${ECR_REPOSITORY_URI}:${TRAVIS_COMMIT}"
+image_uri="${ECR_REPOSITORY_URI}:${CI_COMMIT_SHA}"
 docker login --username AWS --password-stdin "$registry_host" \
   <<< "$(aws ecr get-login-password --region "$AWS_DEFAULT_REGION")"
 docker build --pull --file backend/Dockerfile --tag "$image_uri" backend
@@ -43,7 +41,7 @@ docker push "$image_uri"
 
 image_digest="$(aws ecr describe-images \
   --repository-name "$repository_name" \
-  --image-ids "imageTag=${TRAVIS_COMMIT}" \
+  --image-ids "imageTag=${CI_COMMIT_SHA}" \
   --query 'imageDetails[0].imageDigest' \
   --output text)"
 [[ "$image_digest" == sha256:* ]] || fail "ECR did not return the pushed image digest"
@@ -87,7 +85,7 @@ deploy_service() {
   [[ "$new_task_definition" == arn:*:task-definition/*:* ]] \
     || fail "ECS did not return a registered task definition for ${service_name}"
 
-  printf 'Deploying %s with %s\n' "$service_name" "$TRAVIS_COMMIT"
+  printf 'Deploying %s with %s\n' "$service_name" "$CI_COMMIT_SHA"
   aws ecs update-service \
     --cluster "$ECS_CLUSTER" \
     --service "$service_name" \
@@ -104,4 +102,4 @@ deploy_service "$ECS_WORKER_SERVICE" "${ECS_WORKER_CONTAINER_NAME:-worker}"
 deploy_service "$ECS_SCHEDULER_SERVICE" "${ECS_SCHEDULER_CONTAINER_NAME:-scheduler}"
 
 printf 'Production rollout completed: commit=%s image_digest=%s\n' \
-  "$TRAVIS_COMMIT" "$image_digest"
+  "$CI_COMMIT_SHA" "$image_digest"

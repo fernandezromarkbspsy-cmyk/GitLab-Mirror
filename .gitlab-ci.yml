@@ -1,0 +1,201 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_TAG'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+
+stages:
+  - quality
+  - test
+  - verify
+  - release-acceptance
+  - deploy
+
+variables:
+  NODE_VERSION: "22"
+  PHP_VERSION: "8.3"
+  COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer-cache"
+  PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/.cache/ms-playwright"
+  DOCKER_HOST: "tcp://docker:2375"
+  DOCKER_TLS_CERTDIR: ""
+  POSTGRES_DB: "postgres"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: ""
+  POSTGRES_HOST_AUTH_METHOD: "trust"
+  DB_CONNECTION: "pgsql"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_DATABASE: "postgres"
+  DB_USERNAME: "postgres"
+  DB_PASSWORD: ""
+  DB_SSLMODE: "disable"
+
+frontend:
+  stage: quality
+  image: node:22-bookworm
+  cache:
+    key:
+      files: [frontend/package-lock.json]
+    paths:
+      - frontend/.npm/
+      - .cache/ms-playwright/
+  before_script:
+    - cd frontend
+    - npm ci --cache .npm --prefer-offline
+    - npx playwright install --with-deps chromium
+  script:
+    - npm run check:robots
+    - npm run check:encoding
+    - npm run lint
+    - npm run lint:a11y
+    - npm run format:check
+    - npm test
+    - npm run test:e2e
+    - npm run build
+
+backend:
+  stage: quality
+  image: php:8.3-cli-bookworm
+  cache:
+    key: composer-$CI_COMMIT_REF_SLUG
+    paths: [.composer-cache/]
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git unzip libxml2-dev libonig-dev libsqlite3-dev libpq-dev
+    - docker-php-ext-install dom mbstring pdo_sqlite pdo_pgsql
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+    - cd backend
+    - cp .env.example .env
+    - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+    - composer install --no-interaction --prefer-dist --no-progress --no-scripts
+    - php artisan key:generate --force
+    - composer dump-autoload --optimize
+  script:
+    - composer validate --no-check-publish
+    - composer audit --locked --no-dev --abandoned=ignore
+    - vendor/bin/pint --test
+    - php artisan test --fail-on-skipped --exclude-group=postgres
+
+backend-postgres:
+  stage: test
+  image: php:8.3-cli-bookworm
+  services:
+    - name: postgres:16
+      alias: postgres
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git unzip libxml2-dev libonig-dev libsqlite3-dev libpq-dev
+    - docker-php-ext-install dom mbstring pdo_sqlite pdo_pgsql
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+    - cd backend
+    - cp .env.example .env
+    - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+    - composer install --no-interaction --prefer-dist --no-progress --no-scripts
+    - php artisan key:generate --force
+    - composer dump-autoload --optimize
+  script:
+    - php artisan migrate:install
+    - php artisan migrate --path=database/migrations/2026_09_19_024934_create_idempotency_keys_table.php --force --no-interaction
+    - php artisan migrate --path=database/migrations/2026_09_20_000000_create_user_event_retries_table.php --force --no-interaction
+    - php artisan migrate --path=database/migrations/2026_09_21_000000_add_status_to_user_event_retries_table.php --force --no-interaction
+    - php artisan migrate --path=database/migrations/2026_09_25_000000_create_queue_support_tables.php --force --no-interaction
+    - php artisan migrate --path=database/migrations/2026_10_13_000003_create_workflow_outbox.php --force --no-interaction
+    - php artisan test --group=postgres --fail-on-skipped
+
+backend-migration-chain:
+  stage: test
+  image: php:8.3-cli-bookworm
+  services:
+    - name: postgres:16
+      alias: postgres
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git unzip libxml2-dev libonig-dev libsqlite3-dev libpq-dev postgresql-client
+    - docker-php-ext-install dom mbstring pdo_sqlite pdo_pgsql
+    - php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    - php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    - rm composer-setup.php
+    - cd backend
+    - cp .env.example .env
+    - mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+    - composer install --no-interaction --prefer-dist --no-progress --no-scripts
+    - php artisan key:generate --force
+    - composer dump-autoload --optimize
+  script:
+    - cd ..
+    - bash scripts/ci/apply-postgres-migration-chain.sh
+
+edge-functions:
+  stage: quality
+  image: denoland/deno:alpine-2.5.4
+  script:
+    - deno check supabase/functions/sync-clusters/index.ts supabase/functions/sync-intraday/index.ts
+    - deno test --allow-env supabase/functions/sync-clusters/index_test.ts supabase/functions/sync-intraday/index_test.ts
+
+deployment-config:
+  stage: verify
+  image: docker:27-cli
+  services:
+    - name: docker:27-dind
+      alias: docker
+  before_script:
+    - apk add --no-cache nodejs npm php83-cli composer
+    - cp backend/.env.staging.example backend/.env
+  script:
+    - docker compose version
+    - SUPABASE_URL=https://staging.invalid SUPABASE_PUBLISHABLE_KEY=staging-publishable-key docker compose config -q
+    - SUPABASE_URL=https://staging.invalid SUPABASE_PUBLISHABLE_KEY=staging-publishable-key docker compose build --pull api web
+    - bash scripts/ci/verify-release-static.sh
+
+release-acceptance:
+  stage: release-acceptance
+  image: node:22-bookworm
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  cache:
+    key:
+      files: [package-lock.json]
+    paths: [.cache/ms-playwright/]
+  before_script:
+    - npm ci --prefer-offline
+    - npx playwright install --with-deps chromium
+  script:
+    - bash scripts/ci/require-release-acceptance.sh
+
+publish-deploy-production:
+  stage: deploy
+  image: docker:27-cli
+  services:
+    - name: docker:27-dind
+      alias: docker
+  rules:
+    - if: '$CI_COMMIT_TAG && $PRODUCTION_DEPLOY_ENABLED == "true"'
+  environment:
+    name: production
+  resource_group: production
+  id_tokens:
+    AWS_ID_TOKEN:
+      aud: https://sts.amazonaws.com
+  before_script:
+    - apk add --no-cache aws-cli jq bash
+    - |
+      if [ -n "${AWS_ROLE_ARN:-}" ]; then
+        printf '%s' "$AWS_ID_TOKEN" > /tmp/gitlab-aws-token
+        chmod 600 /tmp/gitlab-aws-token
+        export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/gitlab-aws-token
+        export AWS_ROLE_SESSION_NAME="GitLabCI-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      else
+        : "${AWS_ACCESS_KEY_ID:?Set AWS_ROLE_ARN for OIDC or provide AWS_ACCESS_KEY_ID}"
+        : "${AWS_SECRET_ACCESS_KEY:?Set AWS_ROLE_ARN for OIDC or provide AWS_SECRET_ACCESS_KEY}"
+      fi
+  script:
+    - bash scripts/deploy/deploy-aws-ecs.sh
